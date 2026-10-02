@@ -1323,13 +1323,17 @@
       }
 
       function parseHexInput(input) {
-        const cleaned = String(input || '')
-          .trim()
-          .replace(/0x/gi, '')
+        const raw = String(input || '').trim();
+        if (!raw) return null;
+        const matches = raw.match(/0x[0-9a-f]{2}|[0-9a-f]{2}/gi) || [];
+        const residue = raw
+          .replace(/0x[0-9a-f]{2}|[0-9a-f]{2}/gi, '')
           .replace(/[\s,;:_-]+/g, '');
-        if (!cleaned || !/^[0-9a-f]+$/i.test(cleaned) || cleaned.length % 2 !== 0) return null;
-        const bytes = new Uint8Array(cleaned.length / 2);
-        for (let i = 0; i < cleaned.length; i += 2) bytes[i / 2] = Number.parseInt(cleaned.slice(i, i + 2), 16);
+        if (!matches.length || residue) return null;
+        const bytes = new Uint8Array(matches.length);
+        matches.forEach((token, index) => {
+          bytes[index] = Number.parseInt(token.replace(/^0x/i, ''), 16);
+        });
         return bytes;
       }
 
@@ -1608,10 +1612,7 @@
         } catch (error) {
           if (!state.closing) readFailure = error;
         } finally {
-          try {
-            const trailing = decoder.decode();
-            if (trailing) appendReceived(new Uint8Array(), trailing);
-          } catch { }
+          try { decoder.decode(); } catch { }
           if (state.reader) {
             try { state.reader.releaseLock(); } catch { }
             state.reader = null;
@@ -1775,10 +1776,16 @@
         return true;
       }
 
+      function exactTextForLog(bytes) {
+        if (!bytes || bytes.byteLength === 0) return '';
+        return new TextDecoder('utf-8').decode(bytes);
+      }
+
       function buildTxtLog() {
         return state.sessionEntries.map(entry => {
-          const readable = isReadableLogText(entry.text);
-          const payload = readable ? escapeLogText(entry.text) : 'HEX ' + bytesToHex(entry.bytes);
+          const exactText = exactTextForLog(entry.bytes);
+          const readable = isReadableLogText(exactText);
+          const payload = readable ? escapeLogText(exactText) : 'HEX ' + bytesToHex(entry.bytes);
           return formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload;
         }).join('\n') + '\n';
       }
@@ -1788,7 +1795,7 @@
           time: new Date(entry.time).toISOString(),
           direction: entry.direction,
           bytes: bytesToHex(entry.bytes, true),
-          text: entry.text
+          text: exactTextForLog(entry.bytes)
         })).join('\n') + '\n';
       }
 
