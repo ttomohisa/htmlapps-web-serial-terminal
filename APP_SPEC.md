@@ -258,7 +258,7 @@ One primary workspace:
 - Terminal remains useful at 320px width and above.
 - Connection and send buttons have touch-friendly targets.
 - Help dialog remains fully scrollable.
-- The app does not require a fixed bottom bar in v0.1.0.
+- The app does not require a fixed bottom bar in v0.2.0.
 
 ### Accessibility
 
