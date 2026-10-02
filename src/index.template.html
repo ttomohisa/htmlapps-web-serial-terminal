@@ -832,7 +832,7 @@
         <li data-i18n="helpStep6">終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。</li>
       </ol>
       <h3 data-i18n="helpPrivacyTitle">プライバシー</h3>
-      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.2.0でも通信ログは永続保存しません。通信設定のみ端末内へ保存します。</p>
+      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、保存ボタンを押した場合だけファイルとして端末へ保存します。</p>
       <h3 data-i18n="helpNotesTitle">注意事項</h3>
       <ul>
         <li data-i18n="helpBrowser">Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。</li>
@@ -1405,12 +1405,31 @@
 
       function addSessionEntry(direction, bytes, text) {
         const data = bytes instanceof Uint8Array ? new Uint8Array(bytes) : new Uint8Array(bytes || []);
-        state.sessionEntries.push({ time: Date.now(), direction, bytes: data, text: String(text || '') });
+        const entry = { time: Date.now(), direction, bytes: data, text: String(text || '') };
+        state.sessionEntries.push(entry);
         if (direction === 'rx') state.rxBytes += data.byteLength;
         else state.txBytes += data.byteLength;
         state.terminalRevision += 1;
         updateIoStats();
-        renderTerminal();
+
+        if (direction === 'rx' || state.localEcho) {
+          let next = state.terminalText + displayEntryText(entry);
+          if (next.length > MAX_DISPLAY_CHARS) {
+            next = next.slice(next.length - MAX_DISPLAY_CHARS);
+            if (!state.bufferNoticeShown) {
+              state.bufferNoticeShown = true;
+              showToast(t('bufferTrimmed'), 5200);
+            }
+          }
+          state.terminalText = next;
+          const terminal = $('#terminal');
+          terminal.textContent = next;
+          $('#terminalEmpty').hidden = next.length > 0;
+          updateTerminalControls();
+          if (state.autoScroll) terminal.scrollTop = terminal.scrollHeight;
+        } else {
+          updateTerminalControls();
+        }
       }
 
       function updateTerminalControls() {
@@ -1747,11 +1766,20 @@
         });
       }
 
+      function isReadableLogText(text) {
+        if (!text || text.includes('�')) return false;
+        for (const character of text) {
+          const code = character.codePointAt(0);
+          if (code < 32 && character !== '\r' && character !== '\n' && character !== '\t') return false;
+        }
+        return true;
+      }
+
       function buildTxtLog() {
         return state.sessionEntries.map(entry => {
-          const text = escapeLogText(entry.text);
-          const printable = text && !text.includes('�');
-          return formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + (printable ? text : 'HEX ' + bytesToHex(entry.bytes));
+          const readable = isReadableLogText(entry.text);
+          const payload = readable ? escapeLogText(entry.text) : 'HEX ' + bytesToHex(entry.bytes);
+          return formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload;
         }).join('\n') + '\n';
       }
 
