@@ -390,7 +390,7 @@
       font-size: 10px;
       font-weight: 760;
     }
-    .signal-button, .control-key {
+    .signal-button, .signal-select, .control-key {
       min-height: 36px;
       padding: 6px 10px;
       border: 1px solid var(--line);
@@ -401,9 +401,18 @@
       font-weight: 760;
       cursor: pointer;
     }
-    .signal-button:hover:not(:disabled), .control-key:hover:not(:disabled) {
+    .signal-button:hover:not(:disabled), .signal-select:hover:not(:disabled), .control-key:hover:not(:disabled) {
       border-color: var(--line-strong);
       background: var(--surface-strong);
+    }
+    .signal-select {
+      padding: 6px 28px 6px 9px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 760;
     }
     .signal-button[aria-pressed="true"] {
       border-color: color-mix(in srgb, var(--accent) 52%, var(--line));
@@ -721,7 +730,7 @@
       .device-control-panel summary { padding-inline: 13px; }
       .device-control-body { padding: 2px 13px 13px; }
       .control-section-label { flex-basis: 100%; min-width: 0; }
-      .signal-button, .control-key { min-height: 40px; }
+      .signal-button, .signal-select, .control-key { min-height: 40px; }
       .setting-field:first-child { grid-column: 1 / -1; }
       .baud-row { grid-template-columns: minmax(0, 1fr) minmax(88px, .75fr); }
       .terminal-tools { padding-inline: 10px; }
@@ -877,17 +886,29 @@
         <div class="device-control-body">
           <div class="control-section">
             <span class="control-section-label" data-i18n="outputSignals">出力信号</span>
-            <button class="signal-button" id="dtrButton" type="button" aria-pressed="false" disabled>DTR: <strong id="dtrState" data-i18n="unchanged">未変更</strong></button>
-            <button class="signal-button" id="rtsButton" type="button" aria-pressed="false" disabled>RTS: <strong id="rtsState" data-i18n="unchanged">未変更</strong></button>
+            <label class="terminal-tool-label">DTR
+              <select class="signal-select" id="dtrSelect" disabled>
+                <option value="unchanged" data-i18n="unchanged">未変更</option>
+                <option value="on">ON</option>
+                <option value="off">OFF</option>
+              </select>
+            </label>
+            <label class="terminal-tool-label">RTS
+              <select class="signal-select" id="rtsSelect" disabled>
+                <option value="unchanged" data-i18n="unchanged">未変更</option>
+                <option value="on">ON</option>
+                <option value="off">OFF</option>
+              </select>
+            </label>
             <button class="signal-button" id="breakButton" type="button" disabled>BREAK</button>
           </div>
           <div class="control-section">
             <span class="control-section-label" data-i18n="inputSignals">入力信号</span>
             <div class="input-signals" aria-live="polite">
-              <span class="input-signal" id="ctsSignal" data-on="false">CTS</span>
-              <span class="input-signal" id="dsrSignal" data-on="false">DSR</span>
-              <span class="input-signal" id="dcdSignal" data-on="false">DCD</span>
-              <span class="input-signal" id="riSignal" data-on="false">RI</span>
+              <span class="input-signal" id="ctsSignal" data-on="false">CTS: —</span>
+              <span class="input-signal" id="dsrSignal" data-on="false">DSR: —</span>
+              <span class="input-signal" id="dcdSignal" data-on="false">DCD: —</span>
+              <span class="input-signal" id="riSignal" data-on="false">RI: —</span>
             </div>
             <button class="signal-button" id="refreshSignalsButton" type="button" data-i18n="refreshSignals" disabled>更新</button>
           </div>
@@ -1065,6 +1086,7 @@
           unchanged: '未変更',
           onState: 'ON',
           offState: 'OFF',
+          unknownState: '—',
           refreshSignals: '更新',
           signalNote: 'DTR / RTSは接続時に自動変更しません。機器によっては変更でリセット等が発生します。BREAKは短いパルスとして送信します。',
           signalSetFailed: '制御信号を変更できませんでした。',
@@ -1182,6 +1204,7 @@
           unchanged: 'Unchanged',
           onState: 'ON',
           offState: 'OFF',
+          unknownState: '—',
           refreshSignals: 'Refresh',
           signalNote: 'DTR / RTS are not changed automatically on connect. Some devices may reset when these signals change. BREAK is sent as a short pulse.',
           signalSetFailed: 'Could not change the control signal.',
@@ -1290,6 +1313,7 @@
         devicePhysicallyAvailable: true,
         dtr: null,
         rts: null,
+        inputSignals: { cts: null, dsr: null, dcd: null, ri: null },
         breakActive: false,
         terminalText: '',
         terminalRevision: 0,
@@ -1643,37 +1667,54 @@
         $('#localEchoState').textContent = state.localEcho ? 'ON' : 'OFF';
       }
 
-      function updateSignalButton(buttonId, stateId, value) {
-        const button = $('#' + buttonId);
-        const label = $('#' + stateId);
-        button.setAttribute('aria-pressed', value === true ? 'true' : 'false');
-        label.textContent = value === null ? t('unchanged') : (value ? t('onState') : t('offState'));
+      function updateOutputSignalSelect(kind) {
+        const select = $('#' + kind + 'Select');
+        const value = state[kind];
+        select.value = value === null ? 'unchanged' : (value ? 'on' : 'off');
+        const unchangedOption = select.querySelector('option[value="unchanged"]');
+        unchangedOption.disabled = value !== null;
+      }
+
+      function updateInputSignalUi() {
+        const mapping = [
+          ['ctsSignal', 'CTS', state.inputSignals.cts],
+          ['dsrSignal', 'DSR', state.inputSignals.dsr],
+          ['dcdSignal', 'DCD', state.inputSignals.dcd],
+          ['riSignal', 'RI', state.inputSignals.ri]
+        ];
+        mapping.forEach(([id, label, value]) => {
+          const element = $('#' + id);
+          element.dataset.on = String(value === true);
+          element.textContent = label + ': ' + (value === null ? t('unknownState') : (value ? t('onState') : t('offState')));
+        });
       }
 
       function resetOutputSignalUi() {
         state.dtr = null;
         state.rts = null;
         state.breakActive = false;
-        updateSignalButton('dtrButton', 'dtrState', state.dtr);
-        updateSignalButton('rtsButton', 'rtsState', state.rts);
+        updateOutputSignalSelect('dtr');
+        updateOutputSignalSelect('rts');
         $('#breakButton').classList.remove('break-active');
       }
 
       function clearInputSignalUi() {
-        ['ctsSignal','dsrSignal','dcdSignal','riSignal'].forEach(id => $('#' + id).dataset.on = 'false');
+        state.inputSignals = { cts: null, dsr: null, dcd: null, ri: null };
+        updateInputSignalUi();
       }
 
       function updateDeviceControlUi() {
         const connected = state.phase === 'connected';
         const supportedSignals = connected && state.port && typeof state.port.setSignals === 'function';
-        $('#dtrButton').disabled = !supportedSignals;
-        $('#rtsButton').disabled = !supportedSignals;
+        $('#dtrSelect').disabled = !supportedSignals;
+        $('#rtsSelect').disabled = !supportedSignals;
         $('#breakButton').disabled = !supportedSignals || state.breakActive;
         document.querySelectorAll('.control-key').forEach(button => { button.disabled = !connected || !state.writer; });
         $('#refreshSignalsButton').disabled = !(connected && state.port && typeof state.port.getSignals === 'function');
         $('#deviceControlSummary').textContent = t(connected ? 'deviceControlConnected' : 'deviceControlDisconnected');
-        updateSignalButton('dtrButton', 'dtrState', state.dtr);
-        updateSignalButton('rtsButton', 'rtsState', state.rts);
+        updateOutputSignalSelect('dtr');
+        updateOutputSignalSelect('rts');
+        updateInputSignalUi();
       }
 
       async function refreshInputSignals(options) {
@@ -1684,24 +1725,31 @@
         }
         try {
           const signals = await state.port.getSignals();
-          $('#ctsSignal').dataset.on = String(Boolean(signals.clearToSend));
-          $('#dsrSignal').dataset.on = String(Boolean(signals.dataSetReady));
-          $('#dcdSignal').dataset.on = String(Boolean(signals.dataCarrierDetect));
-          $('#riSignal').dataset.on = String(Boolean(signals.ringIndicator));
+          state.inputSignals = {
+            cts: Boolean(signals.clearToSend),
+            dsr: Boolean(signals.dataSetReady),
+            dcd: Boolean(signals.dataCarrierDetect),
+            ri: Boolean(signals.ringIndicator)
+          };
+          updateInputSignalUi();
         } catch (error) {
           clearInputSignalUi();
           if (!config.silent) showToast(t('signalReadFailed') + technicalSuffix(error), 4300);
         }
       }
 
-      async function setOutputSignal(kind) {
+      async function setOutputSignal(kind, requested) {
         if (state.phase !== 'connected' || !state.port || typeof state.port.setSignals !== 'function') return;
+        if (requested !== 'on' && requested !== 'off') {
+          updateOutputSignalSelect(kind);
+          return;
+        }
         const key = kind === 'dtr' ? 'dataTerminalReady' : 'requestToSend';
-        const next = state[kind] === true ? false : true;
+        const next = requested === 'on';
         const options = {};
         options[key] = next;
-        const button = kind === 'dtr' ? $('#dtrButton') : $('#rtsButton');
-        button.disabled = true;
+        const select = $('#' + kind + 'Select');
+        select.disabled = true;
         try {
           await state.port.setSignals(options);
           state[kind] = next;
@@ -1850,6 +1898,10 @@
           const selected = await navigator.serial.requestPort();
           if (selected) {
             state.port = selected;
+            state.unexpectedDisconnect = false;
+            state.devicePhysicallyAvailable = true;
+            resetOutputSignalUi();
+            clearInputSignalUi();
             refreshDeviceLabel('selectedDevice');
             setPhase('deviceSelected');
             showToast(t('deviceChosen'), 3800);
@@ -2162,8 +2214,8 @@
       $('#chooseButton').addEventListener('click', chooseDevice);
       $('#connectButton').addEventListener('click', connect);
       $('#disconnectButton').addEventListener('click', () => disconnect());
-      $('#dtrButton').addEventListener('click', () => setOutputSignal('dtr'));
-      $('#rtsButton').addEventListener('click', () => setOutputSignal('rts'));
+      $('#dtrSelect').addEventListener('change', () => setOutputSignal('dtr', $('#dtrSelect').value));
+      $('#rtsSelect').addEventListener('change', () => setOutputSignal('rts', $('#rtsSelect').value));
       $('#breakButton').addEventListener('click', sendBreakPulse);
       $('#refreshSignalsButton').addEventListener('click', () => refreshInputSignals());
       document.querySelectorAll('.control-key').forEach(button => {
