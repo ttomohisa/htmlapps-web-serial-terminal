@@ -2,6 +2,32 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 0.3.0 - 2026-10-02
+
+### Added
+
+- Added independent Text / HEX receive-display and transmit modes.
+- Added strict HEX parsing before raw-byte transmit.
+- Added optional millisecond timestamp display.
+- Added optional Local echo with explicit RX / TX records.
+- Added RX / TX raw-byte counters.
+- Added an in-memory session record model for successful RX and TX.
+- Added explicit TXT session-log export.
+- Added explicit JSONL export with timestamp, direction, raw HEX bytes, and Text decoded from the exact bytes.
+
+### Changed
+
+- Clear now affects only the terminal display and does not delete the session log or byte counters.
+- Terminal rendering preserves conventional raw RX Text by default, while structured RX / TX records appear when Timestamp, Local echo, or HEX display is used.
+- Text line endings are disabled for HEX transmit because HEX sends the entered bytes exactly.
+- Display and send-mode preferences are stored locally with the existing connection preferences.
+
+### Privacy
+
+- Communication records remain only in page memory until explicitly saved to a local file.
+- Communication records are not written to localStorage.
+- Runtime network connections remain blocked by CSP.
+
 ## 0.2.0 - 2026-10-02
 
 ### Added
