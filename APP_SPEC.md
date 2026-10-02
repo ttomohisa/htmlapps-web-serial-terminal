@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.7.0
+- Current implementation milestone: v0.8.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -767,7 +767,103 @@ Macro execution and Edit remain separate touch targets.
 
 The editor uses the existing scrollable dialog pattern and remains usable with a software keyboard.
 
-## 8. v0.7.0 UX requirements
+## 7G. v0.8.0 functional requirements — Mobile / Compatibility
+
+### 7G.1 Runtime capability detection is authoritative
+
+The application enables Web Serial connection actions only when both are true:
+
+- the page is in a secure context,
+- `navigator.serial` is available.
+
+Browser-family detection is used only to improve unsupported-environment guidance.
+
+A user-agent string must never override the actual Web Serial capability check.
+
+### 7G.2 Desktop guidance
+
+The user-facing compatibility guidance recognizes the current desktop targets:
+
+- current desktop Chrome / Chromium-derived Edge implementations with Web Serial,
+- Firefox Desktop 151 and later.
+
+When Web Serial is absent in an older Firefox environment, the app explains that Firefox Desktop 151+ provides Web Serial rather than showing only a generic error.
+
+Safari environments that do not expose `navigator.serial` remain unsupported and receive concrete desktop alternatives.
+
+Actual v1.0 support claims still require release-candidate regression testing with the built artifact.
+
+### 7G.3 Android and iPhone / iPad guidance
+
+Android is not treated as universally supported or universally unsupported.
+
+If an Android browser exposes `navigator.serial`:
+
+- connection actions remain enabled,
+- the app shows a caution that device / transport support varies,
+- Bluetooth RFCOMM may be available,
+- wired USB serial is not promised.
+
+If an Android browser does not expose `navigator.serial`, connection actions remain disabled and the UI recommends a desktop browser for USB serial work.
+
+iPhone / iPad environments without `navigator.serial` receive a direct unsupported-environment explanation.
+
+### 7G.4 Mobile quick navigation
+
+At smartphone widths, a compact quick-action row is placed immediately before the terminal.
+
+It provides direct access to:
+
+- Connection settings,
+- Device control,
+- Command macros.
+
+A quick action opens the existing details panel and scrolls it into view.
+
+This does not duplicate settings state and does not add a fixed bottom overlay.
+
+### 7G.5 Software keyboard handling
+
+On narrow layouts, the app observes Visual Viewport changes when available.
+
+When a text-entry control is focused and the visible viewport becomes substantially shorter:
+
+- the body enters a keyboard-open layout state,
+- terminal height is reduced,
+- the focused input is scrolled into the nearest visible area,
+- dialogs use the current visual-viewport height rather than assuming the full layout viewport.
+
+The app must remain functional when Visual Viewport is unavailable by falling back to `window.innerHeight`.
+
+### 7G.6 Narrow-screen controls
+
+At smartphone widths:
+
+- interactive terminal controls have larger tap heights,
+- text-entry controls use a mobile-friendly font size,
+- control keys use a five-column grid,
+- macro cards use a single column,
+- status actions remain touch-friendly,
+- the connection action row can wrap without forcing horizontal page scroll.
+
+At very narrow widths around 390 px and below:
+
+- Choose device can take a full row,
+- Connect and Disconnect can share the next row,
+- connection settings fall back to one column.
+
+### 7G.7 Dialog and motion behavior
+
+Help and macro dialogs:
+
+- stay within the current visual viewport,
+- remain internally scrollable,
+- account for safe-area insets,
+- remain usable while a software keyboard is visible.
+
+Programmatic scrolling respects `prefers-reduced-motion`.
+
+## 8. v0.8.0 UX requirements
 
 ### Desktop
 
@@ -808,7 +904,7 @@ The language switch changes:
 
 Technical terms such as Web Serial, USB, baud rate, VID, and PID may remain technical when translation would reduce clarity.
 
-## 10. v0.7.0 non-goals
+## 10. v0.8.0 non-goals
 
 Not included yet:
 
@@ -818,9 +914,32 @@ Not included yet:
 - firmware flashing,
 - multiple simultaneous ports.
 
-## 11. v0.7.0 acceptance criteria
+## 11. v0.8.0 acceptance criteria
 
 All earlier milestone acceptance criteria remain applicable, plus:
+
+- app metadata identifies v0.8.0.
+- Web Serial enablement continues to depend on secure context plus navigator.serial, not user-agent guesses.
+- unsupported Firefox guidance identifies Firefox Desktop 151+ as a Web Serial-capable target.
+- unsupported Safari / iPhone / iPad / Android environments receive concrete environment-specific guidance.
+- Android environments that expose navigator.serial remain usable but show a transport/device limitation warning.
+- mobile quick actions open and navigate to Connection settings, Device control, and Command macros without duplicating their state.
+- the mobile layout does not add a fixed bottom bar that obscures terminal content.
+- Visual Viewport height is reflected in mobile terminal and dialog sizing when available.
+- software-keyboard opening can reduce terminal height instead of hiding the focused input behind the keyboard.
+- focused command and macro fields are brought into the nearest visible area.
+- mobile terminal/search/form controls have touch-friendly sizing.
+- control keys form a compact five-column mobile row without horizontal page scrolling.
+- at approximately 390 px width and below, connection actions and settings reflow without overlap.
+- macro and help dialogs remain scrollable inside the visual viewport.
+- programmatic mobile scrolling honors prefers-reduced-motion.
+- Japanese and English help explain current desktop, Android, and iPhone / iPad compatibility behavior.
+- JavaScript syntax, translation coverage, repository build, standalone verification, and Preview probe pass.
+- real-device Android behavior remains explicitly unverified unless tested on hardware.
+
+### Historical v0.7.0 acceptance criteria
+
+
 
 - app metadata identifies v0.7.0.
 - up to 12 macros can be stored locally.
@@ -998,7 +1117,7 @@ Add locally stored Text / HEX macros with line-ending settings, editing, deletio
 
 ### v0.8.0 — Mobile / Compatibility
 
-Finish smartphone interaction, software-keyboard handling, compact settings presentation, control-key ergonomics, supported-browser messaging, Firefox desktop verification, and Android Web Serial experiments on available hardware.
+Finish smartphone interaction, software-keyboard handling, compact settings presentation, control-key ergonomics, and supported-browser messaging. Firefox Desktop support guidance is aligned to Firefox 151+. Android remains transport/device-dependent and requires real-hardware verification before a strong support claim. Implemented in v0.8.0.
 
 ### v0.9.0 — Release Candidate
 
@@ -1042,7 +1161,7 @@ The header help button must explain:
 - the difference between terminal Clear and Clear log,
 - that macro definitions are stored only on the current device while communication stays in the browser,
 - that no connection starts automatically,
-- browser support limitations,
+- browser support limitations, including Firefox Desktop 151+, Android transport limitations, and unsupported iPhone / iPad environments,
 - unexpected disconnect recovery.
 
 Help must be updated in the same change whenever user-visible behavior changes.
