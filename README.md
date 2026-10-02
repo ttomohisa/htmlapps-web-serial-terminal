@@ -2,13 +2,13 @@
 
 A small Browser Kitty tool for connecting to a serial device, inspecting Text or HEX data, sending commands, and explicitly saving local session logs.
 
-Current development version: v0.4.0
+Current development version: v0.5.0
 
 [日本語 README](README.ja.md)
 
 ## Current milestone
 
-v0.4.0 adds serial device-control operations on top of the HEX/logging foundation:
+v0.5.0 adds terminal navigation and high-rate display UX on top of the device-control foundation:
 
 - Web Serial feature detection
 - device selection through the browser chooser
@@ -27,7 +27,13 @@ v0.4.0 adds serial device-control operations on top of the HEX/logging foundatio
 - ESC / Ctrl+C / Ctrl+D / Ctrl+Z / Tab one-byte control keys
 - explicit reconnect flow after unexpected USB disconnect
 - RX / TX raw-byte counters
-- terminal Copy, display-only Clear with safe Undo, and manual Auto-scroll ON/OFF
+- terminal Copy and display-only Clear with safe Undo
+- Auto-scroll that pauses when you scroll up, with a new-line counter and Latest action
+- session-only Up / Down command history
+- case-insensitive terminal search with previous / next navigation
+- approximately 32 ms batched display rendering
+- display buffer capped at 50,000 line breaks / approximately 5 MiB without deleting the session log
+- live connection duration
 - in-memory session log with explicit TXT / JSONL file export
 - local persistence of connection/display preferences, but not communication records
 - explicit disconnect
@@ -35,7 +41,7 @@ v0.4.0 adds serial device-control operations on top of the HEX/logging foundatio
 - Japanese / English UI
 - no runtime CDN or external API
 
-Command history, search, completed long-session logging controls, macros, and other advanced features remain scheduled for later milestones.
+Completed long-session logging controls, macros, and other advanced features remain scheduled for later milestones.
 
 ## Usage
 
@@ -47,8 +53,9 @@ Command history, search, completed long-session logging controls, macros, and ot
 6. Choose Text or HEX display. Timestamp and Local echo are optional.
 7. Choose Text or HEX for sending. Text uses the selected line ending; HEX sends the exact byte sequence.
 8. Open Device control when you need DTR / RTS, BREAK, input signals, or control keys.
-9. Use TXT log or JSONL to explicitly save the in-memory session when needed.
-10. Disconnect when finished.
+9. Scroll upward to read older output; follow mode pauses automatically. Use Search or Up / Down command history when needed.
+10. Use TXT log or JSONL to explicitly save the in-memory session when needed.
+11. Disconnect when finished.
 
 The app never connects automatically on page load.
 
@@ -58,7 +65,7 @@ Serial RX and TX data are handled in the browser and are not sent to a Browser K
 
 The standalone build keeps runtime network connections blocked with Content Security Policy. There is no analytics, telemetry, remote font, or runtime CDN dependency.
 
-v0.3.0 keeps communication records only in memory while the page is open. TXT / JSONL files are written only when you explicitly save them. Language, serial, and display preferences may be stored locally.
+v0.5.0 keeps communication records only in memory while the page is open. TXT / JSONL files are written only when you explicitly save them. Language, serial, and display preferences may be stored locally.
 
 ## Browser support
 
@@ -66,14 +73,14 @@ Web Serial support is feature-detected at runtime. Unsupported browsers show an 
 
 Desktop Chromium browsers are the primary initial implementation target. Firefox desktop and Android compatibility are part of the planned compatibility work and must be verified with the actual release before strong support claims are made. Safari environments without Web Serial are unsupported.
 
-## Limitations in v0.4.0
+## Limitations in v0.5.0
 
 - Session logs are kept in memory; complete log-size limits and explicit session-log reset are scheduled for v0.6.0.
 - Custom baud rates are accepted as positive integers, but actual support depends on the OS, driver, browser, and device.
 - No ANSI / VT100 emulation.
 - The browser may expose VID / PID but not a user-friendly COM port name.
 
-See APP_SPEC.md for the v0.4.0 acceptance criteria and the remaining roadmap to v1.0.0.
+See APP_SPEC.md for the v0.5.0 acceptance criteria and the remaining roadmap to v1.0.0.
 
 ## Build
 
@@ -89,4 +96,4 @@ Generated files must not be edited directly. Edit src/index.template.html and re
 
 MIT. See LICENSE.
 
-There are no third-party runtime libraries in v0.4.0.
+There are no third-party runtime libraries in v0.5.0.
