@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.6.0
+- Current implementation milestone: v0.7.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -657,7 +657,117 @@ Dropping old display-history records:
 
 The visible terminal remains bounded by the v0.5.0 display-text limits.
 
-## 8. v0.6.0 UX requirements
+## 7F. v0.7.0 functional requirements — Command Macros
+
+### 7F.1 Macro model
+
+The application supports up to 12 user-defined command macros.
+
+Each macro stores:
+
+- a stable local identifier,
+- a user-visible name,
+- a payload,
+- send mode: Text or HEX,
+- Text line ending: None, LF, CR, or CRLF.
+
+HEX macros always use no additional Text line ending.
+
+Macro names are limited to 40 characters and payloads to 8,192 characters.
+
+### 7F.2 Local persistence
+
+Macros are stored only in localStorage on the current browser/device.
+
+The macro store contains macro definitions only. It does not contain:
+
+- serial RX data,
+- serial TX session records,
+- exported logs,
+- device contents.
+
+If localStorage is unavailable or a save fails, the UI must not claim that the macro was saved.
+
+Clearing browser site data may remove saved macros.
+
+### 7F.3 Add and edit
+
+Macro management is available even while disconnected.
+
+The editor supports:
+
+- name,
+- payload,
+- Text / HEX mode,
+- Text line ending.
+
+The editor validates required name and payload fields.
+
+HEX payloads use the same strict HEX parser as ordinary HEX transmit. Invalid HEX cannot be saved.
+
+No vendor-specific or device-specific macro presets are bundled by default.
+
+### 7F.4 Delete
+
+Deleting a macro is a destructive operation and requires confirmation.
+
+Deletion updates localStorage immediately after confirmation.
+
+A storage failure leaves the previous in-memory macro collection unchanged and produces user-visible feedback.
+
+### 7F.5 Execute
+
+Macro execution is enabled only while a writable serial connection is active.
+
+Text macro execution:
+
+1. encodes the payload as UTF-8,
+2. appends exactly the macro's configured Text line ending,
+3. writes the resulting bytes once through the current SerialPort writer.
+
+HEX macro execution:
+
+1. parses the stored HEX payload,
+2. sends the exact parsed raw bytes,
+3. appends no Text line ending.
+
+Successful macro TX:
+
+- increments TX byte count,
+- enters the same display-history path as normal TX,
+- enters the saved-session log while session logging is active,
+- appears in Local echo when Local echo is enabled.
+
+Macro execution does not add an entry to the Arrow Up / Arrow Down typed-command history.
+
+### 7F.6 Empty and limit states
+
+With no macros configured, the panel shows an explicit empty state explaining how to add one.
+
+The UI shows the current count out of 12.
+
+At 12 macros:
+
+- Add is disabled,
+- existing macros remain editable, executable, and deletable.
+
+### 7F.7 Desktop and smartphone layout
+
+Macros are shown as compact cards containing:
+
+- name,
+- Text / HEX framing summary,
+- a shortened payload preview,
+- a primary execute target,
+- a separate Edit action.
+
+On narrow screens the list becomes a single column.
+
+Macro execution and Edit remain separate touch targets.
+
+The editor uses the existing scrollable dialog pattern and remains usable with a software keyboard.
+
+## 8. v0.7.0 UX requirements
 
 ### Desktop
 
@@ -674,13 +784,13 @@ One primary workspace:
 - Terminal remains useful at 320px width and above.
 - Connection and send buttons have touch-friendly targets.
 - Help dialog remains fully scrollable.
-- The app does not require a fixed bottom bar in v0.5.0.
+- The app does not require a fixed bottom bar in v0.7.0.
 
 ### Accessibility
 
 - Visible focus.
 - Keyboard-operable controls.
-- Status uses aria-live.
+- Connection status uses aria-live without making continuously changing counters or timers live regions.
 - Connected state is not communicated by color alone.
 - Help opens as a dialog and closes with its close control, Escape, or backdrop click.
 - Motion honors prefers-reduced-motion.
@@ -698,20 +808,43 @@ The language switch changes:
 
 Technical terms such as Web Serial, USB, baud rate, VID, and PID may remain technical when translation would reduce clarity.
 
-## 10. v0.6.0 non-goals
+## 10. v0.7.0 non-goals
 
 Not included yet:
 
-- macros,
 - ANSI / VT100 interpretation,
 - serial plotting,
 - Modbus,
 - firmware flashing,
 - multiple simultaneous ports.
 
-## 11. v0.6.0 acceptance criteria
+## 11. v0.7.0 acceptance criteria
 
 All earlier milestone acceptance criteria remain applicable, plus:
+
+- app metadata identifies v0.7.0.
+- up to 12 macros can be stored locally.
+- a macro stores name, payload, Text / HEX mode, and Text line ending.
+- macro definitions are stored in localStorage, while serial session contents remain non-persistent.
+- Add is disabled at 12 macros without disabling edit, execute, or delete for existing macros.
+- an explicit empty state is shown when no macros exist.
+- invalid HEX macro payloads cannot be saved.
+- Text macro TX appends exactly the configured line ending.
+- HEX macro TX sends exactly the parsed bytes with no added Text line ending.
+- successful macro TX uses the normal TX byte counter, display-history, Local echo, and saved-session logging paths.
+- macro execution does not enter typed-command history.
+- macro Run is disabled while no writable serial connection is active.
+- macros can still be added, edited, or deleted while disconnected.
+- delete requires confirmation.
+- a localStorage save failure does not replace the in-memory macro collection and produces visible feedback.
+- no vendor-specific macro presets are bundled.
+- the macro list becomes a single-column layout on narrow screens.
+- Japanese and English UI/help explain macro storage and use.
+- repository build and standalone verification pass.
+
+### Historical v0.6.0 acceptance criteria
+
+
 
 - app metadata identifies v0.6.0.
 - terminal display history and exportable session records are separate structures.
@@ -861,7 +994,7 @@ Complete long-session TXT and JSONL handling, session-size controls, log limits,
 
 ### v0.7.0 — Command Macros
 
-Add locally stored Text / HEX macros with line-ending settings, editing, deletion, empty states, and desktop/mobile layouts.
+Add locally stored Text / HEX macros with line-ending settings, editing, deletion, empty states, and desktop/mobile layouts. Implemented in v0.7.0.
 
 ### v0.8.0 — Mobile / Compatibility
 
@@ -903,10 +1036,11 @@ The header help button must explain:
 - Text / HEX receive display, timestamp, and Local echo behavior,
 - Copy / Clear / Auto-scroll behavior, including automatic follow pause and Latest,
 - terminal search and session-only command history,
+- locally stored Text / HEX command macros and their deletion behavior,
 - that Clear does not erase the in-memory session log,
 - explicit TXT / JSONL save behavior and the approximate 20 MiB log budget,
 - the difference between terminal Clear and Clear log,
-- that communication stays in the browser,
+- that macro definitions are stored only on the current device while communication stays in the browser,
 - that no connection starts automatically,
 - browser support limitations,
 - unexpected disconnect recovery.
