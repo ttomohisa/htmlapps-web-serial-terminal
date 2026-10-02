@@ -1741,7 +1741,7 @@
         const hasLog = state.sessionEntries.length > 0;
         $('#saveTxtButton').disabled = !hasLog;
         $('#saveJsonlButton').disabled = !hasLog;
-        $('#clearSessionLogButton').disabled = !hasLog;
+        $('#clearSessionLogButton').disabled = !hasLog && state.loggingActive;
       }
 
       function updateIoStats() {
@@ -2631,7 +2631,7 @@
       }
 
       function clearSessionLog() {
-        if (!state.sessionEntries.length) return;
+        if (!state.sessionEntries.length && state.loggingActive) return;
         if (!window.confirm(t('clearSessionLogConfirm'))) return;
 
         state.sessionEntries = [];
