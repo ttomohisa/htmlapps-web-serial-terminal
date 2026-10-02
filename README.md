@@ -2,13 +2,13 @@
 
 A small Browser Kitty tool for connecting to a serial device, inspecting Text or HEX data, sending commands, and explicitly saving local session logs.
 
-Current development version: v0.6.0
+Current development version: v0.7.0
 
 [日本語 README](README.ja.md)
 
 ## Current milestone
 
-v0.6.0 completes the bounded in-memory session-log workflow on top of the terminal UX:
+v0.7.0 adds reusable local command macros on top of the terminal and logging workflow:
 
 - Web Serial feature detection
 - device selection through the browser chooser
@@ -30,6 +30,8 @@ v0.6.0 completes the bounded in-memory session-log workflow on top of the termin
 - terminal Copy and display-only Clear with safe Undo
 - Auto-scroll that pauses when you scroll up, with a new-line counter and Latest action
 - session-only Up / Down command history
+- up to 12 locally stored Text / HEX command macros
+- per-macro Text line-ending settings, editing, deletion confirmation, and one-tap send
 - case-insensitive terminal search with previous / next navigation
 - approximately 32 ms batched display rendering
 - display buffer capped at 50,000 line breaks / approximately 5 MiB without deleting the session log
@@ -46,7 +48,7 @@ v0.6.0 completes the bounded in-memory session-log workflow on top of the termin
 - Japanese / English UI
 - no runtime CDN or external API
 
-Macros, mobile/compatibility finish work, and other advanced features remain scheduled for later milestones.
+Mobile/compatibility finish work and other advanced features remain scheduled for later milestones.
 
 ## Usage
 
@@ -59,8 +61,9 @@ Macros, mobile/compatibility finish work, and other advanced features remain sch
 7. Choose Text or HEX for sending. Text uses the selected line ending; HEX sends the exact byte sequence.
 8. Open Device control when you need DTR / RTS, BREAK, input signals, or control keys.
 9. Scroll upward to read older output; follow mode pauses automatically. Use Search or Up / Down command history when needed.
-10. Watch the log-usage indicator during long sessions. If logging stops at the approximate 20 MiB budget, save TXT or JSONL, then use Clear log to start a fresh saved-session log without clearing the terminal.
-11. Disconnect when finished.
+10. Add frequently used Text / HEX sends under Command macros. Macro definitions stay on this browser/device and can be run only while connected.
+11. Watch the log-usage indicator during long sessions. If logging stops at the approximate 20 MiB budget, save TXT or JSONL, then use Clear log to start a fresh saved-session log without clearing the terminal.
+12. Disconnect when finished.
 
 The app never connects automatically on page load.
 
@@ -70,7 +73,7 @@ Serial RX and TX data are handled in the browser and are not sent to a Browser K
 
 The standalone build keeps runtime network connections blocked with Content Security Policy. There is no analytics, telemetry, remote font, or runtime CDN dependency.
 
-v0.6.0 keeps communication records only in memory while the page is open and bounds the exportable session log to an approximate 20 MiB memory budget. TXT / JSONL files are written only when you explicitly save them. Language, serial, and display preferences may be stored locally.
+v0.7.0 keeps communication records only in memory while the page is open and bounds the exportable session log to an approximate 20 MiB memory budget. TXT / JSONL files are written only when you explicitly save them. Language, serial/display preferences, and user-created command macros may be stored locally on this browser/device.
 
 ## Browser support
 
@@ -78,14 +81,15 @@ Web Serial support is feature-detected at runtime. Unsupported browsers show an 
 
 Desktop Chromium browsers are the primary initial implementation target. Firefox desktop and Android compatibility are part of the planned compatibility work and must be verified with the actual release before strong support claims are made. Safari environments without Web Serial are unsupported.
 
-## Limitations in v0.6.0
+## Limitations in v0.7.0
 
 - The 20 MiB log limit is an approximate in-memory estimate rather than a precise JavaScript heap measurement.
+- Macro import/export and synchronization are not included; clearing browser site data can remove locally saved macros.
 - Custom baud rates are accepted as positive integers, but actual support depends on the OS, driver, browser, and device.
 - No ANSI / VT100 emulation.
 - The browser may expose VID / PID but not a user-friendly COM port name.
 
-See APP_SPEC.md for the v0.6.0 acceptance criteria and the remaining roadmap to v1.0.0.
+See APP_SPEC.md for the v0.7.0 acceptance criteria and the remaining roadmap to v1.0.0.
 
 ## Build
 
@@ -101,4 +105,4 @@ Generated files must not be edited directly. Edit src/index.template.html and re
 
 MIT. See LICENSE.
 
-There are no third-party runtime libraries in v0.6.0.
+There are no third-party runtime libraries in v0.7.0.
