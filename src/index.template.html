@@ -45,8 +45,8 @@
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
     }
-    button, input { font: inherit; }
-    button, input { min-width: 0; }
+    button, input, select { font: inherit; }
+    button, input, select { min-width: 0; }
     button:focus-visible, input:focus-visible, summary:focus-visible {
       outline: 3px solid color-mix(in srgb, var(--focus) 42%, transparent);
       outline-offset: 2px;
@@ -857,6 +857,7 @@
           copyFailed: 'コピーできませんでした。',
           clearedTerminal: 'ターミナル表示を消去しました。',
           restoredTerminal: 'ターミナル表示を元に戻しました。',
+          restoreSkipped: '新しい受信データがあるため、消去前の表示には戻しませんでした。',
           terminalEmptyTitle: 'まだ受信データはありません',
           terminalEmptyBody: '機器へ接続すると、受信したテキストがここに表示されます。',
           terminalLabel: '受信ターミナル',
@@ -903,7 +904,7 @@
           helpStep3: '受信テキストを確認し、改行方式を選んで下の入力欄からコマンドを送信します。Enterでも送信できます。',
           helpStep4: '終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。',
           helpPrivacyTitle: 'プライバシー',
-          helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.1.0では通信ログも永続保存しません。',
+          helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.2.0でも通信ログは永続保存しません。通信設定のみ端末内へ保存します。',
           helpNotesTitle: '注意事項',
           helpBrowser: 'Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。',
           helpDriver: '専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。',
@@ -941,6 +942,7 @@
           copyFailed: 'Could not copy.',
           clearedTerminal: 'Terminal display cleared.',
           restoredTerminal: 'Terminal display restored.',
+          restoreSkipped: 'New received data arrived, so the cleared display was not restored.',
           terminalEmptyTitle: 'No received data yet',
           terminalEmptyBody: 'Incoming text appears here after you connect a device.',
           terminalLabel: 'Receive terminal',
@@ -987,7 +989,7 @@
           helpStep3: 'Read incoming text, choose the line ending, and send commands from the field below. You can also press Enter.',
           helpStep4: 'Press Disconnect when finished. If USB is removed, the app leaves the connected state so you can reconnect.',
           helpPrivacyTitle: 'Privacy',
-          helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. v0.1.0 does not persist communication logs.',
+          helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. v0.2.0 still does not persist communication logs; only connection preferences are stored locally.',
           helpNotesTitle: 'Notes',
           helpBrowser: 'A browser with Web Serial support is required. Connection actions stay disabled when the API is unavailable.',
           helpDriver: 'No dedicated terminal application is required, but some USB serial devices still require an operating-system driver.',
@@ -1007,6 +1009,7 @@
         readTask: null,
         closing: false,
         terminalText: '',
+        terminalRevision: 0,
         bufferNoticeShown: false,
         autoScroll: true,
         settings: {
@@ -1262,6 +1265,7 @@
 
       function appendTerminal(text) {
         if (!text) return;
+        state.terminalRevision += 1;
         state.terminalText += text;
         if (state.terminalText.length > MAX_DISPLAY_CHARS) {
           state.terminalText = state.terminalText.slice(state.terminalText.length - MAX_DISPLAY_CHARS);
@@ -1496,9 +1500,12 @@
             textarea.style.position = 'fixed';
             textarea.style.opacity = '0';
             document.body.append(textarea);
-            textarea.select();
-            if (!document.execCommand('copy')) throw new Error('copy command failed');
-            textarea.remove();
+            try {
+              textarea.select();
+              if (!document.execCommand('copy')) throw new Error('copy command failed');
+            } finally {
+              textarea.remove();
+            }
           }
           showToast(t('copiedTerminal'));
         } catch {
@@ -1509,6 +1516,8 @@
       function clearTerminal() {
         if (!state.terminalText) return;
         const before = state.terminalText;
+        state.terminalRevision += 1;
+        const clearRevision = state.terminalRevision;
         state.terminalText = '';
         $('#terminal').textContent = '';
         $('#terminalEmpty').hidden = false;
@@ -1517,10 +1526,14 @@
           message: t('clearedTerminal'),
           actionLabel: state.language === 'ja' ? '元に戻す' : 'Undo',
           onAction: () => {
+            if (state.terminalRevision !== clearRevision) {
+              showToast(t('restoreSkipped'), 4300);
+              return;
+            }
+            state.terminalRevision += 1;
             state.terminalText = before;
             $('#terminal').textContent = before;
-            $('#terminalEmpty').hidden = false;
-            $('#terminalEmpty').hidden = true;
+            $('#terminalEmpty').hidden = before.length > 0;
             updateTerminalControls();
             if (state.autoScroll) $('#terminal').scrollTop = $('#terminal').scrollHeight;
             showToast(t('restoredTerminal'));
