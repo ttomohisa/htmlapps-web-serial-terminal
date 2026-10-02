@@ -2,6 +2,32 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 0.6.0 - 2026-10-02
+
+### Added
+
+- Added separate in-memory histories for terminal display reconstruction and exportable session logging.
+- Added an approximate 20 MiB saved-session log memory budget.
+- Added a one-time near-limit warning around 16 MiB.
+- Added explicit Log recording / warning / stopped status text with approximate usage.
+- Added confirmed Clear log behavior that leaves terminal display and RX / TX counters intact.
+- Added automatic log-recording resume after Clear log.
+
+### Changed
+
+- When the saved-session log reaches its memory budget, only log recording stops; serial RX/TX, terminal display, and byte counters continue.
+- A communication record is never partially stored merely to fit the remaining log budget.
+- TXT and JSONL exports are assembled from per-record Blob parts rather than first creating one fully concatenated output string.
+- Save failure now produces visible feedback.
+- Terminal Clear and Clear log are explicitly separate operations.
+- Display-history records use an additional bounded in-memory guard independently from the exportable session log.
+
+### Privacy
+
+- Session records still remain only in page memory until the user explicitly saves a file.
+- Clearing the saved-session log does not write or transmit its contents anywhere.
+- Runtime network connections remain blocked by CSP.
+
 ## 0.5.0 - 2026-10-02
 
 ### Added
