@@ -1745,6 +1745,49 @@
         writeStorage(APP_CONFIG.slug + ':serial-settings', JSON.stringify(state.settings));
       }
 
+      function createMacroId() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') return window.crypto.randomUUID();
+        return 'macro-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+      }
+
+      function readMacros() {
+        const raw = readStorage(APP_CONFIG.slug + ':command-macros');
+        if (!raw) return [];
+        try {
+          const parsed = JSON.parse(raw);
+          if (!Array.isArray(parsed)) return [];
+          const macros = [];
+          for (const item of parsed) {
+            if (macros.length >= MACRO_LIMIT || !item || typeof item !== 'object') break;
+            const name = typeof item.name === 'string' ? item.name.trim().slice(0, MACRO_NAME_LIMIT) : '';
+            const payload = typeof item.payload === 'string' ? item.payload.slice(0, MACRO_PAYLOAD_LIMIT) : '';
+            const mode = item.mode === 'hex' ? 'hex' : 'text';
+            const lineEnding = ['none','lf','cr','crlf'].includes(item.lineEnding) ? item.lineEnding : 'none';
+            if (!name || !payload) continue;
+            if (mode === 'hex' && !parseHexInput(payload)) continue;
+            macros.push({
+              id: typeof item.id === 'string' && item.id ? item.id : createMacroId(),
+              name,
+              payload,
+              mode,
+              lineEnding: mode === 'hex' ? 'none' : lineEnding
+            });
+          }
+          return macros;
+        } catch {
+          return [];
+        }
+      }
+
+      function persistMacroCollection(macros) {
+        try {
+          localStorage.setItem(APP_CONFIG.slug + ':command-macros', JSON.stringify(macros));
+          return true;
+        } catch {
+          return false;
+        }
+      }
+
       function detectLanguage() {
         if (APP_CONFIG.defaultLanguage === 'ja' || APP_CONFIG.defaultLanguage === 'en') return APP_CONFIG.defaultLanguage;
         return (navigator.language || '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
@@ -1964,6 +2007,191 @@
         $('#commandInput').setAttribute('placeholder', t(hexMode ? 'hexPlaceholder' : 'commandPlaceholder'));
         $('#sendNote').textContent = hexMode ? t('sendNoteHex') : t('sendNote').replace('{ending}', endingText($('#lineEnding').value));
         if (!hexMode) $('#sendError').textContent = '';
+      }
+
+      function macroPayloadPreview(payload) {
+        return String(payload || '')
+          .replace(/\r/g, '\\r')
+          .replace(/\n/g, '\\n')
+          .replace(/\t/g, '\\t');
+      }
+
+      function refreshMacroFormMode() {
+        const hexMode = $('#macroModeSelect').value === 'hex';
+        $('#macroLineEndingSelect').disabled = hexMode;
+        $('#macroPayloadInput').setAttribute('placeholder', t(hexMode ? 'hexPlaceholder' : 'macroPayloadPlaceholder'));
+        $('#macroPayloadHelp').textContent = t(hexMode ? 'macroPayloadHelpHex' : 'macroPayloadHelpText');
+        if (!hexMode) $('#macroFormError').textContent = '';
+      }
+
+      function refreshMacroDialogTitle() {
+        $('#macroDialogTitle').textContent = t(state.editingMacroId ? 'editMacroTitle' : 'addMacroTitle');
+      }
+
+      function updateMacroRunState() {
+        const disabled = state.phase !== 'connected' || !state.writer || state.macroSending;
+        document.querySelectorAll('[data-macro-run]').forEach(button => { button.disabled = disabled; });
+      }
+
+      function renderMacros() {
+        const list = $('#macroList');
+        list.replaceChildren();
+        $('#macroSummary').textContent = state.macros.length + ' / ' + MACRO_LIMIT;
+        $('#addMacroButton').disabled = state.macros.length >= MACRO_LIMIT;
+        $('#macroEmpty').hidden = state.macros.length > 0;
+        list.hidden = state.macros.length === 0;
+
+        for (const macro of state.macros) {
+          const card = document.createElement('div');
+          card.className = 'macro-card';
+
+          const run = document.createElement('button');
+          run.type = 'button';
+          run.className = 'macro-run';
+          run.dataset.macroRun = macro.id;
+          run.setAttribute('aria-label', t('send') + ': ' + macro.name);
+
+          const name = document.createElement('span');
+          name.className = 'macro-name';
+          name.textContent = macro.name;
+
+          const meta = document.createElement('span');
+          meta.className = 'macro-meta';
+          meta.textContent = macro.mode === 'hex'
+            ? t('macroHexMeta')
+            : t('macroTextMeta').replace('{ending}', endingText(macro.lineEnding));
+
+          const payload = document.createElement('span');
+          payload.className = 'macro-payload';
+          payload.textContent = macroPayloadPreview(macro.payload);
+
+          run.append(name, meta, payload);
+
+          const edit = document.createElement('button');
+          edit.type = 'button';
+          edit.className = 'signal-button macro-edit';
+          edit.dataset.macroEdit = macro.id;
+          edit.textContent = t('editMacro');
+          edit.setAttribute('aria-label', t('editMacro') + ': ' + macro.name);
+
+          card.append(run, edit);
+          list.append(card);
+        }
+        updateMacroRunState();
+      }
+
+      function openMacroEditor(macroId) {
+        const macro = macroId ? state.macros.find(item => item.id === macroId) : null;
+        if (!macro && state.macros.length >= MACRO_LIMIT) {
+          showToast(t('macroLimitReached'));
+          return;
+        }
+
+        state.editingMacroId = macro ? macro.id : null;
+        $('#macroNameInput').value = macro ? macro.name : '';
+        $('#macroPayloadInput').value = macro ? macro.payload : '';
+        $('#macroModeSelect').value = macro ? macro.mode : 'text';
+        $('#macroLineEndingSelect').value = macro ? macro.lineEnding : state.settings.lineEnding;
+        $('#deleteMacroButton').hidden = !macro;
+        $('#macroFormError').textContent = '';
+        refreshMacroDialogTitle();
+        refreshMacroFormMode();
+        $('#macroDialog').showModal();
+        window.requestAnimationFrame(() => $('#macroNameInput').focus({ preventScroll: true }));
+      }
+
+      function saveMacroFromForm() {
+        const name = $('#macroNameInput').value.trim();
+        const payload = $('#macroPayloadInput').value;
+        const mode = $('#macroModeSelect').value === 'hex' ? 'hex' : 'text';
+        const lineEnding = mode === 'hex' ? 'none' : $('#macroLineEndingSelect').value;
+
+        if (!name) {
+          $('#macroFormError').textContent = t('macroNameRequired');
+          $('#macroNameInput').focus();
+          return;
+        }
+        if (!payload) {
+          $('#macroFormError').textContent = t('macroPayloadRequired');
+          $('#macroPayloadInput').focus();
+          return;
+        }
+        if (mode === 'hex' && !parseHexInput(payload)) {
+          $('#macroFormError').textContent = t('macroInvalidHex');
+          $('#macroPayloadInput').focus();
+          return;
+        }
+
+        const next = state.macros.slice();
+        if (state.editingMacroId) {
+          const index = next.findIndex(item => item.id === state.editingMacroId);
+          if (index < 0) return;
+          next[index] = { id: state.editingMacroId, name, payload, mode, lineEnding };
+        } else {
+          if (next.length >= MACRO_LIMIT) {
+            $('#macroFormError').textContent = t('macroLimitReached');
+            return;
+          }
+          next.push({ id: createMacroId(), name, payload, mode, lineEnding });
+        }
+
+        if (!persistMacroCollection(next)) {
+          $('#macroFormError').textContent = t('macroStorageFailed');
+          return;
+        }
+
+        state.macros = next;
+        $('#macroDialog').close();
+        renderMacros();
+        showToast(t('macroSaved'));
+      }
+
+      function deleteEditingMacro() {
+        if (!state.editingMacroId) return;
+        if (!window.confirm(t('macroDeleteConfirm'))) return;
+        const next = state.macros.filter(item => item.id !== state.editingMacroId);
+        if (!persistMacroCollection(next)) {
+          $('#macroFormError').textContent = t('macroStorageFailed');
+          return;
+        }
+        state.macros = next;
+        state.editingMacroId = null;
+        $('#macroDialog').close();
+        renderMacros();
+        showToast(t('macroDeleted'));
+      }
+
+      async function executeMacro(macroId) {
+        const macro = state.macros.find(item => item.id === macroId);
+        if (!macro || state.phase !== 'connected' || !state.writer || state.macroSending) return;
+
+        let bytes;
+        let text;
+        if (macro.mode === 'hex') {
+          bytes = parseHexInput(macro.payload);
+          if (!bytes) {
+            showToast(t('macroInvalidHex'), 4300);
+            return;
+          }
+          text = new TextDecoder('utf-8').decode(bytes);
+        } else {
+          text = macro.payload + endingBytes(macro.lineEnding);
+          bytes = encoder.encode(text);
+        }
+
+        state.macroSending = true;
+        updateMacroRunState();
+        clearError();
+        try {
+          await state.writer.write(bytes);
+          addSessionEntry('tx', bytes, text);
+          showToast(t('macroSent').replace('{name}', macro.name), 2200);
+        } catch (error) {
+          setNotice('error', t('writeErrorTitle'), t('writeErrorBody') + technicalSuffix(error));
+        } finally {
+          state.macroSending = false;
+          updateMacroRunState();
+        }
       }
 
       function formatByteCount(value) {
@@ -2487,6 +2715,7 @@
         setSettingsDisabled(busy || connected);
         updateSendState();
         updateDeviceControlUi();
+        updateMacroRunState();
       }
 
       function updateSendState() {
@@ -2530,6 +2759,9 @@
         updateIoStats();
         renderTerminal();
         updateDeviceControlUi();
+        renderMacros();
+        refreshMacroDialogTitle();
+        refreshMacroFormMode();
         updateConnectionClock();
         updateLatestButton();
         updateSearchMatches();
