@@ -381,7 +381,7 @@ One primary workspace:
 - Terminal remains useful at 320px width and above.
 - Connection and send buttons have touch-friendly targets.
 - Help dialog remains fully scrollable.
-- The app does not require a fixed bottom bar in v0.2.0.
+- The app does not require a fixed bottom bar in v0.3.0.
 
 ### Accessibility
 
@@ -444,8 +444,6 @@ All v0.1.0 and v0.2.0 acceptance criteria remain applicable, plus:
 - repository build and standalone verification pass.
 
 ### Historical v0.2.0 acceptance criteria
-
-
 
 - app metadata identifies v0.2.0.
 - baud rate can be selected from presets or entered as a custom positive integer.
