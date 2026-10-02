@@ -3,9 +3,9 @@
   "name": "Web Serial Terminal",
   "nameJa": "Web Serial Terminal / シリアル通信ターミナル",
   "slug": "web-serial-terminal",
-  "version": "0.3.0",
-  "description": "Connect to serial devices, send and inspect Text or HEX data, and save local session logs in the browser.",
-  "descriptionJa": "シリアル機器へブラウザから接続し、Text / HEXデータを送受信してセッションログを端末へ保存できるターミナルです。",
+  "version": "0.4.0",
+  "description": "Connect to serial devices, inspect and send Text or HEX data, control serial signals, and save local session logs in the browser.",
+  "descriptionJa": "シリアル機器へブラウザから接続し、Text / HEX送受信、制御信号・制御キー操作、セッションログ保存を行うターミナルです。",
   "defaultLanguage": "auto",
   "repository": {
     "owner": "ttomohisa",
