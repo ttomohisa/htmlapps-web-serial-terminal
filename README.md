@@ -2,13 +2,13 @@
 
 A small Browser Kitty tool for connecting to a serial device, inspecting Text or HEX data, sending commands, saving reusable local macros, and explicitly exporting session logs.
 
-Current development version: v0.7.0
+Current development version: v0.8.0
 
 [日本語 README](README.ja.md)
 
 ## Current milestone
 
-v0.7.0 adds reusable local command macros on top of the terminal and logging workflow:
+v0.8.0 finishes the mobile-aware interaction layer and browser guidance on top of the terminal, logging, and macro workflow:
 
 - Web Serial feature detection
 - device selection through the browser chooser
@@ -32,6 +32,10 @@ v0.7.0 adds reusable local command macros on top of the terminal and logging wor
 - session-only Up / Down command history
 - up to 12 locally stored Text / HEX command macros
 - per-macro Text line-ending settings, editing, deletion confirmation, and one-tap send
+- smartphone quick navigation for Connection settings, Device control, and Command macros
+- Visual Viewport-aware terminal and dialog sizing for software keyboards
+- larger touch targets and a five-column mobile control-key row
+- environment-specific Web Serial guidance for Firefox, Safari/iPhone/iPad, and Android
 - case-insensitive terminal search with previous / next navigation
 - approximately 32 ms batched display rendering
 - display buffer capped at 50,000 line breaks / approximately 5 MiB without deleting the session log
@@ -48,7 +52,7 @@ v0.7.0 adds reusable local command macros on top of the terminal and logging wor
 - Japanese / English UI
 - no runtime CDN or external API
 
-Mobile/compatibility finish work and other advanced features remain scheduled for later milestones.
+Release-candidate regression, real-device compatibility checks, and other advanced features remain scheduled for later milestones.
 
 ## Usage
 
@@ -62,8 +66,9 @@ Mobile/compatibility finish work and other advanced features remain scheduled fo
 8. Open Device control when you need DTR / RTS, BREAK, input signals, or control keys.
 9. Scroll upward to read older output; follow mode pauses automatically. Use Search or Up / Down command history when needed.
 10. Add frequently used Text / HEX sends under Command macros. Macro definitions stay on this browser/device and can be run only while connected.
-11. Watch the log-usage indicator during long sessions. If logging stops at the approximate 20 MiB budget, save TXT or JSONL, then use Clear log to start a fresh saved-session log without clearing the terminal.
-12. Disconnect when finished.
+11. On a phone-sized screen, use the quick-action row above the terminal to jump to settings, device controls, or macros. The layout adapts when the software keyboard opens.
+12. Watch the log-usage indicator during long sessions. If logging stops at the approximate 20 MiB budget, save TXT or JSONL, then use Clear log to start a fresh saved-session log without clearing the terminal.
+13. Disconnect when finished.
 
 The app never connects automatically on page load.
 
@@ -73,23 +78,38 @@ Serial RX and TX data are handled in the browser and are not sent to a Browser K
 
 The standalone build keeps runtime network connections blocked with Content Security Policy. There is no analytics, telemetry, remote font, or runtime CDN dependency.
 
-v0.7.0 keeps communication records only in memory while the page is open and bounds the exportable session log to an approximate 20 MiB memory budget. TXT / JSONL files are written only when you explicitly save them. Language, serial/display preferences, and user-created command macros may be stored locally on this browser/device.
+v0.8.0 keeps communication records only in memory while the page is open and bounds the exportable session log to an approximate 20 MiB memory budget. TXT / JSONL files are written only when you explicitly save them. Language, serial/display preferences, and user-created command macros may be stored locally on this browser/device.
 
 ## Browser support
 
-Web Serial support is feature-detected at runtime. Unsupported browsers show an explanatory state instead of attempting to connect.
+Web Serial support is feature-detected at runtime. A secure context and `navigator.serial` are required before connection controls are enabled.
 
-Desktop Chromium browsers are the primary initial implementation target. Firefox desktop and Android compatibility are part of the planned compatibility work and must be verified with the actual release before strong support claims are made. Safari environments without Web Serial are unsupported.
+Desktop Chrome / Edge are supported targets. Firefox Desktop added Web Serial in Firefox 151 (May 19, 2026), and v0.8.0 includes Firefox-specific guidance; the release artifact still needs real-device regression before v1.0 claims are finalized.
 
-## Limitations in v0.7.0
+Android is transport- and device-dependent. Chrome for Android can expose Web Serial for Bluetooth RFCOMM, but this app does not claim general wired-USB serial support on Android. When `navigator.serial` exists, the app remains usable and shows a caution; otherwise it recommends desktop for USB serial work.
+
+iPhone / iPad and Safari environments that do not expose Web Serial cannot connect.
+
+## Limitations in v0.8.0
 
 - The 20 MiB log limit is an approximate in-memory estimate rather than a precise JavaScript heap measurement.
 - Macro import/export and synchronization are not included; clearing browser site data can remove locally saved macros.
+- Android wired-USB serial support is not claimed; actual availability depends on the browser, transport, device, and OS.
 - Custom baud rates are accepted as positive integers, but actual support depends on the OS, driver, browser, and device.
 - No ANSI / VT100 emulation.
 - The browser may expose VID / PID but not a user-friendly COM port name.
 
-See APP_SPEC.md for the v0.7.0 acceptance criteria and the remaining roadmap to v1.0.0.
+See APP_SPEC.md for the v0.8.0 acceptance criteria and the remaining roadmap to v1.0.0.
+
+## Raspberry Pi Pico hardware test
+
+Repeatable Pico fixtures and a step-by-step hardware matrix are included:
+
+- [Hardware test guide](docs/HARDWARE_TEST_PICO.md)
+- [USB CDC fixture](examples/pico-usb-web-serial-test.py)
+- [Real UART echo fixture](examples/pico-uart-echo-test.py)
+
+Use the USB CDC fixture for Web Serial UX, Text/HEX, line endings, macros, logging, high-volume receive, and disconnect/reconnect. Use the separate 3.3 V USB-UART adapter fixture when validating real baud/parity/stop-bit behavior.
 
 ## Build
 
@@ -105,4 +125,4 @@ Generated files must not be edited directly. Edit src/index.template.html and re
 
 MIT. See LICENSE.
 
-There are no third-party runtime libraries in v0.7.0.
+There are no third-party runtime libraries in v0.8.0.

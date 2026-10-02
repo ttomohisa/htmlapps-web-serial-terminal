@@ -2,6 +2,32 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 0.8.0 - 2026-10-03
+
+### Added
+
+- Added smartphone quick actions for Connection settings, Device control, and Command macros.
+- Added Visual Viewport-aware mobile sizing for the terminal and dialogs.
+- Added software-keyboard detection that can reduce terminal height and keep focused inputs visible.
+- Added environment-specific unsupported guidance for Firefox, Safari/iPhone/iPad, and Android.
+- Added an Android caution state when the browser exposes Web Serial but device / transport support may be limited.
+- Added a five-column control-key layout and larger touch targets on narrow screens.
+
+### Changed
+
+- Very narrow layouts move Choose device to its own row and let Connect / Disconnect share the next row.
+- Connection settings fall back to one column at approximately 390 px and below.
+- Mobile text-entry controls use a larger font size to reduce unwanted browser zoom.
+- Help and macro dialogs use the current visual viewport height and safe-area insets.
+- Programmatic mobile scrolling respects reduced-motion preferences.
+- Web Serial capability detection remains authoritative; user-agent detection is used only for better guidance.
+
+### Compatibility
+
+- Firefox Desktop 151+ is reflected in the compatibility guidance.
+- Android remains transport- and device-dependent; wired USB serial support is not claimed.
+- Environments without `navigator.serial` remain unable to connect.
+
 ## 0.7.0 - 2026-10-03
 
 ### Added
