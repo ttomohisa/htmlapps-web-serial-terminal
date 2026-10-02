@@ -1318,7 +1318,8 @@
       <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、マクロと設定だけをこの端末内へ保存します。</p>
       <h3 data-i18n="helpNotesTitle">注意事項</h3>
       <ul>
-        <li data-i18n="helpBrowser">Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。</li>
+        <li data-i18n="helpBrowser">デスクトップ版Chrome / Edge、およびFirefox 151以降ではWeb Serialを利用できます。実際の接続可否は起動時にnavigator.serialで判定します。</li>
+        <li data-i18n="helpMobile">Androidでは通信方式と機器によって対応が異なります。Bluetooth RFCOMMを利用できる場合がありますが、USBシリアルは保証しません。iPhone / iPadやWeb Serialを公開しないSafari環境では接続できません。</li>
         <li data-i18n="helpDriver">専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。</li>
         <li data-i18n="helpBusy">接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。</li>
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
@@ -1499,8 +1500,15 @@
           error: 'エラー',
           secureTitle: 'このページではWeb Serialを利用できません',
           secureBody: 'Web Serialには安全なコンテキストが必要です。HTTPSまたは対応するローカル環境から開いてください。',
-          unsupportedTitle: 'このブラウザではWeb Serialを利用できません',
-          unsupportedBody: 'Web Serialに対応したブラウザで開いてください。',
+          unsupportedTitle: 'この環境ではWeb Serialを利用できません',
+          unsupportedBody: 'Web Serialに対応したデスクトップブラウザで開いてください。',
+          unsupportedFirefoxBody: 'Firefox Desktop 151以降ではWeb Serialを利用できます。Firefoxを更新するか、対応するChrome / Edgeのデスクトップ版を利用してください。',
+          unsupportedSafariBody: 'このSafari環境ではWeb Serialを利用できません。対応するChrome / EdgeまたはFirefox 151以降のデスクトップ版を利用してください。',
+          unsupportedIosBody: 'このiPhone / iPad環境ではWeb Serialを利用できません。USBシリアル機器は対応するデスクトップブラウザから利用してください。',
+          unsupportedAndroidBody: 'このAndroid環境ではWeb Serialを利用できません。Androidでは利用できるシリアル方式が端末・ブラウザによって異なるため、USBシリアル用途はデスクトップ版を推奨します。',
+          androidLimitedTitle: 'Androidでは接続できる機器が限定されます',
+          androidLimitedBody: 'このブラウザはWeb Serialを公開していますが、Androidでは通信方式や機器によって利用可否が異なります。Bluetooth RFCOMMは利用できる場合がありますが、USBシリアルは保証できません。',
+          mobileShortcutsLabel: 'モバイル用クイック操作',
           cancelled: '機器は選択されませんでした。',
           permissionLoaded: '以前に許可した機器を選択しました。接続するまで通信は開始しません。',
           deviceChosen: '機器を選択しました。接続するまで通信は開始しません。',
@@ -1531,7 +1539,8 @@
           helpPrivacyTitle: 'プライバシー',
           helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、マクロと設定だけをこの端末内へ保存します。',
           helpNotesTitle: '注意事項',
-          helpBrowser: 'Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。',
+          helpBrowser: 'デスクトップ版Chrome / Edge、およびFirefox 151以降ではWeb Serialを利用できます。実際の接続可否は起動時にnavigator.serialで判定します。',
+          helpMobile: 'Androidでは通信方式と機器によって対応が異なります。Bluetooth RFCOMMを利用できる場合がありますが、USBシリアルは保証しません。iPhone / iPadやWeb Serialを公開しないSafari環境では接続できません。',
           helpDriver: '専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。',
           helpBusy: '接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。',
           helpPortName: 'ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。',
@@ -1665,8 +1674,15 @@
           error: 'Error',
           secureTitle: 'Web Serial is not available on this page',
           secureBody: 'Web Serial requires a secure context. Open the app over HTTPS or in a supported local context.',
-          unsupportedTitle: 'This browser does not provide Web Serial',
-          unsupportedBody: 'Open the app in a browser that supports Web Serial.',
+          unsupportedTitle: 'Web Serial is not available in this environment',
+          unsupportedBody: 'Open the app in a supported desktop browser.',
+          unsupportedFirefoxBody: 'Firefox Desktop 151 and later provide Web Serial. Update Firefox or use a supported desktop Chrome / Edge browser.',
+          unsupportedSafariBody: 'This Safari environment does not provide Web Serial. Use a supported desktop Chrome / Edge browser or Firefox 151 and later.',
+          unsupportedIosBody: 'Web Serial is not available in this iPhone / iPad environment. Use a supported desktop browser for USB serial devices.',
+          unsupportedAndroidBody: 'Web Serial is not available in this Android environment. Android serial support varies by browser, transport, and device, so use a desktop browser for USB serial work.',
+          androidLimitedTitle: 'Android device support is limited',
+          androidLimitedBody: 'This browser exposes Web Serial, but Android support depends on the transport and device. Bluetooth RFCOMM may be available, while wired USB serial is not guaranteed.',
+          mobileShortcutsLabel: 'Mobile quick actions',
           cancelled: 'No device was selected.',
           permissionLoaded: 'A previously permitted device is selected. Communication does not start until you connect.',
           deviceChosen: 'Device selected. Communication does not start until you connect.',
@@ -1697,7 +1713,8 @@
           helpPrivacyTitle: 'Privacy',
           helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. Session logs stay in memory; only macros and preferences are stored on this device.',
           helpNotesTitle: 'Notes',
-          helpBrowser: 'A browser with Web Serial support is required. Connection actions stay disabled when the API is unavailable.',
+          helpBrowser: 'Desktop Chrome / Edge and Firefox 151 and later provide Web Serial. The app still checks navigator.serial at runtime before enabling connection actions.',
+          helpMobile: 'Android support depends on the transport and device. Bluetooth RFCOMM may be available, but wired USB serial is not guaranteed. iPhone / iPad and Safari environments that do not expose Web Serial cannot connect.',
           helpDriver: 'No dedicated terminal application is required, but some USB serial devices still require an operating-system driver.',
           helpBusy: 'If connection fails, check whether Arduino IDE or another serial terminal is already using the same port.',
           helpPortName: 'The browser may not expose a friendly port name such as a COM number.',
