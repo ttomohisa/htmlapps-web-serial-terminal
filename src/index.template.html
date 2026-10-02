@@ -3282,18 +3282,77 @@
         input.setSelectionRange(input.value.length, input.value.length);
       }
 
+      let visualViewportBaseline = 0;
+
+      function updateVisualViewport(options) {
+        const config = options || {};
+        const viewport = window.visualViewport;
+        const height = Math.max(240, Math.round(viewport ? viewport.height : window.innerHeight));
+        document.documentElement.style.setProperty('--visual-viewport-height', height + 'px');
+
+        if (config.resetBaseline || !visualViewportBaseline) visualViewportBaseline = height;
+        if (height > visualViewportBaseline) visualViewportBaseline = height;
+
+        const mobileLayout = window.matchMedia('(max-width: 760px)').matches;
+        const active = document.activeElement;
+        const textInputFocused = Boolean(active && (active.matches('input:not([type="button"]):not([type="submit"]), textarea') || active.isContentEditable));
+        const keyboardOpen = mobileLayout && textInputFocused && visualViewportBaseline - height > 120;
+        document.body.classList.toggle('keyboard-open', keyboardOpen);
+      }
+
+      function revealFocusedControl(element) {
+        window.setTimeout(() => {
+          try { element.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); } catch { }
+        }, 80);
+      }
+
+      function browserEnvironment() {
+        const ua = navigator.userAgent || '';
+        const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+        const ios = /iPhone|iPad|iPod/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const android = /Android/i.test(ua);
+        const firefox = /Firefox\/(\d+)/i.exec(ua);
+        const edge = /Edg\/(\d+)/i.exec(ua);
+        const chrome = /(?:Chrome|Chromium)\/(\d+)/i.exec(ua);
+        const safari = !android && /Safari\//i.test(ua) && !/(?:Chrome|Chromium|CriOS|Edg|Firefox|FxiOS)\//i.test(ua);
+        return {
+          ios,
+          android,
+          firefoxVersion: firefox ? Number(firefox[1]) : null,
+          edgeVersion: edge ? Number(edge[1]) : null,
+          chromeVersion: chrome ? Number(chrome[1]) : null,
+          safari
+        };
+      }
+
+      function unsupportedGuidance(environment) {
+        if (environment.ios) return t('unsupportedIosBody');
+        if (environment.android) return t('unsupportedAndroidBody');
+        if (environment.firefoxVersion !== null) return t('unsupportedFirefoxBody');
+        if (environment.safari) return t('unsupportedSafariBody');
+        return t('unsupportedBody');
+      }
+
       function updateSupportState() {
         if (!window.isSecureContext) {
           setNotice('support', t('secureTitle'), t('secureBody'));
           setPhase('unsupported');
           return false;
         }
+
+        const environment = browserEnvironment();
         if (!navigator.serial) {
-          setNotice('support', t('unsupportedTitle'), t('unsupportedBody'));
+          setNotice('support', t('unsupportedTitle'), unsupportedGuidance(environment));
           setPhase('unsupported');
           return false;
         }
-        setNotice('support', '', '');
+
+        if (environment.android) {
+          setNotice('support', t('androidLimitedTitle'), t('androidLimitedBody'));
+        } else {
+          setNotice('support', '', '');
+        }
+
         if (state.phase === 'unsupported') setPhase(state.port ? 'deviceSelected' : 'idle');
         return true;
       }
@@ -3475,6 +3534,37 @@
         refreshMacroDialogTitle();
       });
 
+      document.querySelectorAll('[data-open-panel]').forEach(button => {
+        button.addEventListener('click', () => {
+          const panel = document.getElementById(button.dataset.openPanel);
+          if (!panel) return;
+          panel.open = true;
+          panel.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          const summary = panel.querySelector('summary');
+          if (summary) window.setTimeout(() => summary.focus({ preventScroll: true }), 220);
+        });
+      });
+
+      ['commandInput','macroNameInput','macroPayloadInput'].forEach(id => {
+        const element = $('#' + id);
+        element.addEventListener('focus', () => {
+          updateVisualViewport();
+          revealFocusedControl(element);
+        });
+        element.addEventListener('blur', () => {
+          window.setTimeout(() => updateVisualViewport(), 120);
+        });
+      });
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => updateVisualViewport());
+        window.visualViewport.addEventListener('scroll', () => updateVisualViewport());
+      }
+      window.addEventListener('resize', () => updateVisualViewport());
+      window.addEventListener('orientationchange', () => {
+        window.setTimeout(() => updateVisualViewport({ resetBaseline: true }), 260);
+      });
+
       $('#languageButton').addEventListener('click', () => {
         state.language = state.language === 'ja' ? 'en' : 'ja';
         writeStorage(APP_CONFIG.slug + ':language', state.language);
@@ -3513,6 +3603,7 @@
         if (state.phase === 'connected') void disconnect({ silent: true });
       });
 
+      updateVisualViewport({ resetBaseline: true });
       state.macros = readMacros();
 
       const savedSettings = readSettings();
