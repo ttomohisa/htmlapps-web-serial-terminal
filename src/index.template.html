@@ -1395,6 +1395,7 @@
         renderTimer: 0,
         programmaticScroll: false,
         newLogLines: 0,
+        newLogPartial: false,
         searchQuery: '',
         searchMatches: [],
         searchIndex: -1,
@@ -1747,10 +1748,20 @@
         window.requestAnimationFrame(() => { state.programmaticScroll = false; });
       }
 
+      function currentNewLogLineCount() {
+        return state.newLogLines + (state.newLogPartial ? 1 : 0);
+      }
+
+      function resetNewLogCount() {
+        state.newLogLines = 0;
+        state.newLogPartial = false;
+      }
+
       function updateLatestButton() {
-        const show = !state.autoScroll && state.newLogLines > 0;
+        const count = currentNewLogLineCount();
+        const show = !state.autoScroll && count > 0;
         $('#latestLogButton').hidden = !show;
-        $('#latestLogText').textContent = t('newLogs').replace('{count}', new Intl.NumberFormat(state.language).format(state.newLogLines));
+        $('#latestLogText').textContent = t('newLogs').replace('{count}', new Intl.NumberFormat(state.language).format(count));
       }
 
       function updateSearchMatches(options) {
@@ -1808,7 +1819,7 @@
         const terminalRect = terminal.getBoundingClientRect();
         const matchRect = range.getBoundingClientRect();
         state.autoScroll = false;
-        state.newLogLines = 0;
+        resetNewLogCount();
         updateTerminalControls();
         if (matchRect.top < terminalRect.top + 24 || matchRect.bottom > terminalRect.bottom - 24) {
           setProgrammaticScrollTop(terminal.scrollTop + matchRect.top - terminalRect.top - terminal.clientHeight / 2);
@@ -1857,7 +1868,7 @@
         updateTerminalControls();
 
         if (state.autoScroll) {
-          state.newLogLines = 0;
+          resetNewLogCount();
           setProgrammaticScrollTop(terminal.scrollHeight);
         }
         updateLatestButton();
@@ -1866,7 +1877,10 @@
       function queueTerminalAppend(text) {
         if (!text) return;
         state.pendingDisplayText += text;
-        if (!state.autoScroll) state.newLogLines += Math.max(1, countLineBreaks(text));
+        if (!state.autoScroll) {
+          state.newLogLines += countLineBreaks(text);
+          state.newLogPartial = !text.endsWith('\n');
+        }
         if (!state.renderTimer) state.renderTimer = window.setTimeout(flushTerminalRender, RENDER_INTERVAL_MS);
         updateLatestButton();
       }
@@ -1913,7 +1927,7 @@
         updateTerminalControls();
         updateSearchMatches();
         if (state.autoScroll) {
-          state.newLogLines = 0;
+          resetNewLogCount();
           setProgrammaticScrollTop(terminal.scrollHeight);
         }
         updateLatestButton();
@@ -2402,7 +2416,7 @@
         const beforeStart = state.displayStartIndex;
         state.displayStartIndex = state.sessionEntries.length;
         state.terminalRevision += 1;
-        state.newLogLines = 0;
+        resetNewLogCount();
         const clearRevision = state.terminalRevision;
         renderTerminal();
         AppToast.show({
@@ -2667,11 +2681,11 @@
         const distance = terminal.scrollHeight - terminal.clientHeight - terminal.scrollTop;
         if (distance > 28 && state.autoScroll) {
           state.autoScroll = false;
-          state.newLogLines = 0;
+          resetNewLogCount();
           updateTerminalControls();
         } else if (distance <= 8 && !state.autoScroll) {
           state.autoScroll = true;
-          state.newLogLines = 0;
+          resetNewLogCount();
           updateTerminalControls();
         }
       }, { passive: true });
