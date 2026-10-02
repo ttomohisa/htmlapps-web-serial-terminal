@@ -2562,29 +2562,31 @@
         return new TextDecoder('utf-8').decode(bytes);
       }
 
-      function buildTxtLog() {
-        return state.sessionEntries.map(entry => {
+      function buildTxtLogParts() {
+        const parts = [];
+        for (const entry of state.sessionEntries) {
           const exactText = exactTextForLog(entry.bytes);
           const readable = isReadableLogText(exactText);
           const payload = readable ? escapeLogText(exactText) : 'HEX ' + bytesToHex(entry.bytes);
-          return formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload;
-        }).join('\n') + '\n';
-      }
-
-      function buildJsonlLog() {
-        return state.sessionEntries.map(entry => JSON.stringify({
-          time: new Date(entry.time).toISOString(),
-          direction: entry.direction,
-          bytes: bytesToHex(entry.bytes, true),
-          text: exactTextForLog(entry.bytes)
-        })).join('\n') + '\n';
-      }
-
-      function downloadText(content, extension, mime) {
-        if (!state.sessionEntries.length) {
-          showToast(t('nothingToSave'));
-          return false;
+          parts.push(formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload + '\n');
         }
+        return parts;
+      }
+
+      function buildJsonlLogParts() {
+        const parts = [];
+        for (const entry of state.sessionEntries) {
+          parts.push(JSON.stringify({
+            time: new Date(entry.time).toISOString(),
+            direction: entry.direction,
+            bytes: bytesToHex(entry.bytes, true),
+            text: exactTextForLog(entry.bytes)
+          }) + '\n');
+        }
+        return parts;
+      }
+
+      function logFilename(extension) {
         const now = new Date();
         const stamp = now.getFullYear() +
           String(now.getMonth() + 1).padStart(2, '0') +
@@ -2592,24 +2594,52 @@
           String(now.getHours()).padStart(2, '0') +
           String(now.getMinutes()).padStart(2, '0') +
           String(now.getSeconds()).padStart(2, '0');
-        const blob = new Blob([content], { type: mime + ';charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = 'serial-log-' + stamp + '.' + extension;
-        document.body.append(anchor);
-        anchor.click();
-        anchor.remove();
-        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-        return true;
+        return 'serial-log-' + stamp + '.' + extension;
+      }
+
+      function downloadLog(parts, extension, mime) {
+        if (!state.sessionEntries.length) {
+          showToast(t('nothingToSave'));
+          return false;
+        }
+
+        let url = '';
+        try {
+          const blob = new Blob(parts, { type: mime + ';charset=utf-8' });
+          url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = logFilename(extension);
+          document.body.append(anchor);
+          anchor.click();
+          anchor.remove();
+          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+          return true;
+        } catch {
+          if (url) URL.revokeObjectURL(url);
+          showToast(t('saveFailed'), 4300);
+          return false;
+        }
       }
 
       function saveTxtLog() {
-        if (downloadText(buildTxtLog(), 'txt', 'text/plain')) showToast(t('savedTxt'));
+        if (downloadLog(buildTxtLogParts(), 'txt', 'text/plain')) showToast(t('savedTxt'));
       }
 
       function saveJsonlLog() {
-        if (downloadText(buildJsonlLog(), 'jsonl', 'application/x-ndjson')) showToast(t('savedJsonl'));
+        if (downloadLog(buildJsonlLogParts(), 'jsonl', 'application/x-ndjson')) showToast(t('savedJsonl'));
+      }
+
+      function clearSessionLog() {
+        if (!state.sessionEntries.length) return;
+        if (!window.confirm(t('clearSessionLogConfirm'))) return;
+
+        state.sessionEntries = [];
+        state.sessionLogEstimateBytes = 0;
+        state.loggingActive = true;
+        state.logLimitWarned = false;
+        updateIoStats();
+        showToast(t('sessionLogCleared'), 5200);
       }
 
       function formatDuration(ms) {
@@ -2740,6 +2770,7 @@
       $('#clearTerminalButton').addEventListener('click', clearTerminal);
       $('#saveTxtButton').addEventListener('click', saveTxtLog);
       $('#saveJsonlButton').addEventListener('click', saveJsonlLog);
+      $('#clearSessionLogButton').addEventListener('click', clearSessionLog);
       $('#autoScrollButton').addEventListener('click', () => {
         state.autoScroll = !state.autoScroll;
         if (state.autoScroll) {
