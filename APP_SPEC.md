@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.4.0
+- Current implementation milestone: v0.5.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -48,7 +48,7 @@ No connection starts automatically on page load.
 - The app performs no runtime HTTP, WebSocket, analytics, telemetry, font, or CDN request.
 - Serial communication is device I/O and does not require a Browser Kitty server.
 - Serial communication content is never sent to a Browser Kitty server.
-- v0.3.0 keeps a session log only in memory while the page is open.
+- v0.5.0 keeps the session log only in memory while the page is open.
 - Language, serial connection preferences, display preferences, and send-mode preferences may be stored locally.
 - TXT / JSONL files are written only after an explicit user save action.
 - Runtime CSP keeps connect-src 'none'.
@@ -455,7 +455,98 @@ DTR / RTS / BREAK controls are disabled while disconnected.
 
 Control-key buttons are disabled unless the serial writer is available.
 
-## 8. v0.4.0 UX requirements
+## 7D. v0.5.0 functional requirements — Terminal UX
+
+### 7D.1 Follow-latest behavior
+
+Auto-scroll defaults to ON.
+
+When the user manually scrolls upward far enough to read older content:
+
+- Auto-scroll pauses automatically.
+- Incoming data continues to be read and recorded normally.
+- The terminal does not pull the viewport back to the bottom.
+- A compact indicator shows how many new logical lines arrived while follow mode was paused.
+- A Latest action restores follow mode and moves to the newest content.
+
+If the user manually scrolls back to the bottom, follow mode resumes and the new-line counter resets.
+
+Manual Auto-scroll ON / OFF remains available.
+
+### 7D.2 Command history
+
+Successful typed Text or HEX sends are added to session-only command history.
+
+History:
+
+- is not persisted across page reloads,
+- keeps up to 100 entries,
+- suppresses consecutive duplicates with the same send mode and Text line-ending setting,
+- is navigated with Arrow Up and Arrow Down in the command field,
+- restores the send mode and line-ending setting associated with the recalled command,
+- preserves the current draft so Arrow Down past the newest history item restores what the user had been typing.
+
+Control-key buttons do not enter command history.
+
+### 7D.3 Terminal search
+
+Search operates on the currently visible terminal display buffer.
+
+Search:
+
+- is case-insensitive,
+- supports previous / next navigation,
+- shows the current match index and total matches,
+- highlights the active match using the browser selection range,
+- does not stop RX processing,
+- pauses follow mode when the user jumps to an older match.
+
+Search work is triggered by search interaction or explicit display rebuild rather than every RX render batch, so high-rate input is not repeatedly rescanned on every chunk.
+
+The stored match index list is capped at 5,000 matches for UI responsiveness.
+
+### 7D.4 Display buffer limits
+
+The terminal display buffer is independent from the full in-memory session log.
+
+The visible display keeps at most:
+
+- 50,000 logical line breaks, and
+- approximately 5 MiB of display text.
+
+When the display limit is reached, older visible content is omitted while:
+
+- RX / TX byte counters remain correct,
+- the in-memory session log remains intact,
+- TXT / JSONL export still includes the session records that were omitted from the display.
+
+The UI explains that older log content was omitted from the display.
+
+Session-log memory limits are handled separately in v0.6.0.
+
+### 7D.5 Batched rendering
+
+High-rate incoming display updates are batched on an approximately 32 ms interval.
+
+Normal receive processing and the session model remain immediate; only DOM display work is batched.
+
+When the display does not need trimming or a complete rebuild, new text is appended to the existing terminal text node instead of replacing the full DOM text on every RX chunk.
+
+Changing display mode, timestamp mode, Local echo, language, or display Clear may perform a full bounded display rebuild because those are deliberate user actions.
+
+### 7D.6 Connection duration
+
+While connected, the status row displays elapsed connection time in `HH:MM:SS`.
+
+The timer:
+
+- starts after the port is successfully opened,
+- resets on a later explicit reconnect,
+- stops on explicit disconnect,
+- stops on unexpected disconnect,
+- does not continue running merely because the selected port remains remembered.
+
+## 8. v0.5.0 UX requirements
 
 ### Desktop
 
@@ -472,7 +563,7 @@ One primary workspace:
 - Terminal remains useful at 320px width and above.
 - Connection and send buttons have touch-friendly targets.
 - Help dialog remains fully scrollable.
-- The app does not require a fixed bottom bar in v0.3.0.
+- The app does not require a fixed bottom bar in v0.5.0.
 
 ### Accessibility
 
@@ -496,12 +587,10 @@ The language switch changes:
 
 Technical terms such as Web Serial, USB, baud rate, VID, and PID may remain technical when translation would reduce clarity.
 
-## 10. v0.4.0 non-goals
+## 10. v0.5.0 non-goals
 
 Not included yet:
 
-- command history,
-- terminal search,
 - macros,
 - ANSI / VT100 interpretation,
 - serial plotting,
@@ -509,9 +598,30 @@ Not included yet:
 - firmware flashing,
 - multiple simultaneous ports.
 
-## 11. v0.4.0 acceptance criteria
+## 11. v0.5.0 acceptance criteria
 
 All earlier milestone acceptance criteria remain applicable, plus:
+
+- app metadata identifies v0.5.0.
+- manually scrolling upward pauses follow mode without pausing RX.
+- new logical lines received while follow mode is paused are counted.
+- Latest resumes follow mode and moves to the bottom.
+- manually scrolling back to the bottom resumes follow mode.
+- successful typed sends are available through session-only Arrow Up / Arrow Down history.
+- command history keeps at most 100 entries and suppresses consecutive duplicates with the same send framing.
+- command history restores the associated Text / HEX send mode and Text line ending.
+- terminal search finds previous / next matches in the current display buffer.
+- search does not run a full-buffer scan on every RX render batch.
+- the display buffer is bounded to 50,000 line breaks and approximately 5 MiB of display text.
+- omitting old display content does not delete session records or alter byte counters.
+- terminal DOM rendering is batched at approximately 32 ms rather than rewritten for every incoming chunk.
+- connection duration is visible only while the serial connection is active.
+- Japanese and English help describe follow mode, search, and command history.
+- repository build and standalone verification pass.
+
+### Historical v0.4.0 acceptance criteria
+
+
 
 - app metadata identifies v0.4.0.
 - DTR and RTS remain untouched by the application until the user explicitly changes them.
@@ -609,7 +719,7 @@ Add DTR, RTS, BREAK, ESC, Ctrl+C, Ctrl+D, Ctrl+Z, Tab, signal inspection where a
 
 ### v0.5.0 — Terminal UX
 
-Add paused auto-scroll while reading history, new-log indicator, command history, search, proper display-buffer limits, batched rendering, and connection duration.
+Add paused auto-scroll while reading history, new-log indicator, command history, search, proper display-buffer limits, batched rendering, and connection duration. Implemented in v0.5.0.
 
 ### v0.6.0 — Logging / Session
 
@@ -657,7 +767,8 @@ The header help button must explain:
 - how explicit Reconnect behaves after USB reattachment,
 - the selectable transmit line endings and Text / HEX send modes,
 - Text / HEX receive display, timestamp, and Local echo behavior,
-- Copy / Clear / Auto-scroll behavior,
+- Copy / Clear / Auto-scroll behavior, including automatic follow pause and Latest,
+- terminal search and session-only command history,
 - that Clear does not erase the in-memory session log,
 - explicit TXT / JSONL save behavior,
 - that communication stays in the browser,
