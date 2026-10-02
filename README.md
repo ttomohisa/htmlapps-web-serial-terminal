@@ -101,6 +101,16 @@ iPhone / iPad and Safari environments that do not expose Web Serial cannot conne
 
 See APP_SPEC.md for the v0.8.0 acceptance criteria and the remaining roadmap to v1.0.0.
 
+## Raspberry Pi Pico hardware test
+
+Repeatable Pico fixtures and a step-by-step hardware matrix are included:
+
+- [Hardware test guide](docs/HARDWARE_TEST_PICO.md)
+- [USB CDC fixture](examples/pico-usb-web-serial-test.py)
+- [Real UART echo fixture](examples/pico-uart-echo-test.py)
+
+Use the USB CDC fixture for Web Serial UX, Text/HEX, line endings, macros, logging, high-volume receive, and disconnect/reconnect. Use the separate 3.3 V USB-UART adapter fixture when validating real baud/parity/stop-bit behavior.
+
 ## Build
 
 On Windows:
