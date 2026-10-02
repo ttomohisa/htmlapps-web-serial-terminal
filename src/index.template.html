@@ -1068,7 +1068,7 @@
         <li data-i18n="helpBusy">接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。</li>
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
       </ul>
-      <p class="dialog-note" data-i18n="helpFixed">DTR / RTSの変更は接続先によってリセットなどを起こす場合があります。BREAKも機器の仕様を確認して使用してください。Clearは画面表示だけを消し、セッションログは残ります。</p>
+      <p class="dialog-note" data-i18n="helpFixed">長い通信では古い内容を表示から省略しますが、セッションログには残ります。DTR / RTSの変更は接続先によってリセットなどを起こす場合があります。BREAKも機器の仕様を確認して使用してください。</p>
       <!-- APP:HELP:END -->
     </div>
   </dialog>
@@ -1241,7 +1241,7 @@
           helpDriver: '専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。',
           helpBusy: '接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。',
           helpPortName: 'ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。',
-          helpFixed: 'DTR / RTSの変更は接続先によってリセットなどを起こす場合があります。BREAKも機器の仕様を確認して使用してください。Clearは画面表示だけを消し、セッションログは残ります。'
+          helpFixed: '長い通信では古い内容を表示から省略しますが、セッションログには残ります。DTR / RTSの変更は接続先によってリセットなどを起こす場合があります。BREAKも機器の仕様を確認して使用してください。'
         },
         en: {
           brandMeta: 'Send and receive with USB serial devices in your browser',
@@ -1368,7 +1368,7 @@
           helpDriver: 'No dedicated terminal application is required, but some USB serial devices still require an operating-system driver.',
           helpBusy: 'If connection fails, check whether Arduino IDE or another serial terminal is already using the same port.',
           helpPortName: 'The browser may not expose a friendly port name such as a COM number.',
-          helpFixed: 'Changing DTR / RTS can reset some target devices, and BREAK should be used according to the device specification. Clear only removes the terminal display; the session log remains.'
+          helpFixed: 'For long sessions, older content can be omitted from the display while remaining in the session log. Changing DTR / RTS can reset some target devices, and BREAK should be used according to the device specification.'
         }
       };
 
