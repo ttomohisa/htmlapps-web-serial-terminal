@@ -2101,8 +2101,8 @@
       }
 
       function saveMacroFromForm() {
-        const name = $('#macroNameInput').value.trim();
-        const payload = $('#macroPayloadInput').value;
+        const name = $('#macroNameInput').value.trim().slice(0, MACRO_NAME_LIMIT);
+        const payload = $('#macroPayloadInput').value.slice(0, MACRO_PAYLOAD_LIMIT);
         const mode = $('#macroModeSelect').value === 'hex' ? 'hex' : 'text';
         const lineEnding = mode === 'hex' ? 'none' : $('#macroLineEndingSelect').value;
 
@@ -3364,6 +3364,39 @@
         }
       });
 
+      $('#addMacroButton').addEventListener('click', () => openMacroEditor(null));
+      $('#macroList').addEventListener('click', event => {
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) return;
+        const run = target.closest('[data-macro-run]');
+        if (run) {
+          void executeMacro(run.dataset.macroRun);
+          return;
+        }
+        const edit = target.closest('[data-macro-edit]');
+        if (edit) openMacroEditor(edit.dataset.macroEdit);
+      });
+      $('#macroModeSelect').addEventListener('change', refreshMacroFormMode);
+      $('#macroForm').addEventListener('submit', event => {
+        event.preventDefault();
+        saveMacroFromForm();
+      });
+      $('#deleteMacroButton').addEventListener('click', deleteEditingMacro);
+
+      const macroDialog = $('#macroDialog');
+      $('#closeMacroButton').addEventListener('click', () => macroDialog.close());
+      $('#cancelMacroButton').addEventListener('click', () => macroDialog.close());
+      macroDialog.addEventListener('click', event => {
+        const rect = macroDialog.getBoundingClientRect();
+        const outside = event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+        if (outside) macroDialog.close();
+      });
+      macroDialog.addEventListener('close', () => {
+        state.editingMacroId = null;
+        $('#macroFormError').textContent = '';
+        refreshMacroDialogTitle();
+      });
+
       $('#languageButton').addEventListener('click', () => {
         state.language = state.language === 'ja' ? 'en' : 'ja';
         writeStorage(APP_CONFIG.slug + ':language', state.language);
@@ -3402,6 +3435,8 @@
         if (state.phase === 'connected') void disconnect({ silent: true });
       });
 
+      state.macros = readMacros();
+
       const savedSettings = readSettings();
       if (savedSettings) {
         const candidateBaud = Number(savedSettings.baudRate);
@@ -3417,6 +3452,7 @@
         if (typeof savedSettings.localEcho === 'boolean') state.settings.localEcho = savedSettings.localEcho;
       }
       applySettingsToControls();
+      renderMacros();
       $('#versionBadge').textContent = 'v' + APP_CONFIG.version;
       $('#buildMeta').textContent = 'v' + APP_CONFIG.version + ' · ' + (BUILD_MANIFEST.generatedAtUtc || '');
       $('#terminalEmpty').hidden = false;
