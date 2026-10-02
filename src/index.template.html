@@ -1756,6 +1756,9 @@
       function updateSearchMatches(options) {
         const config = options || {};
         const query = state.searchQuery;
+        const previousMatches = state.searchMatches;
+        const previousIndex = state.searchIndex;
+        const previousPosition = previousIndex >= 0 ? previousMatches[previousIndex] : null;
         if ($('#terminalSearchInput').value !== query) $('#terminalSearchInput').value = query;
         state.searchMatches = [];
         state.searchIndex = -1;
@@ -1770,7 +1773,12 @@
             state.searchMatches.push(found);
             from = found + Math.max(1, needle.length);
           }
-          if (state.searchMatches.length && config.selectFirst) state.searchIndex = 0;
+          if (state.searchMatches.length && previousPosition !== null && config.preserveIndex !== false) {
+            const samePosition = state.searchMatches.indexOf(previousPosition);
+            state.searchIndex = samePosition >= 0 ? samePosition : Math.min(previousIndex, state.searchMatches.length - 1);
+          } else if (state.searchMatches.length && config.selectFirst) {
+            state.searchIndex = 0;
+          }
         }
 
         const total = state.searchMatches.length;
@@ -1783,7 +1791,6 @@
 
       function selectSearchMatch() {
         if (state.searchIndex < 0 || !state.searchMatches.length || !state.searchQuery) return;
-        flushTerminalRender();
         const terminal = $('#terminal');
         const node = terminal.firstChild;
         if (!node || node.nodeType !== Node.TEXT_NODE) return;
@@ -1809,6 +1816,8 @@
       }
 
       function navigateSearch(delta) {
+        flushTerminalRender();
+        updateSearchMatches({ preserveIndex: true });
         if (!state.searchMatches.length) return;
         state.searchIndex = state.searchIndex < 0
           ? (delta > 0 ? 0 : state.searchMatches.length - 1)
@@ -1846,7 +1855,6 @@
 
         $('#terminalEmpty').hidden = state.terminalText.length > 0;
         updateTerminalControls();
-        updateSearchMatches();
 
         if (state.autoScroll) {
           state.newLogLines = 0;
@@ -1885,7 +1893,9 @@
             break;
           }
         }
-        return { text: parts.reverse().join(''), omitted };
+        const joined = parts.reverse().join('');
+        const bounded = trimDisplayToBudget(joined, countLineBreaks(joined));
+        return { text: bounded.text, omitted: omitted || bounded.omitted };
       }
 
       function renderTerminal() {
@@ -2635,8 +2645,9 @@
         window.getSelection().removeAllRanges();
       });
       $('#terminalSearchInput').addEventListener('input', event => {
+        flushTerminalRender();
         state.searchQuery = event.currentTarget.value;
-        updateSearchMatches({ selectFirst: true });
+        updateSearchMatches({ selectFirst: true, preserveIndex: false });
       });
       $('#terminalSearchInput').addEventListener('keydown', event => {
         if (event.key === 'Enter') {
