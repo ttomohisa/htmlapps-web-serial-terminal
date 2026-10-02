@@ -3,9 +3,9 @@
   "name": "Web Serial Terminal",
   "nameJa": "Web Serial Terminal / シリアル通信ターミナル",
   "slug": "web-serial-terminal",
-  "version": "0.1.0",
-  "description": "Connect to serial devices, inspect received text, and send commands directly from the browser.",
-  "descriptionJa": "シリアル機器へブラウザから接続し、受信テキストの確認とコマンド送信を行うターミナルです。",
+  "version": "0.2.0",
+  "description": "Connect to serial devices, configure the connection, inspect received text, and send commands directly from the browser.",
+  "descriptionJa": "シリアル機器へブラウザから接続し、通信設定を変更しながら受信テキストの確認とコマンド送信を行うターミナルです。",
   "defaultLanguage": "auto",
   "repository": {
     "owner": "ttomohisa",
