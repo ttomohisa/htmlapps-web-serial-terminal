@@ -1022,9 +1022,9 @@
         <p class="composer-error" id="sendError" role="status"></p>
       </div>
 
-      <div class="status-line" aria-live="polite">
+      <div class="status-line">
         <span data-i18n="statusLabel">状態</span>
-        <strong id="statusText">未接続</strong>
+        <strong id="statusText" role="status" aria-live="polite">未接続</strong>
         <span class="connection-duration" id="connectionDuration" hidden></span>
         <span class="status-spacer"></span>
         <span class="io-stats" id="ioStats">RX 0 B · TX 0 B</span>
