@@ -2,6 +2,31 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 0.5.0 - 2026-10-02
+
+### Added
+
+- Added automatic follow pause when the user scrolls upward.
+- Added a new-line counter and Latest action while follow mode is paused.
+- Added session-only Arrow Up / Arrow Down command history with draft restoration.
+- Added case-insensitive terminal search with previous / next navigation and active-match selection.
+- Added live connection duration in HH:MM:SS.
+- Added a 50,000-line-break / approximately 5 MiB terminal display budget.
+
+### Changed
+
+- Terminal DOM updates are batched at approximately 32 ms instead of rewriting the full display for every incoming serial chunk.
+- New display text is appended to the existing text node when no rebuild or trimming is required.
+- Display trimming omits only old visible content; RX / TX counters and the in-memory session log remain intact.
+- Search rescans on search interaction and display rebuilds rather than on every RX render batch.
+- Scrolling back to the bottom resumes follow mode automatically.
+
+### Privacy
+
+- Command history is session-only and is not written to localStorage.
+- Terminal search operates only on the in-memory visible display buffer.
+- Runtime network connections remain blocked by CSP.
+
 ## 0.4.0 - 2026-10-02
 
 ### Added
