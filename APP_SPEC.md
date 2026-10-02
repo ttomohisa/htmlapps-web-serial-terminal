@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.5.0
+- Current implementation milestone: v0.6.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -48,7 +48,7 @@ No connection starts automatically on page load.
 - The app performs no runtime HTTP, WebSocket, analytics, telemetry, font, or CDN request.
 - Serial communication is device I/O and does not require a Browser Kitty server.
 - Serial communication content is never sent to a Browser Kitty server.
-- v0.5.0 keeps the session log only in memory while the page is open.
+- v0.6.0 keeps the session log only in memory while the page is open and bounds its estimated memory usage.
 - Language, serial connection preferences, display preferences, and send-mode preferences may be stored locally.
 - TXT / JSONL files are written only after an explicit user save action.
 - Runtime CSP keeps connect-src 'none'.
@@ -546,7 +546,118 @@ The timer:
 - stops on unexpected disconnect,
 - does not continue running merely because the selected port remains remembered.
 
-## 8. v0.5.0 UX requirements
+## 7E. v0.6.0 functional requirements — Logging / Session
+
+### 7E.1 Separate display history and saved-session log
+
+The terminal display history and the exportable session log are separate in-memory structures.
+
+Every successful RX or TX operation can continue to update:
+
+- the terminal display history,
+- RX / TX byte counters,
+- connection behavior,
+
+even when saved-session logging has stopped.
+
+Display history is separately bounded for terminal reconstruction and does not require the exportable session log to keep growing.
+
+### 7E.2 Session-log memory budget
+
+The exportable session log has an approximate 20 MiB in-memory budget.
+
+The estimate includes:
+
+- raw payload bytes,
+- decoded Text stored for the record,
+- optional display label text,
+- a fixed per-record overhead allowance.
+
+At approximately 16 MiB, the UI gives a one-time warning.
+
+When the next complete record would exceed the 20 MiB budget:
+
+- that record is not added to the exportable session log,
+- log recording stops,
+- serial communication continues,
+- terminal display continues,
+- RX / TX byte counters continue,
+- the UI clearly shows that log recording has stopped.
+
+Records are never partially stored merely to fit the remaining budget.
+
+### 7E.3 Log status
+
+The status row shows approximate current saved-session log usage and the 20 MiB limit.
+
+The state is visually distinguishable as:
+
+- recording,
+- approaching limit,
+- recording stopped.
+
+The state must not be communicated by color alone; text such as Log stopped / ログ停止 remains visible.
+
+### 7E.4 TXT and JSONL export
+
+TXT and JSONL continue to export only records that are present in the exportable session log.
+
+Long-session export is assembled as Blob parts per record instead of first concatenating the entire log into one giant output string.
+
+TXT keeps the established human-readable format.
+
+JSONL keeps one object per communication record with:
+
+- timestamp,
+- direction,
+- raw HEX bytes,
+- UTF-8 decoded Text from the exact record bytes.
+
+Export filenames use the existing `serial-log-YYYYMMDD-HHMMSS` form.
+
+Save failure produces a user-visible message.
+
+### 7E.5 Session-log clear
+
+Clear log / ログ消去 is separate from terminal Clear.
+
+Clear log:
+
+- requires explicit confirmation,
+- removes only the exportable session records,
+- resets the approximate session-log usage to zero,
+- resumes log recording if it had stopped,
+- does not clear the terminal display,
+- does not reset RX / TX byte counters,
+- does not disconnect the serial device.
+
+This operation is intentionally destructive and has no Undo.
+
+### 7E.6 Behavior after the log limit
+
+After log recording stops at the budget:
+
+- the user can continue communicating normally,
+- the terminal remains usable,
+- save buttons export the records captured before the stop,
+- the user can save the current log,
+- the user can then Clear log to begin recording a new in-memory log.
+
+Saving does not automatically clear or resume the log.
+
+### 7E.7 Display-history retention
+
+The display-history entry list has its own approximate memory budget and entry-count guard in addition to the v0.5.0 visible text limits.
+
+Dropping old display-history records:
+
+- may reduce what can be reconstructed after a display-mode change,
+- does not delete records still referenced by the exportable session log,
+- does not alter RX / TX byte counters.
+
+The visible terminal remains bounded by the v0.5.0 display-text limits.
+
+## 8. v0.6.0 UX requirements
 
 ### Desktop
 
@@ -587,7 +698,7 @@ The language switch changes:
 
 Technical terms such as Web Serial, USB, baud rate, VID, and PID may remain technical when translation would reduce clarity.
 
-## 10. v0.5.0 non-goals
+## 10. v0.6.0 non-goals
 
 Not included yet:
 
@@ -598,9 +709,32 @@ Not included yet:
 - firmware flashing,
 - multiple simultaneous ports.
 
-## 11. v0.5.0 acceptance criteria
+## 11. v0.6.0 acceptance criteria
 
 All earlier milestone acceptance criteria remain applicable, plus:
+
+- app metadata identifies v0.6.0.
+- terminal display history and exportable session records are separate structures.
+- saved-session logging has an approximate 20 MiB memory budget.
+- the UI warns once when the log approaches the limit.
+- when a complete next record would exceed the limit, log recording stops without stopping serial RX/TX.
+- no communication record is partially stored to fit the remaining log budget.
+- RX / TX byte counters continue after saved-session logging stops.
+- terminal display continues after saved-session logging stops.
+- status text clearly identifies recording, near-limit, and stopped states.
+- TXT and JSONL export only the records captured in the current saved-session log.
+- TXT / JSONL export is created from per-record Blob parts rather than one pre-concatenated output string.
+- Clear log requires confirmation.
+- Clear log does not clear the terminal display or reset RX / TX byte counters.
+- Clear log resumes logging after a limit stop.
+- saving a log does not automatically clear or resume it.
+- save failures produce user-visible feedback.
+- Japanese and English help explain the 20 MiB approximate log budget and Clear versus Clear log.
+- repository build and standalone verification pass.
+
+### Historical v0.5.0 acceptance criteria
+
+
 
 - app metadata identifies v0.5.0.
 - manually scrolling upward pauses follow mode without pausing RX.
@@ -723,7 +857,7 @@ Add paused auto-scroll while reading history, new-log indicator, command history
 
 ### v0.6.0 — Logging / Session
 
-Complete long-session TXT and JSONL handling, session-size controls, log limits, explicit session-log reset, and the remaining logging UX.
+Complete long-session TXT and JSONL handling, session-size controls, log limits, explicit session-log reset, and the remaining logging UX. Implemented in v0.6.0.
 
 ### v0.7.0 — Command Macros
 
@@ -770,7 +904,8 @@ The header help button must explain:
 - Copy / Clear / Auto-scroll behavior, including automatic follow pause and Latest,
 - terminal search and session-only command history,
 - that Clear does not erase the in-memory session log,
-- explicit TXT / JSONL save behavior,
+- explicit TXT / JSONL save behavior and the approximate 20 MiB log budget,
+- the difference between terminal Clear and Clear log,
 - that communication stays in the browser,
 - that no connection starts automatically,
 - browser support limitations,
