@@ -1,6 +1,6 @@
 # Web Serial Terminal
 
-A small Browser Kitty tool for connecting to a serial device, reading incoming text, and sending commands directly from the browser.
+A small Browser Kitty tool for connecting to a serial device, inspecting Text or HEX data, sending commands, and explicitly saving local session logs.
 
 Current development version: v0.3.0
 
