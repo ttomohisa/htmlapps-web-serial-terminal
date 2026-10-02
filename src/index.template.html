@@ -1865,6 +1865,7 @@
         }
 
         $('#terminalEmpty').hidden = state.terminalText.length > 0;
+        updateIoStats();
         updateTerminalControls();
 
         if (state.autoScroll) {
@@ -1882,7 +1883,6 @@
           state.newLogPartial = !text.endsWith('\n');
         }
         if (!state.renderTimer) state.renderTimer = window.setTimeout(flushTerminalRender, RENDER_INTERVAL_MS);
-        updateLatestButton();
       }
 
       function buildDisplayTextFromSession() {
@@ -1940,11 +1940,13 @@
         if (direction === 'rx') state.rxBytes += data.byteLength;
         else state.txBytes += data.byteLength;
         state.terminalRevision += 1;
-        updateIoStats();
 
         if (direction === 'rx' || state.localEcho) {
-          queueTerminalAppend(displayEntryText(entry));
+          const displayText = displayEntryText(entry);
+          if (displayText) queueTerminalAppend(displayText);
+          else updateIoStats();
         } else {
+          updateIoStats();
           updateTerminalControls();
         }
       }
