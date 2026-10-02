@@ -643,7 +643,9 @@
     }
     .status-line strong { color: var(--text); }
     .status-spacer { flex: 1 1 auto; }
-    .io-stats, .connection-duration { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .io-stats, .connection-duration, .log-status { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .log-status[data-state="warning"] { color: var(--warning); }
+    .log-status[data-state="stopped"] { color: var(--danger); font-weight: 760; }
     .status-action {
       min-height: 30px;
       padding: 4px 8px;
@@ -656,6 +658,7 @@
       cursor: pointer;
     }
     .status-action:hover:not(:disabled) { border-color: var(--line-strong); background: var(--surface-strong); }
+    .status-action.danger { color: var(--danger); }
     .build-meta { white-space: nowrap; }
     dialog {
       width: min(640px, calc(100% - 28px));
@@ -802,7 +805,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.5.0</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.6.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -1028,8 +1031,10 @@
         <span class="connection-duration" id="connectionDuration" hidden></span>
         <span class="status-spacer"></span>
         <span class="io-stats" id="ioStats">RX 0 B · TX 0 B</span>
+        <span class="log-status" id="logStatus" data-state="recording">ログ 約0 B / 20 MiB</span>
         <button class="status-action" id="saveTxtButton" type="button" data-i18n="saveTxt" disabled>TXTログ</button>
         <button class="status-action" id="saveJsonlButton" type="button" data-i18n="saveJsonl" disabled>JSONL</button>
+        <button class="status-action danger" id="clearSessionLogButton" type="button" data-i18n="clearSessionLog" disabled>ログ消去</button>
         <span class="build-meta" id="buildMeta"></span>
       </div>
     </section>
@@ -1055,7 +1060,7 @@
         <li data-i18n="helpStep3">Text / HEX表示を切り替えられます。必要に応じて時刻表示や送信表示をONにします。</li>
         <li data-i18n="helpStep4">送信形式をText / HEXから選びます。Textでは改行方式を、HEXでは送るbyte列を指定します。</li>
         <li data-i18n="helpStep5">機器制御ではDTR / RTS、BREAK、制御キーを送れます。DTR / RTSは接続しただけでは変更しません。</li>
-        <li data-i18n="helpStep6">通信内容はセッション中だけメモリに記録され、TXTまたはJSONLとして明示的に保存できます。</li>
+        <li data-i18n="helpStep6">通信ログはセッション中だけメモリに記録され、TXTまたはJSONLとして保存できます。記録量が目安20 MiBに達するとログ記録だけを停止し、通信と画面表示は続けます。</li>
         <li data-i18n="helpStep7">ログを上へスクロールすると追従を自動停止し、新着件数と「最新へ」を表示します。検索や↑/↓のコマンド履歴も利用できます。</li>
         <li data-i18n="helpStep8">USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。</li>
       </ol>
@@ -1068,7 +1073,7 @@
         <li data-i18n="helpBusy">接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。</li>
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
       </ul>
-      <p class="dialog-note" data-i18n="helpFixed">長い通信では古い内容を表示から省略しますが、セッションログには残ります。DTR / RTSの変更は接続先によってリセットなどを起こす場合があります。BREAKも機器の仕様を確認して使用してください。</p>
+      <p class="dialog-note" data-i18n="helpFixed">「消去」は画面表示だけ、「ログ消去」は保存用セッションログだけを消します。ログ上限後は保存してから「ログ消去」を行うと記録を再開できます。DTR / RTSやBREAKは接続先への影響を確認して使用してください。</p>
       <!-- APP:HELP:END -->
     </div>
   </dialog>
@@ -1173,6 +1178,15 @@
           displayTrimmed: '古いログを表示から省略しました。',
           saveTxt: 'TXTログ',
           saveJsonl: 'JSONL',
+          clearSessionLog: 'ログ消去',
+          logRecording: 'ログ 約{size} / {limit}',
+          logWarning: 'ログ 約{size} / {limit}',
+          logStopped: 'ログ停止 約{size} / {limit}',
+          logNearLimit: 'セッションログが上限に近づいています。必要ならTXTまたはJSONLで保存してください。',
+          logLimitReached: 'セッションログが上限に達したため、ログ記録を停止しました。通信と画面表示は続きます。保存してから「ログ消去」を行うと記録を再開できます。',
+          clearSessionLogConfirm: '保存用のセッションログを消去しますか？ ターミナル表示とRX/TX byte数は残ります。この操作は元に戻せません。',
+          sessionLogCleared: 'セッションログを消去しました。表示とRX/TX byte数は残り、ログ記録を再開しました。',
+          saveFailed: 'ログファイルを保存できませんでした。',
           copiedTerminal: 'ターミナル内容をコピーしました。',
           copyFailed: 'コピーできませんでした。',
           clearedTerminal: 'ターミナル表示を消去しました。',
@@ -1231,7 +1245,7 @@
           helpStep3: 'Text / HEX表示を切り替えられます。必要に応じて時刻表示や送信表示をONにします。',
           helpStep4: '送信形式をText / HEXから選びます。Textでは改行方式を、HEXでは送るbyte列を指定します。',
           helpStep5: '機器制御ではDTR / RTS、BREAK、制御キーを送れます。DTR / RTSは接続しただけでは変更しません。',
-          helpStep6: '通信内容はセッション中だけメモリに記録され、TXTまたはJSONLとして明示的に保存できます。',
+          helpStep6: '通信ログはセッション中だけメモリに記録され、TXTまたはJSONLとして保存できます。記録量が目安20 MiBに達するとログ記録だけを停止し、通信と画面表示は続けます。',
           helpStep7: 'ログを上へスクロールすると追従を自動停止し、新着件数と「最新へ」を表示します。検索や↑/↓のコマンド履歴も利用できます。',
           helpStep8: 'USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。',
           helpPrivacyTitle: 'プライバシー',
@@ -1241,7 +1255,7 @@
           helpDriver: '専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。',
           helpBusy: '接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。',
           helpPortName: 'ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。',
-          helpFixed: '長い通信では古い内容を表示から省略しますが、セッションログには残ります。DTR / RTSの変更は接続先によってリセットなどを起こす場合があります。BREAKも機器の仕様を確認して使用してください。'
+          helpFixed: '「消去」は画面表示だけ、「ログ消去」は保存用セッションログだけを消します。ログ上限後は保存してから「ログ消去」を行うと記録を再開できます。DTR / RTSやBREAKは接続先への影響を確認して使用してください。'
         },
         en: {
           brandMeta: 'Send and receive with USB serial devices in your browser',
@@ -1300,6 +1314,15 @@
           displayTrimmed: 'Older log content was omitted from the display.',
           saveTxt: 'TXT log',
           saveJsonl: 'JSONL',
+          clearSessionLog: 'Clear log',
+          logRecording: 'Log ~{size} / {limit}',
+          logWarning: 'Log ~{size} / {limit}',
+          logStopped: 'Log stopped ~{size} / {limit}',
+          logNearLimit: 'The session log is approaching its limit. Save TXT or JSONL if you need to keep it.',
+          logLimitReached: 'The session log reached its limit, so log recording stopped. Serial communication and the terminal display continue. Save the log, then Clear log to start recording a new log.',
+          clearSessionLogConfirm: 'Clear the saved-session log? The terminal display and RX/TX byte counts will remain. This cannot be undone.',
+          sessionLogCleared: 'Session log cleared. The terminal display and RX/TX byte counts remain, and log recording resumed.',
+          saveFailed: 'Could not save the log file.',
           copiedTerminal: 'Terminal content copied.',
           copyFailed: 'Could not copy.',
           clearedTerminal: 'Terminal display cleared.',
@@ -1358,7 +1381,7 @@
           helpStep3: 'Switch the receive display between Text and HEX. Enable timestamps or Local echo when useful.',
           helpStep4: 'Choose Text or HEX for sending. Text uses the selected line ending; HEX sends the byte sequence you enter.',
           helpStep5: 'Device control provides DTR / RTS, BREAK, and control keys. DTR / RTS are not changed merely by connecting.',
-          helpStep6: 'Communication is recorded only in session memory and can be explicitly saved as TXT or JSONL.',
+          helpStep6: 'The session log stays only in memory and can be saved as TXT or JSONL. Around the 20 MiB memory budget, only log recording stops; serial communication and the terminal display continue.',
           helpStep7: 'Scrolling upward pauses follow mode automatically and shows a new-line count with a Latest button. Search and Up/Down command history are also available.',
           helpStep8: 'If USB is removed, the app leaves the connected state. Reconnect the same device and press Reconnect to resume.',
           helpPrivacyTitle: 'Privacy',
@@ -1368,7 +1391,7 @@
           helpDriver: 'No dedicated terminal application is required, but some USB serial devices still require an operating-system driver.',
           helpBusy: 'If connection fails, check whether Arduino IDE or another serial terminal is already using the same port.',
           helpPortName: 'The browser may not expose a friendly port name such as a COM number.',
-          helpFixed: 'For long sessions, older content can be omitted from the display while remaining in the session log. Changing DTR / RTS can reset some target devices, and BREAK should be used according to the device specification.'
+          helpFixed: 'Clear removes only the terminal display; Clear log removes only the saved-session log. After the log limit is reached, save it and use Clear log to resume recording. Use DTR / RTS and BREAK according to the target device specification.'
         }
       };
 
@@ -1404,7 +1427,12 @@
         commandDraft: '',
         connectedAt: null,
         connectionClockTimer: 0,
+        displayEntries: [],
+        displayEntryEstimateBytes: 0,
         sessionEntries: [],
+        sessionLogEstimateBytes: 0,
+        loggingActive: true,
+        logLimitWarned: false,
         rxBytes: 0,
         txBytes: 0,
         bufferNoticeShown: false,
@@ -1428,6 +1456,10 @@
 
       const MAX_DISPLAY_CHARS = 5 * 1024 * 1024;
       const MAX_DISPLAY_LINES = 50000;
+      const DISPLAY_ENTRY_MEMORY_BUDGET = 8 * 1024 * 1024;
+      const DISPLAY_ENTRY_LIMIT = 60000;
+      const SESSION_LOG_LIMIT_BYTES = 20 * 1024 * 1024;
+      const SESSION_LOG_WARNING_BYTES = 16 * 1024 * 1024;
       const RENDER_INTERVAL_MS = 32;
       const COMMAND_HISTORY_LIMIT = 100;
       const SEARCH_MATCH_LIMIT = 5000;
