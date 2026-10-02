@@ -79,7 +79,7 @@ v0.8.0 では、スマートフォン操作とソフトウェアキーボード�
 
 単一HTML版では Content Security Policy により実行時のネットワーク接続を遮断します。Analytics、Telemetry、外部フォント、実行時CDNも使用しません。
 
-v0.8.0では通信記録をページを開いている間だけメモリに保持し、保存用セッションログはメモリ使用量の概算20 MiBを上限にします.TXT / JSONLは保存ボタンを押した場合だけ端末へファイルとして保存します。言語・通信・表示設定とユーザーが作成したコマンドマクロは、このブラウザ・端末内へ保存することがあります。
+v0.8.0では通信記録をページを開いている間だけメモリに保持し、保存用セッションログはメモリ使用量の概算20 MiBを上限にします。TXT / JSONLは保存ボタンを押した場合だけ端末へファイルとして保存します。言語・通信・表示設定とユーザーが作成したコマンドマクロは、このブラウザ・端末内へ保存することがあります。
 
 ## ブラウザ対応
 
@@ -101,6 +101,16 @@ iPhone / iPadや、Web Serialを公開しないSafari環境では接続できま
 - ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。
 
 v0.8.0の受け入れ条件とv1.0.0までの残りの計画は APP_SPEC.md に記載しています。
+
+## Raspberry Pi Pico 実機テスト
+
+再現可能なPico用fixtureと手順を同梱しています。
+
+- [実機テスト手順](docs/HARDWARE_TEST_PICO.ja.md)
+- [USB CDCテストfixture](examples/pico-usb-web-serial-test.py)
+- [実UART echo fixture](examples/pico-uart-echo-test.py)
+
+PicoのUSB直結ではWeb Serial UI、Text / HEX、改行、マクロ、ログ、大量RX、抜去・再接続を確認できます。実際のbaud / parity / stop bitsを検証する場合は、3.3 V対応USB-UARTアダプタを使う実UART fixtureへ切り替えます。
 
 ## ビルド
 
