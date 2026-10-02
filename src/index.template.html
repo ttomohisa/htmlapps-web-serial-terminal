@@ -1710,16 +1710,91 @@
         if (!hexMode) $('#sendError').textContent = '';
       }
 
-      function updateIoStats() {
-        const format = value => {
-          if (value < 1024) return value + ' B';
-          if (value < 1024 * 1024) return (value / 1024).toFixed(value < 10240 ? 1 : 0) + ' KB';
-          return (value / (1024 * 1024)).toFixed(1) + ' MB';
-        };
-        $('#ioStats').textContent = 'RX ' + format(state.rxBytes) + ' · TX ' + format(state.txBytes);
+      function formatByteCount(value) {
+        if (value < 1024) return value + ' B';
+        if (value < 1024 * 1024) return (value / 1024).toFixed(value < 10240 ? 1 : 0) + ' KiB';
+        return (value / (1024 * 1024)).toFixed(1) + ' MiB';
+      }
+
+      function estimateEntryMemory(entry) {
+        return entry.bytes.byteLength +
+          entry.text.length * 2 +
+          entry.displayText.length * 2 +
+          128;
+      }
+
+      function updateLogStatus() {
+        const status = $('#logStatus');
+        const size = formatByteCount(state.sessionLogEstimateBytes);
+        const limit = formatByteCount(SESSION_LOG_LIMIT_BYTES);
+        let key = 'logRecording';
+        let statusState = 'recording';
+        if (!state.loggingActive) {
+          key = 'logStopped';
+          statusState = 'stopped';
+        } else if (state.sessionLogEstimateBytes >= SESSION_LOG_WARNING_BYTES) {
+          key = 'logWarning';
+          statusState = 'warning';
+        }
+        status.dataset.state = statusState;
+        status.textContent = t(key).replace('{size}', size).replace('{limit}', limit);
         const hasLog = state.sessionEntries.length > 0;
         $('#saveTxtButton').disabled = !hasLog;
         $('#saveJsonlButton').disabled = !hasLog;
+        $('#clearSessionLogButton').disabled = !hasLog;
+      }
+
+      function updateIoStats() {
+        $('#ioStats').textContent = 'RX ' + formatByteCount(state.rxBytes) + ' · TX ' + formatByteCount(state.txBytes);
+        updateLogStatus();
+      }
+
+      function appendDisplayEntry(entry) {
+        const estimate = estimateEntryMemory(entry);
+        state.displayEntries.push(entry);
+        state.displayEntryEstimateBytes += estimate;
+
+        let removeCount = 0;
+        let removedBytes = 0;
+        while (
+          removeCount < state.displayEntries.length - 1 &&
+          (state.displayEntryEstimateBytes - removedBytes > DISPLAY_ENTRY_MEMORY_BUDGET ||
+           state.displayEntries.length - removeCount > DISPLAY_ENTRY_LIMIT)
+        ) {
+          removedBytes += estimateEntryMemory(state.displayEntries[removeCount]);
+          removeCount += 1;
+        }
+
+        if (removeCount > 0) {
+          state.displayEntries.splice(0, removeCount);
+          state.displayEntryEstimateBytes = Math.max(0, state.displayEntryEstimateBytes - removedBytes);
+          state.displayStartIndex = Math.max(0, state.displayStartIndex - removeCount);
+          if (!state.bufferNoticeShown) {
+            state.bufferNoticeShown = true;
+            showToast(t('displayTrimmed'), 5200);
+          }
+        }
+      }
+
+      function recordSessionEntry(entry) {
+        if (!state.loggingActive) return false;
+        const estimate = estimateEntryMemory(entry);
+
+        if (state.sessionLogEstimateBytes + estimate > SESSION_LOG_LIMIT_BYTES) {
+          state.loggingActive = false;
+          updateLogStatus();
+          showToast(t('logLimitReached'), 8200);
+          return false;
+        }
+
+        state.sessionEntries.push(entry);
+        state.sessionLogEstimateBytes += estimate;
+
+        if (!state.logLimitWarned && state.sessionLogEstimateBytes >= SESSION_LOG_WARNING_BYTES) {
+          state.logLimitWarned = true;
+          showToast(t('logNearLimit'), 6200);
+        }
+        return true;
       }
 
       function displayEntryText(entry) {
@@ -1917,13 +1992,13 @@
         if (!state.renderTimer) state.renderTimer = window.setTimeout(flushTerminalRender, RENDER_INTERVAL_MS);
       }
 
-      function buildDisplayTextFromSession() {
+      function buildDisplayTextFromHistory() {
         const parts = [];
         let chars = 0;
         let lines = 0;
         let omitted = false;
-        for (let i = state.sessionEntries.length - 1; i >= state.displayStartIndex; i -= 1) {
-          const entry = state.sessionEntries[i];
+        for (let i = state.displayEntries.length - 1; i >= state.displayStartIndex; i -= 1) {
+          const entry = state.displayEntries[i];
           if (entry.direction !== 'rx' && !state.localEcho) continue;
           const piece = displayEntryText(entry);
           const pieceLines = countLineBreaks(piece);
@@ -1946,7 +2021,7 @@
 
       function renderTerminal() {
         cancelPendingRender();
-        const built = buildDisplayTextFromSession();
+        const built = buildDisplayTextFromHistory();
         state.terminalText = built.text;
         state.displayLineCount = countLineBreaks(built.text);
         const terminal = $('#terminal');
@@ -1968,14 +2043,17 @@
       function addSessionEntry(direction, bytes, text, displayText) {
         const data = bytes instanceof Uint8Array ? new Uint8Array(bytes) : new Uint8Array(bytes || []);
         const entry = { time: Date.now(), direction, bytes: data, text: String(text || ''), displayText: displayText ? String(displayText) : '' };
-        state.sessionEntries.push(entry);
+
+        appendDisplayEntry(entry);
+        recordSessionEntry(entry);
+
         if (direction === 'rx') state.rxBytes += data.byteLength;
         else state.txBytes += data.byteLength;
         state.terminalRevision += 1;
 
         if (direction === 'rx' || state.localEcho) {
-          const displayText = displayEntryText(entry);
-          if (displayText) queueTerminalAppend(displayText);
+          const visibleText = displayEntryText(entry);
+          if (visibleText) queueTerminalAppend(visibleText);
           else updateIoStats();
         } else {
           updateIoStats();
@@ -2448,7 +2526,7 @@
         flushTerminalRender();
         if (!state.terminalText) return;
         const beforeStart = state.displayStartIndex;
-        state.displayStartIndex = state.sessionEntries.length;
+        state.displayStartIndex = state.displayEntries.length;
         state.terminalRevision += 1;
         resetNewLogCount();
         const clearRevision = state.terminalRevision;
