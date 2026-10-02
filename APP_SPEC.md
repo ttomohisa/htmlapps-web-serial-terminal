@@ -16,9 +16,9 @@ Web Serial Terminal connects a browser directly to a serial device through the W
 
 The product is intentionally focused on three jobs:
 
-1. See data received from a serial device.
-2. Send data to a serial device.
-3. Record or export the communication when that feature is introduced in later milestones.
+1. See Text or raw HEX data received from a serial device.
+2. Send Text or raw HEX data to a serial device.
+3. Keep an in-memory session record and explicitly export it when needed.
 
 It is not intended to become a full embedded-development IDE.
 
@@ -504,7 +504,7 @@ Add paused auto-scroll while reading history, new-log indicator, command history
 
 ### v0.6.0 — Logging / Session
 
-Complete TXT and JSONL exports, raw-byte preservation, session-size handling, log limits, and clear separation between display clear and log clear.
+Complete long-session TXT and JSONL handling, session-size controls, log limits, explicit session-log reset, and the remaining logging UX.
 
 ### v0.7.0 — Command Macros
 
