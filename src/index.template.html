@@ -47,7 +47,7 @@
     }
     button, input, select { font: inherit; }
     button, input, select { min-width: 0; }
-    button:focus-visible, input:focus-visible, summary:focus-visible {
+    button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
       outline: 3px solid color-mix(in srgb, var(--focus) 42%, transparent);
       outline-offset: 2px;
     }
@@ -366,6 +366,24 @@
     }
     .terminal-tool-spacer { flex: 1 1 auto; }
     .terminal-count { font-size: 10px; white-space: nowrap; }
+    .terminal-select {
+      min-height: 32px;
+      padding: 5px 27px 5px 8px;
+      border: 1px solid #33443d;
+      border-radius: 8px;
+      background: #111a16;
+      color: #c9d5cf;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .terminal-tool-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #91a39a;
+      font-size: 10px;
+      white-space: nowrap;
+    }
     .terminal-wrap {
       position: relative;
       min-height: 390px;
@@ -403,7 +421,7 @@
     .terminal-empty span { max-width: 390px; font-size: 11px; line-height: 1.6; }
     .composer {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(94px, auto) auto;
+      grid-template-columns: minmax(0, 1fr) 88px minmax(94px, auto) auto;
       gap: 9px;
       padding: 13px 14px;
       border-top: 1px solid #25322d;
@@ -446,9 +464,17 @@
       color: #90a39a;
       font-size: 10px;
     }
+    .composer-error {
+      grid-column: 1 / -1;
+      margin: -3px 2px 0;
+      color: #ffb4ac;
+      font-size: 10px;
+    }
+    .composer-error:empty { display: none; }
     .status-line {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 9px;
       min-height: 42px;
       padding: 9px 15px;
@@ -459,6 +485,19 @@
     }
     .status-line strong { color: var(--text); }
     .status-spacer { flex: 1 1 auto; }
+    .io-stats { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .status-action {
+      min-height: 30px;
+      padding: 4px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 760;
+      cursor: pointer;
+    }
+    .status-action:hover:not(:disabled) { border-color: var(--line-strong); background: var(--surface-strong); }
     .build-meta { white-space: nowrap; }
     dialog {
       width: min(640px, calc(100% - 28px));
@@ -574,8 +613,13 @@
       .terminal-wrap, .terminal { min-height: 330px; }
       .terminal { height: 48vh; padding: 14px 13px 26px; font-size: 12px; }
       .composer { grid-template-columns: minmax(0, 1fr) 82px 72px; padding: 11px; }
-      .send-button { min-width: 0; padding-inline: 9px; }
+      .command-field { grid-column: 1 / -1; }
+      .send-mode { grid-column: 1; }
+      .line-ending { grid-column: 2; }
+      .send-button { grid-column: 3; min-width: 0; padding-inline: 9px; }
       .status-line { padding-inline: 12px; }
+      .status-line .status-spacer { flex-basis: 100%; height: 0; }
+      .io-stats { margin-right: auto; }
       #helpDialog {
         width: calc(100% - 18px);
         max-height: calc(100dvh - 18px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
@@ -593,7 +637,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.2.0</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.3.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -711,6 +755,15 @@
       </details>
 
       <div class="terminal-tools">
+        <label class="terminal-tool-label">
+          <span data-i18n="displayMode">表示</span>
+          <select class="terminal-select" id="displayMode">
+            <option value="text">Text</option>
+            <option value="hex">HEX</option>
+          </select>
+        </label>
+        <button class="terminal-tool" id="timestampButton" type="button" aria-pressed="false"><span data-i18n="timestamp">時刻</span>: <strong id="timestampState">OFF</strong></button>
+        <button class="terminal-tool" id="localEchoButton" type="button" aria-pressed="false"><span data-i18n="localEcho">送信表示</span>: <strong id="localEchoState">OFF</strong></button>
         <button class="terminal-tool" id="copyTerminalButton" type="button" data-i18n="copyTerminal" disabled>コピー</button>
         <button class="terminal-tool" id="clearTerminalButton" type="button" data-i18n="clearTerminal" disabled>消去</button>
         <span class="terminal-tool-spacer"></span>
@@ -730,6 +783,11 @@
       <div class="composer">
         <label class="sr-only" for="commandInput" data-i18n="commandLabel">送信するコマンド</label>
         <input class="command-field" id="commandInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="commandPlaceholder" placeholder="command..." disabled>
+        <label class="sr-only" for="sendMode" data-i18n="sendMode">送信形式</label>
+        <select class="line-ending send-mode" id="sendMode" data-i18n-aria-label="sendMode">
+          <option value="text">Text</option>
+          <option value="hex">HEX</option>
+        </select>
         <label class="sr-only" for="lineEnding" data-i18n="lineEnding">改行</label>
         <select class="line-ending" id="lineEnding" data-i18n-aria-label="lineEnding">
           <option value="none" data-i18n="lineNone">なし</option>
@@ -739,12 +797,16 @@
         </select>
         <button class="button send-button" id="sendButton" type="button" data-i18n="send" disabled>送信</button>
         <p class="composer-note" id="sendNote"></p>
+        <p class="composer-error" id="sendError" role="status"></p>
       </div>
 
       <div class="status-line" aria-live="polite">
         <span data-i18n="statusLabel">状態</span>
         <strong id="statusText">未接続</strong>
         <span class="status-spacer"></span>
+        <span class="io-stats" id="ioStats">RX 0 B · TX 0 B</span>
+        <button class="status-action" id="saveTxtButton" type="button" data-i18n="saveTxt" disabled>TXTログ</button>
+        <button class="status-action" id="saveJsonlButton" type="button" data-i18n="saveJsonl" disabled>JSONL</button>
         <span class="build-meta" id="buildMeta"></span>
       </div>
     </section>
@@ -767,11 +829,13 @@
       <ol>
         <li data-i18n="helpStep1">USBシリアル機器を接続し、「機器を選択」から対象を選びます。</li>
         <li data-i18n="helpStep2">必要なら「通信設定」を開き、Baud rate、Data bits、Parity、Stop bits、Flow controlを変更してから「接続」を押します。</li>
-        <li data-i18n="helpStep3">受信テキストを確認し、改行方式を選んで下の入力欄からコマンドを送信します。Enterでも送信できます。</li>
-        <li data-i18n="helpStep4">終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。</li>
+        <li data-i18n="helpStep3">Text / HEX表示を切り替えられます。必要に応じて時刻表示や送信表示をONにします。</li>
+        <li data-i18n="helpStep4">送信形式をText / HEXから選びます。Textでは改行方式を、HEXでは送るbyte列を指定します。</li>
+        <li data-i18n="helpStep5">通信内容はセッション中だけメモリに記録され、TXTまたはJSONLとして明示的に保存できます。</li>
+        <li data-i18n="helpStep6">終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。</li>
       </ol>
       <h3 data-i18n="helpPrivacyTitle">プライバシー</h3>
-      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.2.0でも通信ログは永続保存しません。通信設定のみ端末内へ保存します。</p>
+      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、保存ボタンを押した場合だけファイルとして端末へ保存します。</p>
       <h3 data-i18n="helpNotesTitle">注意事項</h3>
       <ul>
         <li data-i18n="helpBrowser">Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。</li>
@@ -779,7 +843,7 @@
         <li data-i18n="helpBusy">接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。</li>
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
       </ul>
-      <p class="dialog-note" data-i18n="helpFixed">接続中は通信設定を変更できません。設定を変更する場合はいったん切断してください。HEX、DTR/RTS、ログ保存などは後続版で追加します。</p>
+      <p class="dialog-note" data-i18n="helpFixed">Clearは画面表示だけを消します。セッションログは残るため、TXT / JSONL保存にはClear前の通信も含まれます。DTR/RTSなどの機器制御は後続版で追加します。</p>
       <!-- APP:HELP:END -->
     </div>
   </dialog>
@@ -850,23 +914,35 @@
           flowControl: 'Flow control',
           noneOption: 'None',
           settingsLocked: '接続中は通信設定を変更できません。',
+          displayMode: '表示',
+          timestamp: '時刻',
+          localEcho: '送信表示',
           copyTerminal: 'コピー',
           clearTerminal: '消去',
           autoScroll: '自動スクロール',
+          saveTxt: 'TXTログ',
+          saveJsonl: 'JSONL',
           copiedTerminal: 'ターミナル内容をコピーしました。',
           copyFailed: 'コピーできませんでした。',
           clearedTerminal: 'ターミナル表示を消去しました。',
           restoredTerminal: 'ターミナル表示を元に戻しました。',
           restoreSkipped: '新しい受信データがあるため、消去前の表示には戻しませんでした。',
+          savedTxt: 'TXTログを保存しました。',
+          savedJsonl: 'JSONLログを保存しました。',
+          nothingToSave: '保存できる通信ログがまだありません。',
           terminalEmptyTitle: 'まだ受信データはありません',
           terminalEmptyBody: '機器へ接続すると、受信したテキストがここに表示されます。',
           terminalLabel: '受信ターミナル',
-          commandLabel: '送信するコマンド',
+          commandLabel: '送信するデータ',
           commandPlaceholder: 'command...',
+          hexPlaceholder: '01 03 00 00 00 02',
           send: '送信',
+          sendMode: '送信形式',
           lineEnding: '改行',
           lineNone: 'なし',
-          sendNote: '送信時の改行: {ending} · Enterでも送信できます。',
+          sendNote: 'Text送信 · 改行: {ending} · Enterでも送信できます。',
+          sendNoteHex: 'HEX送信 · 例: 01 03 00 00 / 01030000 / 0x01 0x03',
+          invalidHex: 'HEXとして読み取れません。2桁のbyte列になるよう入力してください。',
           statusLabel: '状態',
           idle: '未接続',
           deviceSelected: '接続待ち',
@@ -901,16 +977,18 @@
           helpBasicsTitle: '基本操作',
           helpStep1: 'USBシリアル機器を接続し、「機器を選択」から対象を選びます。',
           helpStep2: '必要なら「通信設定」を開き、Baud rate、Data bits、Parity、Stop bits、Flow controlを変更してから「接続」を押します。ページを開いただけでは自動接続しません。',
-          helpStep3: '受信テキストを確認し、改行方式を選んで下の入力欄からコマンドを送信します。Enterでも送信できます。',
-          helpStep4: '終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。',
+          helpStep3: 'Text / HEX表示を切り替えられます。必要に応じて時刻表示や送信表示をONにします。',
+          helpStep4: '送信形式をText / HEXから選びます。Textでは改行方式を、HEXでは送るbyte列を指定します。',
+          helpStep5: '通信内容はセッション中だけメモリに記録され、TXTまたはJSONLとして明示的に保存できます。',
+          helpStep6: '終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。',
           helpPrivacyTitle: 'プライバシー',
-          helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.2.0でも通信ログは永続保存しません。通信設定のみ端末内へ保存します。',
+          helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、保存ボタンを押した場合だけファイルとして端末へ保存します。',
           helpNotesTitle: '注意事項',
           helpBrowser: 'Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。',
           helpDriver: '専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。',
           helpBusy: '接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。',
           helpPortName: 'ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。',
-          helpFixed: '接続中は通信設定を変更できません。設定を変更する場合はいったん切断してください。HEX、DTR/RTS、ログ保存などは後続版で追加します。'
+          helpFixed: 'Clearは画面表示だけを消します。セッションログは残るため、TXT / JSONL保存にはClear前の通信も含まれます。DTR/RTSなどの機器制御は後続版で追加します。'
         },
         en: {
           brandMeta: 'Send and receive with USB serial devices in your browser',
@@ -935,23 +1013,35 @@
           flowControl: 'Flow control',
           noneOption: 'None',
           settingsLocked: 'Connection settings cannot be changed while connected.',
+          displayMode: 'Display',
+          timestamp: 'Timestamp',
+          localEcho: 'Local echo',
           copyTerminal: 'Copy',
           clearTerminal: 'Clear',
           autoScroll: 'Auto-scroll',
+          saveTxt: 'TXT log',
+          saveJsonl: 'JSONL',
           copiedTerminal: 'Terminal content copied.',
           copyFailed: 'Could not copy.',
           clearedTerminal: 'Terminal display cleared.',
           restoredTerminal: 'Terminal display restored.',
           restoreSkipped: 'New received data arrived, so the cleared display was not restored.',
+          savedTxt: 'TXT log saved.',
+          savedJsonl: 'JSONL log saved.',
+          nothingToSave: 'There is no communication log to save yet.',
           terminalEmptyTitle: 'No received data yet',
           terminalEmptyBody: 'Incoming text appears here after you connect a device.',
           terminalLabel: 'Receive terminal',
-          commandLabel: 'Command to send',
+          commandLabel: 'Data to send',
           commandPlaceholder: 'command...',
+          hexPlaceholder: '01 03 00 00 00 02',
           send: 'Send',
+          sendMode: 'Send format',
           lineEnding: 'Line ending',
           lineNone: 'None',
-          sendNote: 'Line ending: {ending} · You can also press Enter.',
+          sendNote: 'Text send · Line ending: {ending} · You can also press Enter.',
+          sendNoteHex: 'HEX send · Examples: 01 03 00 00 / 01030000 / 0x01 0x03',
+          invalidHex: 'Could not parse this as HEX. Enter complete two-digit bytes.',
           statusLabel: 'Status',
           idle: 'Not connected',
           deviceSelected: 'Ready to connect',
@@ -986,16 +1076,18 @@
           helpBasicsTitle: 'Basics',
           helpStep1: 'Connect a USB serial device, then choose it with Choose device.',
           helpStep2: 'Open Connection settings when needed, change baud rate, data bits, parity, stop bits, or flow control, then press Connect. Opening the page never connects automatically.',
-          helpStep3: 'Read incoming text, choose the line ending, and send commands from the field below. You can also press Enter.',
-          helpStep4: 'Press Disconnect when finished. If USB is removed, the app leaves the connected state so you can reconnect.',
+          helpStep3: 'Switch the receive display between Text and HEX. Enable timestamps or Local echo when useful.',
+          helpStep4: 'Choose Text or HEX for sending. Text uses the selected line ending; HEX sends the byte sequence you enter.',
+          helpStep5: 'Communication is recorded only in session memory and can be explicitly saved as TXT or JSONL.',
+          helpStep6: 'Press Disconnect when finished. If USB is removed, the app leaves the connected state so you can reconnect.',
           helpPrivacyTitle: 'Privacy',
-          helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. v0.2.0 still does not persist communication logs; only connection preferences are stored locally.',
+          helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. Session logs stay in memory and are written to a local file only when you explicitly save them.',
           helpNotesTitle: 'Notes',
           helpBrowser: 'A browser with Web Serial support is required. Connection actions stay disabled when the API is unavailable.',
           helpDriver: 'No dedicated terminal application is required, but some USB serial devices still require an operating-system driver.',
           helpBusy: 'If connection fails, check whether Arduino IDE or another serial terminal is already using the same port.',
           helpPortName: 'The browser may not expose a friendly port name such as a COM number.',
-          helpFixed: 'Connection settings are locked while connected. Disconnect before changing them. HEX, DTR/RTS, and log export are planned for later milestones.'
+          helpFixed: 'Clear only removes the terminal display. The session log remains, so TXT / JSONL exports still include communication from before Clear. Device controls such as DTR/RTS are planned for later milestones.'
         }
       };
 
@@ -1010,15 +1102,26 @@
         closing: false,
         terminalText: '',
         terminalRevision: 0,
+        displayStartIndex: 0,
+        sessionEntries: [],
+        rxBytes: 0,
+        txBytes: 0,
         bufferNoticeShown: false,
         autoScroll: true,
+        displayMode: 'text',
+        showTimestamp: false,
+        localEcho: false,
         settings: {
           baudRate: 115200,
           dataBits: 8,
           stopBits: 1,
           parity: 'none',
           flowControl: 'none',
-          lineEnding: 'lf'
+          lineEnding: 'lf',
+          sendMode: 'text',
+          displayMode: 'text',
+          showTimestamp: false,
+          localEcho: false
         }
       };
 
@@ -1172,6 +1275,10 @@
         state.settings.parity = $('#parity').value;
         state.settings.flowControl = $('#flowControl').value;
         state.settings.lineEnding = $('#lineEnding').value;
+        state.settings.sendMode = $('#sendMode').value;
+        state.settings.displayMode = $('#displayMode').value;
+        state.settings.showTimestamp = state.showTimestamp;
+        state.settings.localEcho = state.localEcho;
         persistSettings();
         refreshProfileSummary();
         refreshSendNote();
@@ -1190,6 +1297,11 @@
         $('#parity').value = state.settings.parity;
         $('#flowControl').value = state.settings.flowControl;
         $('#lineEnding').value = state.settings.lineEnding;
+        $('#sendMode').value = state.settings.sendMode;
+        $('#displayMode').value = state.settings.displayMode;
+        state.displayMode = state.settings.displayMode;
+        state.showTimestamp = state.settings.showTimestamp;
+        state.localEcho = state.settings.localEcho;
         refreshProfileSummary();
         refreshSendNote();
       }
@@ -1208,9 +1320,123 @@
         return value === 'crlf' ? '\r\n' : value === 'cr' ? '\r' : value === 'lf' ? '\n' : '';
       }
 
+      function bytesToHex(bytes, compact = false) {
+        const parts = Array.from(bytes || [], value => value.toString(16).toUpperCase().padStart(2, '0'));
+        return compact ? parts.join('') : parts.join(' ');
+      }
+
+      function parseHexInput(input) {
+        const raw = String(input || '').trim();
+        if (!raw) return null;
+        const matches = raw.match(/0x[0-9a-f]{2}|[0-9a-f]{2}/gi) || [];
+        const residue = raw
+          .replace(/0x[0-9a-f]{2}|[0-9a-f]{2}/gi, '')
+          .replace(/[\s,;:_-]+/g, '');
+        if (!matches.length || residue) return null;
+        const bytes = new Uint8Array(matches.length);
+        matches.forEach((token, index) => {
+          bytes[index] = Number.parseInt(token.replace(/^0x/i, ''), 16);
+        });
+        return bytes;
+      }
+
+      function formatDisplayTime(ms) {
+        const date = new Date(ms);
+        const hh = String(date.getHours()).padStart(2, '0');
+        const mm = String(date.getMinutes()).padStart(2, '0');
+        const ss = String(date.getSeconds()).padStart(2, '0');
+        const mmm = String(date.getMilliseconds()).padStart(3, '0');
+        return hh + ':' + mm + ':' + ss + '.' + mmm;
+      }
+
+      function formatFileTime(ms) {
+        const date = new Date(ms);
+        const yyyy = date.getFullYear();
+        const mo = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const hh = String(date.getHours()).padStart(2, '0');
+        const mi = String(date.getMinutes()).padStart(2, '0');
+        const ss = String(date.getSeconds()).padStart(2, '0');
+        const mmm = String(date.getMilliseconds()).padStart(3, '0');
+        return yyyy + '-' + mo + '-' + dd + ' ' + hh + ':' + mi + ':' + ss + '.' + mmm;
+      }
+
+      function escapeLogText(text) {
+        return String(text || '').replace(/\\/g, '\\\\').replace(/\r/g, '\\r').replace(/\n/g, '\\n').replace(/\t/g, '\\t');
+      }
+
       function refreshSendNote() {
-        const label = endingText($('#lineEnding').value);
-        $('#sendNote').textContent = t('sendNote').replace('{ending}', label);
+        const hexMode = $('#sendMode').value === 'hex';
+        $('#lineEnding').disabled = hexMode;
+        $('#commandInput').setAttribute('placeholder', t(hexMode ? 'hexPlaceholder' : 'commandPlaceholder'));
+        $('#sendNote').textContent = hexMode ? t('sendNoteHex') : t('sendNote').replace('{ending}', endingText($('#lineEnding').value));
+        if (!hexMode) $('#sendError').textContent = '';
+      }
+
+      function updateIoStats() {
+        const format = value => {
+          if (value < 1024) return value + ' B';
+          if (value < 1024 * 1024) return (value / 1024).toFixed(value < 10240 ? 1 : 0) + ' KB';
+          return (value / (1024 * 1024)).toFixed(1) + ' MB';
+        };
+        $('#ioStats').textContent = 'RX ' + format(state.rxBytes) + ' · TX ' + format(state.txBytes);
+        const hasLog = state.sessionEntries.length > 0;
+        $('#saveTxtButton').disabled = !hasLog;
+        $('#saveJsonlButton').disabled = !hasLog;
+      }
+
+      function displayEntryText(entry) {
+        if (state.displayMode === 'text' && !state.showTimestamp && !state.localEcho && entry.direction === 'rx') return entry.text;
+        const prefix = (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + entry.direction.toUpperCase() + '  ';
+        const payload = state.displayMode === 'hex' ? bytesToHex(entry.bytes) : entry.text;
+        return prefix + payload + (payload.endsWith('\n') ? '' : '\n');
+      }
+
+      function renderTerminal() {
+        const visible = state.sessionEntries.slice(state.displayStartIndex).filter(entry => entry.direction === 'rx' || state.localEcho);
+        let text = visible.map(displayEntryText).join('');
+        if (text.length > MAX_DISPLAY_CHARS) {
+          text = text.slice(text.length - MAX_DISPLAY_CHARS);
+          if (!state.bufferNoticeShown) {
+            state.bufferNoticeShown = true;
+            showToast(t('bufferTrimmed'), 5200);
+          }
+        }
+        state.terminalText = text;
+        const terminal = $('#terminal');
+        terminal.textContent = text;
+        $('#terminalEmpty').hidden = text.length > 0;
+        updateTerminalControls();
+        if (state.autoScroll) terminal.scrollTop = terminal.scrollHeight;
+      }
+
+      function addSessionEntry(direction, bytes, text) {
+        const data = bytes instanceof Uint8Array ? new Uint8Array(bytes) : new Uint8Array(bytes || []);
+        const entry = { time: Date.now(), direction, bytes: data, text: String(text || '') };
+        state.sessionEntries.push(entry);
+        if (direction === 'rx') state.rxBytes += data.byteLength;
+        else state.txBytes += data.byteLength;
+        state.terminalRevision += 1;
+        updateIoStats();
+
+        if (direction === 'rx' || state.localEcho) {
+          let next = state.terminalText + displayEntryText(entry);
+          if (next.length > MAX_DISPLAY_CHARS) {
+            next = next.slice(next.length - MAX_DISPLAY_CHARS);
+            if (!state.bufferNoticeShown) {
+              state.bufferNoticeShown = true;
+              showToast(t('bufferTrimmed'), 5200);
+            }
+          }
+          state.terminalText = next;
+          const terminal = $('#terminal');
+          terminal.textContent = next;
+          $('#terminalEmpty').hidden = next.length > 0;
+          updateTerminalControls();
+          if (state.autoScroll) terminal.scrollTop = terminal.scrollHeight;
+        } else {
+          updateTerminalControls();
+        }
       }
 
       function updateTerminalControls() {
@@ -1220,6 +1446,10 @@
         $('#terminalCount').textContent = new Intl.NumberFormat(state.language).format(state.terminalText.length) + (state.language === 'ja' ? ' 文字' : ' chars');
         $('#autoScrollButton').setAttribute('aria-pressed', String(state.autoScroll));
         $('#autoScrollState').textContent = state.autoScroll ? 'ON' : 'OFF';
+        $('#timestampButton').setAttribute('aria-pressed', String(state.showTimestamp));
+        $('#timestampState').textContent = state.showTimestamp ? 'ON' : 'OFF';
+        $('#localEchoButton').setAttribute('aria-pressed', String(state.localEcho));
+        $('#localEchoState').textContent = state.localEcho ? 'ON' : 'OFF';
       }
 
       function setPhase(phase) {
@@ -1263,22 +1493,9 @@
         $('#deviceDetail').textContent = info.detail;
       }
 
-      function appendTerminal(text) {
-        if (!text) return;
-        state.terminalRevision += 1;
-        state.terminalText += text;
-        if (state.terminalText.length > MAX_DISPLAY_CHARS) {
-          state.terminalText = state.terminalText.slice(state.terminalText.length - MAX_DISPLAY_CHARS);
-          if (!state.bufferNoticeShown) {
-            state.bufferNoticeShown = true;
-            showToast(t('bufferTrimmed'), 5200);
-          }
-        }
-        const terminal = $('#terminal');
-        terminal.textContent = state.terminalText;
-        $('#terminalEmpty').hidden = state.terminalText.length > 0;
-        updateTerminalControls();
-        if (state.autoScroll) terminal.scrollTop = terminal.scrollHeight;
+      function appendReceived(bytes, text) {
+        if ((!bytes || bytes.byteLength === 0) && !text) return;
+        addSessionEntry('rx', bytes || new Uint8Array(), text || '');
       }
 
       function applyLanguage() {
@@ -1302,6 +1519,8 @@
         refreshProfileSummary();
         refreshSendNote();
         updateTerminalControls();
+        updateIoStats();
+        renderTerminal();
         setPhase(state.phase);
         updateSupportState();
       }
@@ -1391,15 +1610,12 @@
           while (!state.closing && state.reader) {
             const result = await state.reader.read();
             if (result.done) break;
-            if (result.value) appendTerminal(decoder.decode(result.value, { stream: true }));
+            if (result.value) appendReceived(result.value, decoder.decode(result.value, { stream: true }));
           }
         } catch (error) {
           if (!state.closing) readFailure = error;
         } finally {
-          try {
-            const trailing = decoder.decode();
-            if (trailing) appendTerminal(trailing);
-          } catch { }
+          try { decoder.decode(); } catch { }
           if (state.reader) {
             try { state.reader.releaseLock(); } catch { }
             state.reader = null;
@@ -1471,14 +1687,31 @@
       async function sendCommand() {
         const input = $('#commandInput');
         if (state.phase !== 'connected' || !state.writer || !input.value) return;
-        const text = input.value;
         state.settings.lineEnding = $('#lineEnding').value;
+        state.settings.sendMode = $('#sendMode').value;
         persistSettings();
         refreshSendNote();
         clearError();
+
+        let bytes;
+        let text;
+        if (state.settings.sendMode === 'hex') {
+          bytes = parseHexInput(input.value);
+          if (!bytes) {
+            $('#sendError').textContent = t('invalidHex');
+            return;
+          }
+          text = new TextDecoder('utf-8').decode(bytes);
+        } else {
+          text = input.value + endingBytes(state.settings.lineEnding);
+          bytes = encoder.encode(text);
+        }
+
+        $('#sendError').textContent = '';
         $('#sendButton').disabled = true;
         try {
-          await state.writer.write(encoder.encode(text + endingBytes(state.settings.lineEnding)));
+          await state.writer.write(bytes);
+          addSessionEntry('tx', bytes, text);
           input.value = '';
           updateSendState();
           input.focus();
@@ -1515,13 +1748,11 @@
 
       function clearTerminal() {
         if (!state.terminalText) return;
-        const before = state.terminalText;
+        const beforeStart = state.displayStartIndex;
+        state.displayStartIndex = state.sessionEntries.length;
         state.terminalRevision += 1;
         const clearRevision = state.terminalRevision;
-        state.terminalText = '';
-        $('#terminal').textContent = '';
-        $('#terminalEmpty').hidden = false;
-        updateTerminalControls();
+        renderTerminal();
         AppToast.show({
           message: t('clearedTerminal'),
           actionLabel: state.language === 'ja' ? '元に戻す' : 'Undo',
@@ -1530,16 +1761,77 @@
               showToast(t('restoreSkipped'), 4300);
               return;
             }
+            state.displayStartIndex = beforeStart;
             state.terminalRevision += 1;
-            state.terminalText = before;
-            $('#terminal').textContent = before;
-            $('#terminalEmpty').hidden = before.length > 0;
-            updateTerminalControls();
-            if (state.autoScroll) $('#terminal').scrollTop = $('#terminal').scrollHeight;
+            renderTerminal();
             showToast(t('restoredTerminal'));
           },
           duration: 5000
         });
+      }
+
+      function isReadableLogText(text) {
+        if (!text || text.includes('�')) return false;
+        for (const character of text) {
+          const code = character.codePointAt(0);
+          if (code < 32 && character !== '\r' && character !== '\n' && character !== '\t') return false;
+        }
+        return true;
+      }
+
+      function exactTextForLog(bytes) {
+        if (!bytes || bytes.byteLength === 0) return '';
+        return new TextDecoder('utf-8').decode(bytes);
+      }
+
+      function buildTxtLog() {
+        return state.sessionEntries.map(entry => {
+          const exactText = exactTextForLog(entry.bytes);
+          const readable = isReadableLogText(exactText);
+          const payload = readable ? escapeLogText(exactText) : 'HEX ' + bytesToHex(entry.bytes);
+          return formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload;
+        }).join('\n') + '\n';
+      }
+
+      function buildJsonlLog() {
+        return state.sessionEntries.map(entry => JSON.stringify({
+          time: new Date(entry.time).toISOString(),
+          direction: entry.direction,
+          bytes: bytesToHex(entry.bytes, true),
+          text: exactTextForLog(entry.bytes)
+        })).join('\n') + '\n';
+      }
+
+      function downloadText(content, extension, mime) {
+        if (!state.sessionEntries.length) {
+          showToast(t('nothingToSave'));
+          return false;
+        }
+        const now = new Date();
+        const stamp = now.getFullYear() +
+          String(now.getMonth() + 1).padStart(2, '0') +
+          String(now.getDate()).padStart(2, '0') + '-' +
+          String(now.getHours()).padStart(2, '0') +
+          String(now.getMinutes()).padStart(2, '0') +
+          String(now.getSeconds()).padStart(2, '0');
+        const blob = new Blob([content], { type: mime + ';charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = 'serial-log-' + stamp + '.' + extension;
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        return true;
+      }
+
+      function saveTxtLog() {
+        if (downloadText(buildTxtLog(), 'txt', 'text/plain')) showToast(t('savedTxt'));
+      }
+
+      function saveJsonlLog() {
+        if (downloadText(buildJsonlLog(), 'jsonl', 'application/x-ndjson')) showToast(t('savedJsonl'));
       }
 
       function updateSupportState() {
@@ -1561,8 +1853,30 @@
       $('#chooseButton').addEventListener('click', chooseDevice);
       $('#connectButton').addEventListener('click', connect);
       $('#disconnectButton').addEventListener('click', () => disconnect());
+      $('#displayMode').addEventListener('change', () => {
+        state.displayMode = $('#displayMode').value;
+        state.settings.displayMode = state.displayMode;
+        persistSettings();
+        renderTerminal();
+      });
+      $('#timestampButton').addEventListener('click', () => {
+        state.showTimestamp = !state.showTimestamp;
+        state.settings.showTimestamp = state.showTimestamp;
+        persistSettings();
+        updateTerminalControls();
+        renderTerminal();
+      });
+      $('#localEchoButton').addEventListener('click', () => {
+        state.localEcho = !state.localEcho;
+        state.settings.localEcho = state.localEcho;
+        persistSettings();
+        updateTerminalControls();
+        renderTerminal();
+      });
       $('#copyTerminalButton').addEventListener('click', copyTerminal);
       $('#clearTerminalButton').addEventListener('click', clearTerminal);
+      $('#saveTxtButton').addEventListener('click', saveTxtLog);
+      $('#saveJsonlButton').addEventListener('click', saveJsonlLog);
       $('#autoScrollButton').addEventListener('click', () => {
         state.autoScroll = !state.autoScroll;
         updateTerminalControls();
@@ -1585,8 +1899,18 @@
         $('#' + id).addEventListener('change', updateSettingsFromControls);
       });
       $('#lineEnding').addEventListener('change', updateSettingsFromControls);
+      $('#sendMode').addEventListener('change', () => {
+        state.settings.sendMode = $('#sendMode').value;
+        persistSettings();
+        $('#sendError').textContent = '';
+        refreshSendNote();
+        updateSendState();
+      });
       $('#sendButton').addEventListener('click', sendCommand);
-      $('#commandInput').addEventListener('input', updateSendState);
+      $('#commandInput').addEventListener('input', () => {
+        $('#sendError').textContent = '';
+        updateSendState();
+      });
       $('#commandInput').addEventListener('keydown', event => {
         if (event.key === 'Enter' && !event.isComposing) {
           event.preventDefault();
@@ -1631,12 +1955,17 @@
         if (['none','even','odd'].includes(savedSettings.parity)) state.settings.parity = savedSettings.parity;
         if (['none','hardware'].includes(savedSettings.flowControl)) state.settings.flowControl = savedSettings.flowControl;
         if (['none','lf','cr','crlf'].includes(savedSettings.lineEnding)) state.settings.lineEnding = savedSettings.lineEnding;
+        if (['text','hex'].includes(savedSettings.sendMode)) state.settings.sendMode = savedSettings.sendMode;
+        if (['text','hex'].includes(savedSettings.displayMode)) state.settings.displayMode = savedSettings.displayMode;
+        if (typeof savedSettings.showTimestamp === 'boolean') state.settings.showTimestamp = savedSettings.showTimestamp;
+        if (typeof savedSettings.localEcho === 'boolean') state.settings.localEcho = savedSettings.localEcho;
       }
       applySettingsToControls();
       $('#versionBadge').textContent = 'v' + APP_CONFIG.version;
       $('#buildMeta').textContent = 'v' + APP_CONFIG.version + ' · ' + (BUILD_MANIFEST.generatedAtUtc || '');
       $('#terminalEmpty').hidden = false;
       updateTerminalControls();
+      updateIoStats();
       applyLanguage();
       if (updateSupportState()) {
         setPhase('idle');
