@@ -32,6 +32,7 @@
       --focus: #287a66;
       --shadow: 0 12px 34px rgba(21, 48, 40, .08);
       --radius: 14px;
+      --visual-viewport-height: 100dvh;
     }
     * { box-sizing: border-box; }
     html { min-height: 100%; background: var(--bg); }
@@ -580,6 +581,31 @@
       border-top: 1px solid var(--line);
     }
     .dialog-actions .button:first-child { margin-right: auto; }
+    .mobile-shortcuts {
+      display: none;
+      gap: 7px;
+      padding: 8px 10px;
+      overflow-x: auto;
+      border-bottom: 1px solid #25322d;
+      background: #17211d;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mobile-shortcuts::-webkit-scrollbar { display: none; }
+    .mobile-shortcut {
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 7px 11px;
+      border: 1px solid #33443d;
+      border-radius: 9px;
+      background: #111a16;
+      color: #d4ded9;
+      font-size: 11px;
+      font-weight: 760;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .mobile-shortcut:hover { border-color: #557068; background: #1b2923; }
     .terminal-tools {
       display: flex;
       align-items: center;
@@ -870,6 +896,7 @@
       border: 0;
     }
     @media (max-width: 760px) {
+      html { scroll-padding-top: 72px; }
       .intro { flex-direction: column; gap: 10px; }
       .privacy-note { align-self: flex-start; }
       .connection-bar { grid-template-columns: 1fr; }
@@ -877,8 +904,14 @@
       .connection-actions .button { flex: 1 1 auto; }
       .settings-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .setting-field:first-child { grid-column: 1 / -1; }
-      .terminal, .terminal-wrap { min-height: 360px; }
-      .terminal { height: 51vh; }
+      .mobile-shortcuts { display: flex; }
+      .terminal-tool, .terminal-select { min-height: 40px; }
+      .terminal, .terminal-wrap { min-height: 320px; }
+      .terminal { height: min(51vh, calc(var(--visual-viewport-height) * .52)); }
+      body.keyboard-open .terminal-wrap,
+      body.keyboard-open .terminal { min-height: 190px; }
+      body.keyboard-open .terminal { height: min(260px, calc(var(--visual-viewport-height) * .38)); }
+      dialog { max-height: calc(var(--visual-viewport-height) - 18px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
       .build-meta { display: none; }
     }
     @media (max-width: 520px) {
@@ -899,28 +932,49 @@
       .macro-toolbar { align-items: flex-start; }
       .macro-form-row { grid-template-columns: 1fr; }
       .control-section-label { flex-basis: 100%; min-width: 0; }
-      .signal-button, .signal-select, .control-key { min-height: 40px; }
+      .signal-button, .signal-select, .control-key { min-height: 44px; }
+      .control-section.control-keys {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        width: 100%;
+      }
+      .control-section.control-keys .control-section-label { grid-column: 1 / -1; }
+      .control-section.control-keys .control-key { min-width: 0; padding-inline: 4px; }
       .setting-field:first-child { grid-column: 1 / -1; }
       .baud-row { grid-template-columns: minmax(0, 1fr) minmax(88px, .75fr); }
       .terminal-tools { padding-inline: 10px; }
       .terminal-search { grid-template-columns: minmax(0, 1fr) auto auto; padding-inline: 10px; }
       .terminal-search .search-count { grid-column: 1 / 2; text-align: left; }
       .terminal-search #closeSearchButton { grid-column: 3; grid-row: 1; }
-      .terminal-wrap, .terminal { min-height: 330px; }
-      .terminal { height: 48vh; padding: 14px 13px 26px; font-size: 12px; }
+      .terminal-wrap, .terminal { min-height: 300px; }
+      .terminal { height: min(48vh, calc(var(--visual-viewport-height) * .48)); padding: 14px 13px 26px; font-size: 12px; }
       .composer { grid-template-columns: minmax(0, 1fr) 82px 72px; padding: 11px; }
       .command-field { grid-column: 1 / -1; }
       .send-mode { grid-column: 1; }
       .line-ending { grid-column: 2; }
       .send-button { grid-column: 3; min-width: 0; padding-inline: 9px; }
-      .status-line { padding-inline: 12px; }
+      .status-line { padding-inline: 12px; gap: 7px; }
       .status-line .status-spacer { flex-basis: 100%; height: 0; }
       .io-stats { margin-right: auto; }
-      #helpDialog {
+      .status-action { min-height: 40px; }
+      #helpDialog, #macroDialog {
         width: calc(100% - 18px);
         max-height: calc(100dvh - 18px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
       }
       .toast { left: 11px; right: 11px; bottom: calc(11px + env(safe-area-inset-bottom)); max-width: none; }
+    }
+    @media (max-width: 390px) {
+      .connection-actions #chooseButton { flex-basis: 100%; }
+      .connection-actions #connectButton,
+      .connection-actions #disconnectButton { flex: 1 1 calc(50% - 4px); }
+      .settings-body { grid-template-columns: 1fr; }
+      .setting-field:first-child { grid-column: auto; }
+      .baud-row { grid-template-columns: minmax(0, 1fr) minmax(92px, .72fr); }
+      .terminal-search { grid-template-columns: minmax(0, 1fr) auto; }
+      .terminal-search #previousMatchButton,
+      .terminal-search #nextMatchButton { min-width: 68px; }
+      .terminal-search #closeSearchButton { grid-column: 2; grid-row: 1; }
+      .terminal-search .search-count { grid-column: 1; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
@@ -1084,7 +1138,7 @@
             </div>
             <button class="signal-button" id="refreshSignalsButton" type="button" data-i18n="refreshSignals" disabled>更新</button>
           </div>
-          <div class="control-section">
+          <div class="control-section control-keys">
             <span class="control-section-label" data-i18n="controlKeys">制御キー</span>
             <button class="control-key" type="button" data-byte="27" data-label="ESC" disabled>ESC</button>
             <button class="control-key" type="button" data-byte="3" data-label="Ctrl+C" disabled>Ctrl+C</button>
@@ -1110,6 +1164,12 @@
           <div class="macro-list" id="macroList" hidden></div>
         </div>
       </details>
+
+      <nav class="mobile-shortcuts" data-i18n-aria-label="mobileShortcutsLabel" aria-label="モバイル用クイック操作">
+        <button class="mobile-shortcut" type="button" data-open-panel="settingsPanel" data-i18n="profile">通信設定</button>
+        <button class="mobile-shortcut" type="button" data-open-panel="deviceControlPanel" data-i18n="deviceControl">機器制御</button>
+        <button class="mobile-shortcut" type="button" data-open-panel="macroPanel" data-i18n="commandMacros">コマンドマクロ</button>
+      </nav>
 
       <div class="terminal-tools">
         <label class="terminal-tool-label">
