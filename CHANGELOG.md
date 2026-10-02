@@ -2,6 +2,31 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 0.7.0 - 2026-10-03
+
+### Added
+
+- Added up to 12 user-defined command macros stored locally on the current browser/device.
+- Added Text and HEX macro modes.
+- Added per-macro None / LF / CR / CRLF settings for Text sends.
+- Added macro create/edit dialog, empty state, count/limit display, and confirmed deletion.
+- Added one-tap macro execution while a writable serial connection is active.
+- Added single-column macro layout on narrow screens.
+
+### Changed
+
+- Successful macro sends use the normal TX byte counter, display-history, Local echo, and saved-session logging paths.
+- Macro execution does not enter the session-only typed-command history.
+- Macro management remains available while disconnected, while Run is disabled until connected.
+- Invalid HEX macro payloads are rejected before they can be saved.
+- A localStorage failure no longer allows the UI to claim that a macro was saved or deleted.
+
+### Privacy
+
+- Only macro definitions are persisted in localStorage.
+- Serial RX/TX session records remain in memory and are not added to macro storage.
+- Runtime network connections remain blocked by CSP.
+
 ## 0.6.0 - 2026-10-02
 
 ### Added
