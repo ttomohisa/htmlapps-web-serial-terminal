@@ -784,13 +784,13 @@ One primary workspace:
 - Terminal remains useful at 320px width and above.
 - Connection and send buttons have touch-friendly targets.
 - Help dialog remains fully scrollable.
-- The app does not require a fixed bottom bar in v0.5.0.
+- The app does not require a fixed bottom bar in v0.7.0.
 
 ### Accessibility
 
 - Visible focus.
 - Keyboard-operable controls.
-- Status uses aria-live.
+- Connection status uses aria-live without making continuously changing counters or timers live regions.
 - Connected state is not communicated by color alone.
 - Help opens as a dialog and closes with its close control, Escape, or backdrop click.
 - Motion honors prefers-reduced-motion.
