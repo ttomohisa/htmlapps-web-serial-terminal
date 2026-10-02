@@ -3,9 +3,9 @@
   "name": "Web Serial Terminal",
   "nameJa": "Web Serial Terminal / シリアル通信ターミナル",
   "slug": "web-serial-terminal",
-  "version": "0.7.0",
-  "description": "Connect to serial devices, inspect and send Text or HEX data, save reusable local command macros, control serial signals, and export bounded session logs.",
-  "descriptionJa": "シリアル機器へブラウザから接続し、Text / HEX送受信、ローカルのコマンドマクロ、機器制御、上限付きセッションログ保存を行うターミナルです。",
+  "version": "0.8.0",
+  "description": "Connect to serial devices, inspect and send Text or HEX data, use reusable local macros, export bounded session logs, and work in a mobile-aware Web Serial UI.",
+  "descriptionJa": "シリアル機器へブラウザから接続し、Text / HEX送受信、ローカルマクロ、ログ保存を、スマートフォンも考慮したUIで行うターミナルです。",
   "defaultLanguage": "auto",
   "repository": {
     "owner": "ttomohisa",
