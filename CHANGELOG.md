@@ -2,6 +2,31 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 0.4.0 - 2026-10-02
+
+### Added
+
+- Added explicit DTR and RTS control without changing either signal automatically on connect.
+- Added a short BREAK pulse control with best-effort de-assertion after errors.
+- Added CTS, DSR, DCD, and RI input-signal inspection through getSignals().
+- Added ESC, Ctrl+C, Ctrl+D, Ctrl+Z, and Tab one-byte control-key buttons.
+- Added control-key TX to the existing byte counters and session log.
+- Added an explicit Reconnect state after unexpected USB disconnect.
+- Added handling for a matching Web Serial connect event when the selected device is reattached.
+
+### Changed
+
+- Device controls are grouped in a collapsible Device control section.
+- DTR / RTS begin in an explicit Unchanged state to avoid implying or forcing an initial output value.
+- Unexpected disconnect keeps the selected device, terminal display, and in-memory session while disabling send and device-control actions.
+- Reattaching a device never reopens the serial port automatically; the user must press Reconnect.
+
+### Privacy
+
+- Device-control operations communicate only with the selected local serial port.
+- Control-key TX is handled like other session TX and is not sent to a Browser Kitty server.
+- Runtime network connections remain blocked by CSP.
+
 ## 0.3.0 - 2026-10-02
 
 ### Added
