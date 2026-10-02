@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="App icon">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Web Serial Terminal icon">
   <rect width="64" height="64" rx="16" fill="#16624F"/>
-  <path d="M18 16h20l8 8v24H18z" fill="none" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
-  <path d="M38 16v10h10M25 34h14M25 42h10" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round"/>
+  <rect x="13.5" y="14.5" width="37" height="30" rx="5.5" fill="none" stroke="#fff" stroke-width="3"/>
+  <path d="m21 24 5 5-5 5M31 34h11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M24 49h16M27 49v4M32 49v4M37 49v4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
 </svg>
