@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.3.0
+- Current implementation milestone: v0.4.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -364,7 +364,98 @@ v0.3.0 introduces the session-log data model and export path, but complete sessi
 
 The existing terminal display-size guard remains in place independently from the session log.
 
-## 8. v0.3.0 UX requirements
+## 7C. v0.4.0 functional requirements — Device Control
+
+### 7C.1 Output control signals
+
+While connected, the application exposes:
+
+- DTR / Data Terminal Ready
+- RTS / Request To Send
+- BREAK
+
+DTR and RTS are not set merely because the serial port is opened.
+
+Their initial application state is shown as unchanged. The application calls `SerialPort.setSignals()` only after an explicit user action.
+
+The UI warns that changing DTR / RTS can reset or otherwise affect some target devices.
+
+BREAK is sent as a short pulse:
+
+1. assert BREAK,
+2. wait approximately 250 ms,
+3. de-assert BREAK.
+
+The application attempts to de-assert BREAK even if an error occurs after assertion.
+
+BREAK does not increment TX byte count because it is a control signal rather than transmitted payload bytes.
+
+### 7C.2 Input signal inspection
+
+When supported by the open port, `SerialPort.getSignals()` is used to display:
+
+- CTS / Clear To Send
+- DSR / Data Set Ready
+- DCD / Data Carrier Detect
+- RI / Ring Indicator
+
+Input signals are read after connection and can be refreshed manually.
+
+Failure to read input signals does not terminate the serial connection.
+
+### 7C.3 Control keys
+
+While connected, the application provides touch-friendly buttons for:
+
+- ESC: `0x1B`
+- Ctrl+C: `0x03`
+- Ctrl+D: `0x04`
+- Ctrl+Z: `0x1A`
+- Tab: `0x09`
+
+Each control key sends exactly one raw byte.
+
+No Text line ending is appended.
+
+Successful control-key transmit:
+
+- increments TX byte count,
+- is stored in the same in-memory session log as other TX data,
+- appears in Local echo when Local echo is enabled.
+
+The Text display may use a readable control-key label while the underlying raw byte remains authoritative.
+
+### 7C.4 Unexpected disconnect and reconnect
+
+If the selected device disconnects unexpectedly:
+
+- active stream locks are released,
+- the current session display and log remain available,
+- send and device-control actions are disabled,
+- the selected port reference is retained,
+- the primary connection action changes to Reconnect.
+
+While the browser reports that the physical device is unavailable, Reconnect remains disabled.
+
+When a matching Web Serial `connect` event indicates that the selected port is available again:
+
+- Reconnect becomes available,
+- the application does not automatically reopen the port,
+- the user must explicitly press Reconnect.
+
+The same connection settings are reused unless the user changes them before reconnecting.
+
+### 7C.5 Device-control errors
+
+The application distinguishes signal-control failures from normal serial payload write failures.
+
+A failure to change or inspect control signals must not silently terminate the connection.
+
+DTR / RTS / BREAK controls are disabled while disconnected.
+
+Control-key buttons are disabled unless the serial writer is available.
+
+## 8. v0.4.0 UX requirements
 
 ### Desktop
 
@@ -405,12 +496,10 @@ The language switch changes:
 
 Technical terms such as Web Serial, USB, baud rate, VID, and PID may remain technical when translation would reduce clarity.
 
-## 10. v0.3.0 non-goals
+## 10. v0.4.0 non-goals
 
 Not included yet:
 
-- DTR / RTS / BREAK,
-- control-key palette,
 - command history,
 - terminal search,
 - macros,
@@ -420,9 +509,29 @@ Not included yet:
 - firmware flashing,
 - multiple simultaneous ports.
 
-## 11. v0.3.0 acceptance criteria
+## 11. v0.4.0 acceptance criteria
 
-All v0.1.0 and v0.2.0 acceptance criteria remain applicable, plus:
+All earlier milestone acceptance criteria remain applicable, plus:
+
+- app metadata identifies v0.4.0.
+- DTR and RTS remain untouched by the application until the user explicitly changes them.
+- DTR / RTS can be asserted and de-asserted with `setSignals()`.
+- BREAK is sent as a short assert/de-assert pulse and is not counted as TX payload bytes.
+- CTS / DSR / DCD / RI are displayed when `getSignals()` succeeds.
+- failure to read input signals does not terminate the connection.
+- ESC, Ctrl+C, Ctrl+D, Ctrl+Z, and Tab send their exact one-byte control values.
+- control-key TX is counted and recorded in the normal session log.
+- device-control actions are disabled while disconnected.
+- unexpected USB removal leaves the visible terminal and in-memory session intact.
+- after unexpected disconnect the primary action clearly becomes Reconnect.
+- the application does not automatically reopen a reattached device.
+- a matching Web Serial connect event re-enables explicit Reconnect.
+- Japanese and English help warn about DTR / RTS / BREAK effects.
+- repository build and standalone verification pass.
+
+### Historical v0.3.0 acceptance criteria
+
+
 
 - app metadata identifies v0.3.0.
 - receive display can switch between Text and HEX without changing the recorded raw bytes.
@@ -512,7 +621,7 @@ Add locally stored Text / HEX macros with line-ending settings, editing, deletio
 
 ### v0.8.0 — Mobile / Compatibility
 
-Finish smartphone interaction, software-keyboard handling, compact settings presentation, supported-browser messaging, Firefox desktop verification, and Android Web Serial experiments on available hardware.
+Finish smartphone interaction, software-keyboard handling, compact settings presentation, control-key ergonomics, supported-browser messaging, Firefox desktop verification, and Android Web Serial experiments on available hardware.
 
 ### v0.9.0 — Release Candidate
 
@@ -543,6 +652,9 @@ The header help button must explain:
 
 - how to choose and connect a device,
 - how and when connection settings can be changed,
+- how DTR / RTS / BREAK and the control-key row behave,
+- that DTR / RTS are not changed automatically on connect,
+- how explicit Reconnect behaves after USB reattachment,
 - the selectable transmit line endings and Text / HEX send modes,
 - Text / HEX receive display, timestamp, and Local echo behavior,
 - Copy / Clear / Auto-scroll behavior,
