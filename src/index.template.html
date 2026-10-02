@@ -504,6 +504,28 @@
       font-size: 10px;
       white-space: nowrap;
     }
+    .terminal-search {
+      display: grid;
+      grid-template-columns: minmax(120px, 1fr) auto auto auto auto;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #25322d;
+      background: #131d19;
+    }
+    .terminal-search[hidden] { display: none; }
+    .search-input {
+      min-height: 34px;
+      padding: 6px 9px;
+      border: 1px solid #33443d;
+      border-radius: 8px;
+      outline: none;
+      background: #0f1714;
+      color: var(--terminal-text);
+      font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .search-input:focus { border-color: #6ba895; box-shadow: 0 0 0 3px rgba(107, 168, 149, .14); }
+    .search-count { min-width: 54px; color: #91a39a; font-size: 10px; text-align: center; white-space: nowrap; }
     .terminal-wrap {
       position: relative;
       min-height: 390px;
@@ -539,6 +561,22 @@
     .terminal-empty svg { width: 34px; height: 34px; margin: 0 auto; opacity: .86; }
     .terminal-empty strong { color: #cbd8d2; font-size: 13px; }
     .terminal-empty span { max-width: 390px; font-size: 11px; line-height: 1.6; }
+    .latest-log-button {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      min-height: 36px;
+      padding: 7px 11px;
+      border: 1px solid #4b9c83;
+      border-radius: 999px;
+      background: #1b4b3d;
+      color: #e8f4ef;
+      box-shadow: 0 6px 18px rgba(0,0,0,.22);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .latest-log-button[hidden] { display: none; }
     .composer {
       display: grid;
       grid-template-columns: minmax(0, 1fr) 88px minmax(94px, auto) auto;
@@ -605,7 +643,7 @@
     }
     .status-line strong { color: var(--text); }
     .status-spacer { flex: 1 1 auto; }
-    .io-stats { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .io-stats, .connection-duration { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .status-action {
       min-height: 30px;
       padding: 4px 8px;
@@ -734,6 +772,9 @@
       .setting-field:first-child { grid-column: 1 / -1; }
       .baud-row { grid-template-columns: minmax(0, 1fr) minmax(88px, .75fr); }
       .terminal-tools { padding-inline: 10px; }
+      .terminal-search { grid-template-columns: minmax(0, 1fr) auto auto; padding-inline: 10px; }
+      .terminal-search .search-count { grid-column: 1 / 2; text-align: left; }
+      .terminal-search #closeSearchButton { grid-column: 3; grid-row: 1; }
       .terminal-wrap, .terminal { min-height: 330px; }
       .terminal { height: 48vh; padding: 14px 13px 26px; font-size: 12px; }
       .composer { grid-template-columns: minmax(0, 1fr) 82px 72px; padding: 11px; }
@@ -761,7 +802,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.4.0</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.5.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -936,9 +977,19 @@
         <button class="terminal-tool" id="localEchoButton" type="button" aria-pressed="false"><span data-i18n="localEcho">送信表示</span>: <strong id="localEchoState">OFF</strong></button>
         <button class="terminal-tool" id="copyTerminalButton" type="button" data-i18n="copyTerminal" disabled>コピー</button>
         <button class="terminal-tool" id="clearTerminalButton" type="button" data-i18n="clearTerminal" disabled>消去</button>
+        <button class="terminal-tool" id="searchTerminalButton" type="button" data-i18n="searchTerminal">検索</button>
         <span class="terminal-tool-spacer"></span>
         <span class="terminal-count" id="terminalCount">0 chars</span>
         <button class="terminal-tool" id="autoScrollButton" type="button" aria-pressed="true"><span data-i18n="autoScroll">自動スクロール</span>: <strong id="autoScrollState">ON</strong></button>
+      </div>
+
+      <div class="terminal-search" id="terminalSearch" hidden>
+        <label class="sr-only" for="terminalSearchInput" data-i18n="searchTerminal">検索</label>
+        <input class="search-input" id="terminalSearchInput" type="search" autocomplete="off" spellcheck="false" data-i18n-placeholder="searchPlaceholder" placeholder="ログを検索">
+        <button class="terminal-tool" id="previousMatchButton" type="button" data-i18n="previousMatch" disabled>前へ</button>
+        <button class="terminal-tool" id="nextMatchButton" type="button" data-i18n="nextMatch" disabled>次へ</button>
+        <span class="search-count" id="searchCount">0 / 0</span>
+        <button class="terminal-tool" id="closeSearchButton" type="button" data-i18n-aria-label="closeSearch" aria-label="検索を閉じる">×</button>
       </div>
 
       <div class="terminal-wrap">
@@ -948,6 +999,7 @@
           <strong data-i18n="terminalEmptyTitle">まだ受信データはありません</strong>
           <span data-i18n="terminalEmptyBody">機器へ接続すると、受信したテキストがここに表示されます。</span>
         </div>
+        <button class="latest-log-button" id="latestLogButton" type="button" hidden>↓ <span id="latestLogText"></span></button>
       </div>
 
       <div class="composer">
@@ -973,6 +1025,7 @@
       <div class="status-line" aria-live="polite">
         <span data-i18n="statusLabel">状態</span>
         <strong id="statusText">未接続</strong>
+        <span class="connection-duration" id="connectionDuration" hidden></span>
         <span class="status-spacer"></span>
         <span class="io-stats" id="ioStats">RX 0 B · TX 0 B</span>
         <button class="status-action" id="saveTxtButton" type="button" data-i18n="saveTxt" disabled>TXTログ</button>
@@ -1003,7 +1056,8 @@
         <li data-i18n="helpStep4">送信形式をText / HEXから選びます。Textでは改行方式を、HEXでは送るbyte列を指定します。</li>
         <li data-i18n="helpStep5">機器制御ではDTR / RTS、BREAK、制御キーを送れます。DTR / RTSは接続しただけでは変更しません。</li>
         <li data-i18n="helpStep6">通信内容はセッション中だけメモリに記録され、TXTまたはJSONLとして明示的に保存できます。</li>
-        <li data-i18n="helpStep7">USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。</li>
+        <li data-i18n="helpStep7">ログを上へスクロールすると追従を自動停止し、新着件数と「最新へ」を表示します。検索や↑/↓のコマンド履歴も利用できます。</li>
+        <li data-i18n="helpStep8">USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。</li>
       </ol>
       <h3 data-i18n="helpPrivacyTitle">プライバシー</h3>
       <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、保存ボタンを押した場合だけファイルとして端末へ保存します。</p>
@@ -1109,6 +1163,14 @@
           copyTerminal: 'コピー',
           clearTerminal: '消去',
           autoScroll: '自動スクロール',
+          searchTerminal: '検索',
+          searchPlaceholder: '表示中のログを検索',
+          previousMatch: '前へ',
+          nextMatch: '次へ',
+          closeSearch: '検索を閉じる',
+          newLogs: '新しいログ {count}行',
+          connectionTime: '接続 {time}',
+          displayTrimmed: '古いログを表示から省略しました。',
           saveTxt: 'TXTログ',
           saveJsonl: 'JSONL',
           copiedTerminal: 'ターミナル内容をコピーしました。',
@@ -1170,7 +1232,8 @@
           helpStep4: '送信形式をText / HEXから選びます。Textでは改行方式を、HEXでは送るbyte列を指定します。',
           helpStep5: '機器制御ではDTR / RTS、BREAK、制御キーを送れます。DTR / RTSは接続しただけでは変更しません。',
           helpStep6: '通信内容はセッション中だけメモリに記録され、TXTまたはJSONLとして明示的に保存できます。',
-          helpStep7: 'USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。',
+          helpStep7: 'ログを上へスクロールすると追従を自動停止し、新着件数と「最新へ」を表示します。検索や↑/↓のコマンド履歴も利用できます。',
+          helpStep8: 'USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。',
           helpPrivacyTitle: 'プライバシー',
           helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、保存ボタンを押した場合だけファイルとして端末へ保存します。',
           helpNotesTitle: '注意事項',
@@ -1227,6 +1290,14 @@
           copyTerminal: 'Copy',
           clearTerminal: 'Clear',
           autoScroll: 'Auto-scroll',
+          searchTerminal: 'Search',
+          searchPlaceholder: 'Search visible log',
+          previousMatch: 'Previous',
+          nextMatch: 'Next',
+          closeSearch: 'Close search',
+          newLogs: '{count} new lines',
+          connectionTime: 'Connected {time}',
+          displayTrimmed: 'Older log content was omitted from the display.',
           saveTxt: 'TXT log',
           saveJsonl: 'JSONL',
           copiedTerminal: 'Terminal content copied.',
@@ -1288,7 +1359,8 @@
           helpStep4: 'Choose Text or HEX for sending. Text uses the selected line ending; HEX sends the byte sequence you enter.',
           helpStep5: 'Device control provides DTR / RTS, BREAK, and control keys. DTR / RTS are not changed merely by connecting.',
           helpStep6: 'Communication is recorded only in session memory and can be explicitly saved as TXT or JSONL.',
-          helpStep7: 'If USB is removed, the app leaves the connected state. Reconnect the same device and press Reconnect to resume.',
+          helpStep7: 'Scrolling upward pauses follow mode automatically and shows a new-line count with a Latest button. Search and Up/Down command history are also available.',
+          helpStep8: 'If USB is removed, the app leaves the connected state. Reconnect the same device and press Reconnect to resume.',
           helpPrivacyTitle: 'Privacy',
           helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. Session logs stay in memory and are written to a local file only when you explicitly save them.',
           helpNotesTitle: 'Notes',
@@ -1318,6 +1390,19 @@
         terminalText: '',
         terminalRevision: 0,
         displayStartIndex: 0,
+        displayLineCount: 0,
+        pendingDisplayText: '',
+        renderTimer: 0,
+        programmaticScroll: false,
+        newLogLines: 0,
+        searchQuery: '',
+        searchMatches: [],
+        searchIndex: -1,
+        commandHistory: [],
+        commandHistoryIndex: -1,
+        commandDraft: '',
+        connectedAt: null,
+        connectionClockTimer: 0,
         sessionEntries: [],
         rxBytes: 0,
         txBytes: 0,
@@ -1340,7 +1425,11 @@
         }
       };
 
-      const MAX_DISPLAY_CHARS = 240000;
+      const MAX_DISPLAY_CHARS = 5 * 1024 * 1024;
+      const MAX_DISPLAY_LINES = 50000;
+      const RENDER_INTERVAL_MS = 32;
+      const COMMAND_HISTORY_LIMIT = 100;
+      const SEARCH_MATCH_LIMIT = 5000;
       const decoder = new TextDecoder('utf-8');
       const encoder = new TextEncoder();
 
