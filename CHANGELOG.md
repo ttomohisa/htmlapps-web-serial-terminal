@@ -2,6 +2,30 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 0.2.0 - 2026-10-02
+
+### Added
+
+- Added configurable baud rate presets and a custom positive-integer baud rate.
+- Added configurable data bits, stop bits, parity, and hardware flow control.
+- Added None / LF / CR / CRLF transmit line endings.
+- Added terminal Copy and Clear controls.
+- Added safe Undo for Clear without overwriting newer received data.
+- Added manual Auto-scroll ON/OFF.
+- Added current terminal character count.
+- Added local persistence for serial connection preferences.
+
+### Changed
+
+- Connection settings are grouped in a collapsible panel and locked while the port is active.
+- In-app help and bilingual documentation now describe the v0.2.0 terminal workflow.
+
+### Privacy
+
+- Communication content is still not persisted.
+- Only language and serial connection preferences may be stored locally.
+- Runtime network connections remain blocked by CSP.
+
 ## 0.1.0 - 2026-10-02
 
 ### Added
