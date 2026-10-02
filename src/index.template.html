@@ -1696,22 +1696,217 @@
         return prefix + payload + (payload.endsWith('\n') ? '' : '\n');
       }
 
-      function renderTerminal() {
-        const visible = state.sessionEntries.slice(state.displayStartIndex).filter(entry => entry.direction === 'rx' || state.localEcho);
-        let text = visible.map(displayEntryText).join('');
-        if (text.length > MAX_DISPLAY_CHARS) {
-          text = text.slice(text.length - MAX_DISPLAY_CHARS);
-          if (!state.bufferNoticeShown) {
-            state.bufferNoticeShown = true;
-            showToast(t('bufferTrimmed'), 5200);
+      function countLineBreaks(text) {
+        let count = 0;
+        for (let i = 0; i < text.length; i += 1) if (text.charCodeAt(i) === 10) count += 1;
+        return count;
+      }
+
+      function trimDisplayToBudget(text, knownLineCount) {
+        let output = text;
+        let lineCount = knownLineCount;
+        let omitted = false;
+
+        if (output.length > MAX_DISPLAY_CHARS) {
+          output = output.slice(output.length - MAX_DISPLAY_CHARS);
+          lineCount = countLineBreaks(output);
+          omitted = true;
+        }
+
+        if (lineCount > MAX_DISPLAY_LINES) {
+          let removeLines = lineCount - MAX_DISPLAY_LINES;
+          let cut = 0;
+          while (removeLines > 0) {
+            const next = output.indexOf('\n', cut);
+            if (next < 0) break;
+            cut = next + 1;
+            removeLines -= 1;
+          }
+          if (cut > 0) {
+            output = output.slice(cut);
+            lineCount = countLineBreaks(output);
+            omitted = true;
           }
         }
-        state.terminalText = text;
+
+        return { text: output, lineCount, omitted };
+      }
+
+      function cancelPendingRender() {
+        if (state.renderTimer) {
+          window.clearTimeout(state.renderTimer);
+          state.renderTimer = 0;
+        }
+        state.pendingDisplayText = '';
+      }
+
+      function setProgrammaticScrollTop(value) {
         const terminal = $('#terminal');
-        terminal.textContent = text;
-        $('#terminalEmpty').hidden = text.length > 0;
+        state.programmaticScroll = true;
+        terminal.scrollTop = value;
+        window.requestAnimationFrame(() => { state.programmaticScroll = false; });
+      }
+
+      function updateLatestButton() {
+        const show = !state.autoScroll && state.newLogLines > 0;
+        $('#latestLogButton').hidden = !show;
+        $('#latestLogText').textContent = t('newLogs').replace('{count}', new Intl.NumberFormat(state.language).format(state.newLogLines));
+      }
+
+      function updateSearchMatches(options) {
+        const config = options || {};
+        const query = state.searchQuery;
+        if ($('#terminalSearchInput').value !== query) $('#terminalSearchInput').value = query;
+        state.searchMatches = [];
+        state.searchIndex = -1;
+
+        if (query) {
+          const haystack = state.terminalText.toLocaleLowerCase();
+          const needle = query.toLocaleLowerCase();
+          let from = 0;
+          while (state.searchMatches.length < SEARCH_MATCH_LIMIT) {
+            const found = haystack.indexOf(needle, from);
+            if (found < 0) break;
+            state.searchMatches.push(found);
+            from = found + Math.max(1, needle.length);
+          }
+          if (state.searchMatches.length && config.selectFirst) state.searchIndex = 0;
+        }
+
+        const total = state.searchMatches.length;
+        const current = state.searchIndex >= 0 ? state.searchIndex + 1 : 0;
+        $('#searchCount').textContent = current + ' / ' + total + (total === SEARCH_MATCH_LIMIT ? '+' : '');
+        $('#previousMatchButton').disabled = total === 0;
+        $('#nextMatchButton').disabled = total === 0;
+        if (state.searchIndex >= 0) selectSearchMatch();
+      }
+
+      function selectSearchMatch() {
+        if (state.searchIndex < 0 || !state.searchMatches.length || !state.searchQuery) return;
+        flushTerminalRender();
+        const terminal = $('#terminal');
+        const node = terminal.firstChild;
+        if (!node || node.nodeType !== Node.TEXT_NODE) return;
+        const start = state.searchMatches[state.searchIndex];
+        const end = start + state.searchQuery.length;
+        if (end > node.data.length) return;
+
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.setStart(node, start);
+        range.setEnd(node, end);
+        selection.removeAllRanges();
+        selection.addRange(range);
+
+        const terminalRect = terminal.getBoundingClientRect();
+        const matchRect = range.getBoundingClientRect();
+        state.autoScroll = false;
+        state.newLogLines = 0;
         updateTerminalControls();
-        if (state.autoScroll) terminal.scrollTop = terminal.scrollHeight;
+        if (matchRect.top < terminalRect.top + 24 || matchRect.bottom > terminalRect.bottom - 24) {
+          setProgrammaticScrollTop(terminal.scrollTop + matchRect.top - terminalRect.top - terminal.clientHeight / 2);
+        }
+      }
+
+      function navigateSearch(delta) {
+        if (!state.searchMatches.length) return;
+        state.searchIndex = state.searchIndex < 0
+          ? (delta > 0 ? 0 : state.searchMatches.length - 1)
+          : (state.searchIndex + delta + state.searchMatches.length) % state.searchMatches.length;
+        $('#searchCount').textContent = (state.searchIndex + 1) + ' / ' + state.searchMatches.length + (state.searchMatches.length === SEARCH_MATCH_LIMIT ? '+' : '');
+        selectSearchMatch();
+      }
+
+      function flushTerminalRender() {
+        if (state.renderTimer) {
+          window.clearTimeout(state.renderTimer);
+          state.renderTimer = 0;
+        }
+        const pending = state.pendingDisplayText;
+        state.pendingDisplayText = '';
+        if (!pending) return;
+
+        const previousText = state.terminalText;
+        const previousLength = previousText.length;
+        const trimmed = trimDisplayToBudget(previousText + pending, state.displayLineCount + countLineBreaks(pending));
+        state.terminalText = trimmed.text;
+        state.displayLineCount = trimmed.lineCount;
+
+        const terminal = $('#terminal');
+        if (!trimmed.omitted && terminal.childNodes.length === 1 && terminal.firstChild.nodeType === Node.TEXT_NODE && terminal.firstChild.data.length === previousLength) {
+          terminal.firstChild.appendData(pending);
+        } else {
+          terminal.textContent = state.terminalText;
+        }
+
+        if (trimmed.omitted && !state.bufferNoticeShown) {
+          state.bufferNoticeShown = true;
+          showToast(t('displayTrimmed'), 5200);
+        }
+
+        $('#terminalEmpty').hidden = state.terminalText.length > 0;
+        updateTerminalControls();
+        updateSearchMatches();
+
+        if (state.autoScroll) {
+          state.newLogLines = 0;
+          setProgrammaticScrollTop(terminal.scrollHeight);
+        }
+        updateLatestButton();
+      }
+
+      function queueTerminalAppend(text) {
+        if (!text) return;
+        state.pendingDisplayText += text;
+        if (!state.autoScroll) state.newLogLines += Math.max(1, countLineBreaks(text));
+        if (!state.renderTimer) state.renderTimer = window.setTimeout(flushTerminalRender, RENDER_INTERVAL_MS);
+        updateLatestButton();
+      }
+
+      function buildDisplayTextFromSession() {
+        const parts = [];
+        let chars = 0;
+        let lines = 0;
+        let omitted = false;
+        for (let i = state.sessionEntries.length - 1; i >= state.displayStartIndex; i -= 1) {
+          const entry = state.sessionEntries[i];
+          if (entry.direction !== 'rx' && !state.localEcho) continue;
+          const piece = displayEntryText(entry);
+          const pieceLines = countLineBreaks(piece);
+          if (parts.length && (chars + piece.length > MAX_DISPLAY_CHARS || lines + pieceLines > MAX_DISPLAY_LINES)) {
+            omitted = true;
+            break;
+          }
+          parts.push(piece);
+          chars += piece.length;
+          lines += pieceLines;
+          if (chars >= MAX_DISPLAY_CHARS || lines >= MAX_DISPLAY_LINES) {
+            omitted = i > state.displayStartIndex;
+            break;
+          }
+        }
+        return { text: parts.reverse().join(''), omitted };
+      }
+
+      function renderTerminal() {
+        cancelPendingRender();
+        const built = buildDisplayTextFromSession();
+        state.terminalText = built.text;
+        state.displayLineCount = countLineBreaks(built.text);
+        const terminal = $('#terminal');
+        terminal.textContent = built.text;
+        $('#terminalEmpty').hidden = built.text.length > 0;
+        if (built.omitted && !state.bufferNoticeShown) {
+          state.bufferNoticeShown = true;
+          showToast(t('displayTrimmed'), 5200);
+        }
+        updateTerminalControls();
+        updateSearchMatches();
+        if (state.autoScroll) {
+          state.newLogLines = 0;
+          setProgrammaticScrollTop(terminal.scrollHeight);
+        }
+        updateLatestButton();
       }
 
       function addSessionEntry(direction, bytes, text, displayText) {
@@ -1724,20 +1919,7 @@
         updateIoStats();
 
         if (direction === 'rx' || state.localEcho) {
-          let next = state.terminalText + displayEntryText(entry);
-          if (next.length > MAX_DISPLAY_CHARS) {
-            next = next.slice(next.length - MAX_DISPLAY_CHARS);
-            if (!state.bufferNoticeShown) {
-              state.bufferNoticeShown = true;
-              showToast(t('bufferTrimmed'), 5200);
-            }
-          }
-          state.terminalText = next;
-          const terminal = $('#terminal');
-          terminal.textContent = next;
-          $('#terminalEmpty').hidden = next.length > 0;
-          updateTerminalControls();
-          if (state.autoScroll) terminal.scrollTop = terminal.scrollHeight;
+          queueTerminalAppend(displayEntryText(entry));
         } else {
           updateTerminalControls();
         }
@@ -1754,6 +1936,7 @@
         $('#timestampState').textContent = state.showTimestamp ? 'ON' : 'OFF';
         $('#localEchoButton').setAttribute('aria-pressed', String(state.localEcho));
         $('#localEchoState').textContent = state.localEcho ? 'ON' : 'OFF';
+        updateLatestButton();
       }
 
       function updateOutputSignalSelect(kind) {
@@ -1955,6 +2138,9 @@
         updateIoStats();
         renderTerminal();
         updateDeviceControlUi();
+        updateConnectionClock();
+        updateLatestButton();
+        updateSearchMatches();
         setPhase(state.phase);
         updateSupportState();
       }
@@ -2035,6 +2221,7 @@
           state.devicePhysicallyAvailable = true;
           resetOutputSignalUi();
           setPhase('connected');
+          startConnectionClock();
           await refreshInputSignals({ silent: true });
           showToast(t('connectedToast'));
           state.readTask = readLoop();
@@ -2099,6 +2286,7 @@
         } finally {
           state.readTask = null;
           state.closing = false;
+          stopConnectionClock();
           if (!config.silent) {
             state.unexpectedDisconnect = false;
             state.devicePhysicallyAvailable = true;
@@ -2121,6 +2309,7 @@
         } finally {
           state.readTask = null;
           state.closing = false;
+          stopConnectionClock();
           state.unexpectedDisconnect = true;
           state.devicePhysicallyAvailable = false;
           resetOutputSignalUi();
@@ -2162,6 +2351,7 @@
         try {
           await state.writer.write(bytes);
           addSessionEntry('tx', bytes, text);
+          rememberCommand(input.value);
           input.value = '';
           updateSendState();
           input.focus();
@@ -2197,10 +2387,12 @@
       }
 
       function clearTerminal() {
+        flushTerminalRender();
         if (!state.terminalText) return;
         const beforeStart = state.displayStartIndex;
         state.displayStartIndex = state.sessionEntries.length;
         state.terminalRevision += 1;
+        state.newLogLines = 0;
         const clearRevision = state.terminalRevision;
         renderTerminal();
         AppToast.show({
@@ -2282,6 +2474,80 @@
 
       function saveJsonlLog() {
         if (downloadText(buildJsonlLog(), 'jsonl', 'application/x-ndjson')) showToast(t('savedJsonl'));
+      }
+
+      function formatDuration(ms) {
+        const total = Math.max(0, Math.floor(ms / 1000));
+        const hours = Math.floor(total / 3600);
+        const minutes = Math.floor((total % 3600) / 60);
+        const seconds = total % 60;
+        return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+      }
+
+      function updateConnectionClock() {
+        const element = $('#connectionDuration');
+        if (state.phase !== 'connected' || !state.connectedAt) {
+          element.hidden = true;
+          element.textContent = '';
+          return;
+        }
+        element.hidden = false;
+        element.textContent = t('connectionTime').replace('{time}', formatDuration(Date.now() - state.connectedAt));
+      }
+
+      function stopConnectionClock() {
+        if (state.connectionClockTimer) {
+          window.clearInterval(state.connectionClockTimer);
+          state.connectionClockTimer = 0;
+        }
+        state.connectedAt = null;
+        updateConnectionClock();
+      }
+
+      function startConnectionClock() {
+        stopConnectionClock();
+        state.connectedAt = Date.now();
+        updateConnectionClock();
+        state.connectionClockTimer = window.setInterval(updateConnectionClock, 1000);
+      }
+
+      function rememberCommand(value) {
+        const text = String(value || '');
+        if (!text) return;
+        const mode = $('#sendMode').value;
+        const lineEnding = $('#lineEnding').value;
+        const last = state.commandHistory[state.commandHistory.length - 1];
+        if (!last || last.value !== text || last.mode !== mode || last.lineEnding !== lineEnding) {
+          state.commandHistory.push({ value: text, mode, lineEnding });
+          if (state.commandHistory.length > COMMAND_HISTORY_LIMIT) state.commandHistory.shift();
+        }
+        state.commandHistoryIndex = -1;
+        state.commandDraft = '';
+      }
+
+      function recallCommand(delta) {
+        if (!state.commandHistory.length) return;
+        const input = $('#commandInput');
+        if (state.commandHistoryIndex < 0) {
+          if (delta > 0) return;
+          state.commandDraft = input.value;
+          state.commandHistoryIndex = state.commandHistory.length;
+        }
+        state.commandHistoryIndex = Math.max(0, Math.min(state.commandHistory.length, state.commandHistoryIndex + delta));
+        if (state.commandHistoryIndex === state.commandHistory.length) {
+          input.value = state.commandDraft;
+        } else {
+          const item = state.commandHistory[state.commandHistoryIndex];
+          input.value = item.value;
+          $('#sendMode').value = item.mode;
+          $('#lineEnding').value = item.lineEnding;
+          state.settings.sendMode = item.mode;
+          state.settings.lineEnding = item.lineEnding;
+          refreshSendNote();
+        }
+        $('#sendError').textContent = '';
+        updateSendState();
+        input.setSelectionRange(input.value.length, input.value.length);
       }
 
       function updateSupportState() {
