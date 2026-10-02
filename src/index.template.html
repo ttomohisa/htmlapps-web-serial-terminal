@@ -971,11 +971,12 @@
       .settings-body { grid-template-columns: 1fr; }
       .setting-field:first-child { grid-column: auto; }
       .baud-row { grid-template-columns: minmax(0, 1fr) minmax(92px, .72fr); }
-      .terminal-search { grid-template-columns: minmax(0, 1fr) auto; }
-      .terminal-search #previousMatchButton,
-      .terminal-search #nextMatchButton { min-width: 68px; }
-      .terminal-search #closeSearchButton { grid-column: 2; grid-row: 1; }
-      .terminal-search .search-count { grid-column: 1; }
+      .terminal-search { grid-template-columns: minmax(0, 1fr) minmax(68px, auto); }
+      .terminal-search .search-input { grid-column: 1 / -1; grid-row: 1; }
+      .terminal-search #previousMatchButton { grid-column: 1; grid-row: 2; min-width: 0; }
+      .terminal-search #nextMatchButton { grid-column: 2; grid-row: 2; min-width: 68px; }
+      .terminal-search .search-count { grid-column: 1; grid-row: 3; }
+      .terminal-search #closeSearchButton { grid-column: 2; grid-row: 3; justify-self: end; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
