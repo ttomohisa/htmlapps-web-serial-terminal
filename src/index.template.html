@@ -1758,7 +1758,8 @@
           if (!Array.isArray(parsed)) return [];
           const macros = [];
           for (const item of parsed) {
-            if (macros.length >= MACRO_LIMIT || !item || typeof item !== 'object') break;
+            if (macros.length >= MACRO_LIMIT) break;
+            if (!item || typeof item !== 'object') continue;
             const name = typeof item.name === 'string' ? item.name.trim().slice(0, MACRO_NAME_LIMIT) : '';
             const payload = typeof item.payload === 'string' ? item.payload.slice(0, MACRO_PAYLOAD_LIMIT) : '';
             const mode = item.mode === 'hex' ? 'hex' : 'text';
