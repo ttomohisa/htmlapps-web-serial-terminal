@@ -906,6 +906,7 @@
       .setting-field:first-child { grid-column: 1 / -1; }
       .mobile-shortcuts { display: flex; }
       .terminal-tool, .terminal-select { min-height: 40px; }
+      .command-field, .search-input, .macro-form-control, .setting-control, .line-ending, .signal-select { font-size: 16px; }
       .terminal, .terminal-wrap { min-height: 320px; }
       .terminal { height: min(51vh, calc(var(--visual-viewport-height) * .52)); }
       body.keyboard-open .terminal-wrap,
@@ -3302,7 +3303,7 @@
 
       function revealFocusedControl(element) {
         window.setTimeout(() => {
-          try { element.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); } catch { }
+          try { element.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } catch { }
         }, 80);
       }
 
@@ -3539,7 +3540,7 @@
           const panel = document.getElementById(button.dataset.openPanel);
           if (!panel) return;
           panel.open = true;
-          panel.scrollIntoView({ block: 'start', behavior: 'smooth' });
+          panel.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
           const summary = panel.querySelector('summary');
           if (summary) window.setTimeout(() => summary.focus({ preventScroll: true }), 220);
         });
