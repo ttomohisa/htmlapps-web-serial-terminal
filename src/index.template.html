@@ -456,6 +456,130 @@
       font-size: 10px;
       line-height: 1.55;
     }
+    .macro-body {
+      display: grid;
+      gap: 11px;
+      padding: 2px 16px 15px;
+    }
+    .macro-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .macro-hint {
+      color: var(--muted);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+    .macro-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 9px;
+    }
+    .macro-empty {
+      padding: 16px;
+      border: 1px dashed var(--line-strong);
+      border-radius: 10px;
+      color: var(--muted);
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.6;
+    }
+    .macro-empty[hidden], .macro-list[hidden] { display: none; }
+    .macro-card {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: stretch;
+      gap: 7px;
+      min-width: 0;
+    }
+    .macro-run {
+      min-width: 0;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      text-align: left;
+      cursor: pointer;
+    }
+    .macro-run:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+    .macro-run:disabled { cursor: not-allowed; opacity: .58; }
+    .macro-name {
+      display: block;
+      overflow: hidden;
+      font-size: 12px;
+      font-weight: 780;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .macro-meta {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 9px;
+    }
+    .macro-payload {
+      display: block;
+      overflow: hidden;
+      margin-top: 5px;
+      color: var(--muted);
+      font: 10px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .macro-edit {
+      align-self: stretch;
+      min-width: 52px;
+    }
+    #macroDialog[open] { display: flex; flex-direction: column; }
+    .macro-form {
+      display: grid;
+      gap: 14px;
+    }
+    .macro-form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .macro-form-field {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+      color: var(--text);
+      font-size: 11px;
+      font-weight: 730;
+    }
+    .macro-form-control {
+      width: 100%;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      outline: none;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-weight: 560;
+    }
+    textarea.macro-form-control {
+      min-height: 120px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      line-height: 1.5;
+    }
+    .macro-form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--focus); }
+    .macro-form-help { color: var(--muted); font-size: 10px; font-weight: 500; line-height: 1.5; }
+    .macro-form-error { min-height: 18px; color: var(--danger); font-size: 11px; }
+    .dialog-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 17px calc(13px + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--line);
+    }
+    .dialog-actions .button:first-child { margin-right: auto; }
     .terminal-tools {
       display: flex;
       align-items: center;
@@ -770,6 +894,10 @@
       .settings-body { grid-template-columns: 1fr 1fr; padding: 2px 13px 13px; gap: 10px; }
       .device-control-panel summary { padding-inline: 13px; }
       .device-control-body { padding: 2px 13px 13px; }
+      .macro-body { padding: 2px 13px 13px; }
+      .macro-list { grid-template-columns: 1fr; }
+      .macro-toolbar { align-items: flex-start; }
+      .macro-form-row { grid-template-columns: 1fr; }
       .control-section-label { flex-basis: 100%; min-width: 0; }
       .signal-button, .signal-select, .control-key { min-height: 40px; }
       .setting-field:first-child { grid-column: 1 / -1; }
@@ -805,7 +933,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.6.0</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.7.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -968,6 +1096,21 @@
         </div>
       </details>
 
+      <details class="device-control-panel macro-panel" id="macroPanel">
+        <summary>
+          <span data-i18n="commandMacros">コマンドマクロ</span>
+          <span class="device-control-summary" id="macroSummary">0 / 12</span>
+        </summary>
+        <div class="macro-body">
+          <div class="macro-toolbar">
+            <span class="macro-hint" data-i18n="macroHint">よく使う送信内容をこの端末に保存できます。</span>
+            <button class="signal-button" id="addMacroButton" type="button" data-i18n="addMacro">追加</button>
+          </div>
+          <div class="macro-empty" id="macroEmpty" data-i18n="macroEmpty">まだマクロはありません。「追加」からよく使うコマンドを登録できます。</div>
+          <div class="macro-list" id="macroList" hidden></div>
+        </div>
+      </details>
+
       <div class="terminal-tools">
         <label class="terminal-tool-label">
           <span data-i18n="displayMode">表示</span>
@@ -1044,6 +1187,52 @@
     <span data-i18n="footer">Web Serial APIを使い、シリアル通信はブラウザ内で処理します。</span>
   </footer>
 
+  <dialog id="macroDialog">
+    <div class="dialog-head">
+      <h2 id="macroDialogTitle" data-i18n="addMacroTitle">マクロを追加</h2>
+      <button class="icon-button" id="closeMacroButton" type="button" data-i18n-aria-label="close" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+      </button>
+    </div>
+    <div class="dialog-body">
+      <form class="macro-form" id="macroForm">
+        <label class="macro-form-field">
+          <span data-i18n="macroName">名前</span>
+          <input class="macro-form-control" id="macroNameInput" type="text" maxlength="40" autocomplete="off" data-i18n-placeholder="macroNamePlaceholder" placeholder="status">
+        </label>
+        <label class="macro-form-field">
+          <span data-i18n="macroPayload">送信内容</span>
+          <textarea class="macro-form-control" id="macroPayloadInput" maxlength="8192" spellcheck="false" data-i18n-placeholder="macroPayloadPlaceholder" placeholder="status"></textarea>
+          <span class="macro-form-help" id="macroPayloadHelp" data-i18n="macroPayloadHelpText">Textは入力内容をUTF-8で送信します。</span>
+        </label>
+        <div class="macro-form-row">
+          <label class="macro-form-field">
+            <span data-i18n="macroMode">送信形式</span>
+            <select class="macro-form-control" id="macroModeSelect">
+              <option value="text">Text</option>
+              <option value="hex">HEX</option>
+            </select>
+          </label>
+          <label class="macro-form-field">
+            <span data-i18n="macroLineEnding">改行</span>
+            <select class="macro-form-control" id="macroLineEndingSelect">
+              <option value="none" data-i18n="lineNone">なし</option>
+              <option value="lf">LF</option>
+              <option value="cr">CR</option>
+              <option value="crlf">CRLF</option>
+            </select>
+          </label>
+        </div>
+        <p class="macro-form-error" id="macroFormError" role="status"></p>
+      </form>
+    </div>
+    <div class="dialog-actions">
+      <button class="button danger" id="deleteMacroButton" type="button" data-i18n="deleteMacro" hidden>削除</button>
+      <button class="button" id="cancelMacroButton" type="button" data-i18n="cancel">キャンセル</button>
+      <button class="button primary" id="saveMacroButton" type="submit" form="macroForm" data-i18n="saveMacro">保存</button>
+    </div>
+  </dialog>
+
   <dialog id="helpDialog">
     <div class="dialog-head">
       <h2 data-i18n="helpTitle">使い方と注意事項</h2>
@@ -1062,7 +1251,8 @@
         <li data-i18n="helpStep5">機器制御ではDTR / RTS、BREAK、制御キーを送れます。DTR / RTSは接続しただけでは変更しません。</li>
         <li data-i18n="helpStep6">通信ログはセッション中だけメモリに記録され、TXTまたはJSONLとして保存できます。記録量が目安20 MiBに達するとログ記録だけを停止し、通信と画面表示は続けます。</li>
         <li data-i18n="helpStep7">ログを上へスクロールすると追従を自動停止し、新着件数と「最新へ」を表示します。検索や↑/↓のコマンド履歴も利用できます。</li>
-        <li data-i18n="helpStep8">USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。</li>
+        <li data-i18n="helpStep8">「コマンドマクロ」には、よく使うText / HEX送信を最大12個までこの端末へ保存できます。</li>
+        <li data-i18n="helpStep9">USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。</li>
       </ol>
       <h3 data-i18n="helpPrivacyTitle">プライバシー</h3>
       <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、保存ボタンを押した場合だけファイルとして端末へ保存します。</p>
