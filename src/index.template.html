@@ -452,6 +452,17 @@
       color: var(--muted);
       font-size: 11px;
     }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
     @media (max-width: 760px) {
       .intro { flex-direction: column; gap: 10px; }
       .privacy-note { align-self: flex-start; }
@@ -562,7 +573,7 @@
       </div>
 
       <div class="terminal-wrap">
-        <pre class="terminal" id="terminal" tabindex="0" aria-label="受信ターミナル"></pre>
+        <pre class="terminal" id="terminal" tabindex="0" data-i18n-aria-label="terminalLabel" aria-label="受信ターミナル"></pre>
         <div class="terminal-empty" id="terminalEmpty">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3M13 15h4"/></svg>
           <strong data-i18n="terminalEmptyTitle">まだ受信データはありません</strong>
@@ -679,6 +690,7 @@
           profileFixed: 'v0.1.0では固定です',
           terminalEmptyTitle: 'まだ受信データはありません',
           terminalEmptyBody: '機器へ接続すると、受信したテキストがここに表示されます。',
+          terminalLabel: '受信ターミナル',
           commandLabel: '送信するコマンド',
           commandPlaceholder: 'command...',
           send: '送信',
@@ -744,6 +756,7 @@
           profileFixed: 'Fixed in v0.1.0',
           terminalEmptyTitle: 'No received data yet',
           terminalEmptyBody: 'Incoming text appears here after you connect a device.',
+          terminalLabel: 'Receive terminal',
           commandLabel: 'Command to send',
           commandPlaceholder: 'command...',
           send: 'Send',
@@ -1028,13 +1041,14 @@
           state.readTask = readLoop();
           $('#commandInput').focus();
         } catch (error) {
-          await releaseLocks(false);
+          await releaseLocks(true);
           setPhase('error');
           setNotice('error', t('openErrorTitle'), t('openErrorBody') + technicalSuffix(error));
         }
       }
 
       async function readLoop() {
+        let readFailure = null;
         try {
           while (!state.closing && state.reader) {
             const result = await state.reader.read();
@@ -1042,10 +1056,7 @@
             if (result.value) appendTerminal(decoder.decode(result.value, { stream: true }));
           }
         } catch (error) {
-          if (!state.closing) {
-            setPhase('error');
-            setNotice('error', t('readErrorTitle'), t('readErrorBody') + technicalSuffix(error));
-          }
+          if (!state.closing) readFailure = error;
         } finally {
           try {
             const trailing = decoder.decode();
@@ -1056,7 +1067,7 @@
             state.reader = null;
           }
           if (!state.closing && state.phase === 'connected') {
-            await handleUnexpectedDisconnect();
+            await handleUnexpectedDisconnect(readFailure);
           }
         }
       }
@@ -1099,7 +1110,7 @@
         }
       }
 
-      async function handleUnexpectedDisconnect() {
+      async function handleUnexpectedDisconnect(readFailure) {
         if (state.closing) return;
         state.closing = true;
         try {
@@ -1111,7 +1122,11 @@
           state.readTask = null;
           state.closing = false;
           setPhase(state.port ? 'deviceSelected' : 'disconnected');
-          setNotice('error', t('lostTitle'), t('lostBody'));
+          if (readFailure) {
+            setNotice('error', t('readErrorTitle'), t('readErrorBody') + technicalSuffix(readFailure));
+          } else {
+            setNotice('error', t('lostTitle'), t('lostBody'));
+          }
         }
       }
 
