@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.2.0
+- Current implementation milestone: v0.3.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -47,9 +47,10 @@ No connection starts automatically on page load.
 - Serial RX and TX data remain in the browser.
 - The app performs no runtime HTTP, WebSocket, analytics, telemetry, font, or CDN request.
 - Serial communication is device I/O and does not require a Browser Kitty server.
-- User communication content is not persisted by v0.2.0.
-- Language preference and serial connection preferences may be stored locally.
-- Later log export must occur only after an explicit user action.
+- Serial communication content is never sent to a Browser Kitty server.
+- v0.3.0 keeps a session log only in memory while the page is open.
+- Language, serial connection preferences, display preferences, and send-mode preferences may be stored locally.
+- TXT / JSONL files are written only after an explicit user save action.
 - Runtime CSP keeps connect-src 'none'.
 
 ## 6. Browser and device constraints
@@ -241,7 +242,129 @@ Invalid custom baud values:
 
 Whether a numerically valid baud rate is actually supported is determined by the OS, driver, browser, and device.
 
-## 8. v0.2.0 UX requirements
+## 7B. v0.3.0 functional requirements — HEX / Logging Basics
+
+### 7B.1 Display modes
+
+The terminal supports two receive display modes:
+
+- Text
+- HEX
+
+Text mode uses streaming UTF-8 decoding for the live receive view.
+
+HEX mode renders the original received bytes as uppercase two-digit hexadecimal values separated by spaces.
+
+The display mode is a view preference only. Switching display mode does not alter the underlying session bytes.
+
+### 7B.2 Timestamp and direction display
+
+Timestamp display can be toggled independently.
+
+When timestamp display is enabled, terminal records include local time with millisecond precision.
+
+When structured terminal records are shown, RX and TX are labeled explicitly.
+
+With the default Text display, timestamps OFF, and Local echo OFF, RX text remains visually close to a conventional serial monitor rather than forcing direction prefixes onto every receive chunk.
+
+### 7B.3 Local echo
+
+Local echo defaults to OFF.
+
+When ON, TX session entries are also displayed in the terminal and are labeled TX.
+
+Local echo changes display behavior only. TX bytes are recorded in the in-memory session log regardless of the Local echo setting.
+
+### 7B.4 HEX transmit
+
+Transmit mode supports:
+
+- Text
+- HEX
+
+Text mode retains the v0.2.0 selectable line ending.
+
+HEX mode sends the entered bytes exactly and does not append a Text line ending.
+
+Accepted HEX examples include:
+
+- `01 03 00 00`
+- `01030000`
+- `0x01 0x03 0x00 0x00`
+
+Incomplete bytes, non-hexadecimal characters, or otherwise invalid input must not be sent and must produce an inline explanation.
+
+### 7B.5 Byte counters
+
+The session UI tracks:
+
+- RX byte count
+- TX byte count
+
+Counts represent the raw bytes received from or written to the SerialPort.
+
+Display Clear does not reset byte counters.
+
+### 7B.6 Session log model
+
+Each communication record kept in memory includes at minimum:
+
+- timestamp
+- direction: RX or TX
+- raw bytes
+- decoded Text representation used by the live view where applicable
+
+The session log is not written to localStorage or another persistent browser database.
+
+Closing or reloading the page discards it unless the user explicitly saves a file first.
+
+### 7B.7 TXT export
+
+TXT export is a human-readable session log.
+
+Each exported record includes:
+
+- local date and time with millisecond precision
+- RX / TX
+- readable escaped Text when the exact record bytes form suitable Text
+- otherwise an explicit HEX byte sequence
+
+Control newlines and tabs are escaped so one communication record remains one TXT line.
+
+### 7B.8 JSONL export
+
+JSONL export stores one JSON object per communication record.
+
+Each object includes:
+
+- ISO timestamp
+- direction
+- raw bytes as compact hexadecimal
+- a UTF-8 decoded Text field derived from those exact bytes
+
+The raw byte field is authoritative when Text decoding is lossy.
+
+### 7B.9 Display Clear versus session log
+
+Clear removes only the visible terminal history.
+
+It does not remove:
+
+- session records
+- byte counters
+- data included in later TXT / JSONL export
+
+Undo restores the prior display only when no newer communication record arrived after Clear.
+
+Full session-log clearing and session-size controls are deferred to v0.6.0.
+
+### 7B.10 Initial logging limits
+
+v0.3.0 introduces the session-log data model and export path, but complete session-size handling, explicit log reset, and long-session limits remain part of v0.6.0.
+
+The existing terminal display-size guard remains in place independently from the session log.
+
+## 8. v0.3.0 UX requirements
 
 ### Desktop
 
@@ -282,18 +405,14 @@ The language switch changes:
 
 Technical terms such as Web Serial, USB, baud rate, VID, and PID may remain technical when translation would reduce clarity.
 
-## 10. v0.2.0 non-goals
+## 10. v0.3.0 non-goals
 
 Not included yet:
 
-- HEX RX or TX,
-- timestamps,
-- local echo,
 - DTR / RTS / BREAK,
 - control-key palette,
 - command history,
 - terminal search,
-- log file export,
 - macros,
 - ANSI / VT100 interpretation,
 - serial plotting,
@@ -301,9 +420,32 @@ Not included yet:
 - firmware flashing,
 - multiple simultaneous ports.
 
-## 11. v0.2.0 acceptance criteria
+## 11. v0.3.0 acceptance criteria
 
-All v0.1.0 acceptance criteria remain applicable, plus:
+All v0.1.0 and v0.2.0 acceptance criteria remain applicable, plus:
+
+- app metadata identifies v0.3.0.
+- receive display can switch between Text and HEX without changing the recorded raw bytes.
+- Text display uses streaming UTF-8 decoding.
+- timestamp display can be toggled and includes millisecond precision.
+- Local echo can be toggled and TX remains hidden from the terminal when Local echo is OFF.
+- RX and TX remain distinct in structured display and session data.
+- Text and HEX transmit modes are independently selectable from the receive display mode.
+- HEX transmit sends the exact parsed byte sequence with no Text line ending appended.
+- invalid HEX is blocked with an inline explanation.
+- RX and TX raw-byte counters update correctly and are not reset by display Clear.
+- every successful RX and TX operation is recorded in the in-memory session model.
+- display Clear does not delete the session log.
+- TXT export includes timestamp, direction, and readable Text or HEX fallback.
+- JSONL export includes timestamp, direction, compact raw HEX bytes, and Text decoded from those exact bytes.
+- log files are created only after an explicit user action.
+- communication records are not written to localStorage.
+- Japanese and English help explain Text / HEX, timestamp, Local echo, and log saving.
+- repository build and standalone verification pass.
+
+### Historical v0.2.0 acceptance criteria
+
+
 
 - app metadata identifies v0.2.0.
 - baud rate can be selected from presets or entered as a custom positive integer.
@@ -403,8 +545,11 @@ The header help button must explain:
 
 - how to choose and connect a device,
 - how and when connection settings can be changed,
-- the selectable transmit line endings,
-- Copy / Clear / Auto-scroll behavior where relevant,
+- the selectable transmit line endings and Text / HEX send modes,
+- Text / HEX receive display, timestamp, and Local echo behavior,
+- Copy / Clear / Auto-scroll behavior,
+- that Clear does not erase the in-memory session log,
+- explicit TXT / JSONL save behavior,
 - that communication stays in the browser,
 - that no connection starts automatically,
 - browser support limitations,
