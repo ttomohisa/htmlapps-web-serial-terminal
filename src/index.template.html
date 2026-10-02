@@ -51,7 +51,7 @@
       outline: 3px solid color-mix(in srgb, var(--focus) 42%, transparent);
       outline-offset: 2px;
     }
-    button:disabled, input:disabled { cursor: not-allowed; opacity: .48; }
+    button:disabled, input:disabled, select:disabled { cursor: not-allowed; opacity: .48; }
     .app-header {
       position: sticky;
       top: 0;
@@ -771,7 +771,7 @@
         <li data-i18n="helpStep4">終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。</li>
       </ol>
       <h3 data-i18n="helpPrivacyTitle">プライバシー</h3>
-      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.1.0では通信ログも永続保存しません。</p>
+      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.2.0でも通信ログは永続保存しません。通信設定のみ端末内へ保存します。</p>
       <h3 data-i18n="helpNotesTitle">注意事項</h3>
       <ul>
         <li data-i18n="helpBrowser">Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。</li>
