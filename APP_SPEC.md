@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.1.0
+- Current implementation milestone: v0.2.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -47,8 +47,8 @@ No connection starts automatically on page load.
 - Serial RX and TX data remain in the browser.
 - The app performs no runtime HTTP, WebSocket, analytics, telemetry, font, or CDN request.
 - Serial communication is device I/O and does not require a Browser Kitty server.
-- User communication content is not persisted by v0.1.0.
-- Language preference may be stored locally.
+- User communication content is not persisted by v0.2.0.
+- Language preference and serial connection preferences may be stored locally.
 - Later log export must occur only after an explicit user action.
 - Runtime CSP keeps connect-src 'none'.
 
@@ -102,7 +102,7 @@ v0.1.0 uses a fixed connection profile:
 
 The current profile must be visible in the UI.
 
-Changing these values is deferred to v0.2.0.
+v0.2.0 replaces this fixed profile with configurable values. The v0.1.0 behavior is retained here as historical context.
 
 ### 7.5 Connect
 
@@ -139,7 +139,7 @@ The UI uses human-readable localized labels rather than exposing these internal 
 - The UI must state that LF is appended.
 - Enter sends from the single-line command field.
 - Sending is disabled while disconnected or while the field is empty.
-- CR, CRLF, and no-line-ending selection are deferred to v0.2.0.
+- v0.2.0 adds None, LF, CR, and CRLF line-ending selection.
 
 ### 7.8 Disconnect
 
@@ -171,7 +171,77 @@ At minimum distinguish:
 
 Technical exception names may be included as secondary detail, but the primary user-facing message must describe the likely next action.
 
-## 8. v0.1.0 UX requirements
+## 7A. v0.2.0 functional requirements — Terminal Core
+
+### 7A.1 Communication settings
+
+Before connecting, the user can configure:
+
+- Baud rate presets: 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, and 921600.
+- A custom positive integer baud rate.
+- Data bits: 7 or 8.
+- Stop bits: 1 or 2.
+- Parity: none, even, or odd.
+- Flow control: none or hardware.
+
+The selected settings are passed directly to `SerialPort.open()`.
+
+Connection settings are disabled while connecting, connected, or disconnecting. The user must disconnect before changing them.
+
+The last valid connection settings are stored locally and restored on the next load. They are not sent anywhere.
+
+### 7A.2 Line endings
+
+Text transmit supports:
+
+- None
+- LF
+- CR
+- CRLF
+
+The selected line ending is shown next to the command field and is stored locally.
+
+Changing the line ending does not require disconnecting because it affects only outgoing text framing.
+
+### 7A.3 Terminal toolbar
+
+The terminal provides:
+
+- Copy all displayed terminal text.
+- Clear displayed terminal text.
+- Undo for Clear while no newer received data has arrived.
+- A character count for the current display buffer.
+- Manual Auto-scroll ON/OFF.
+
+Copy uses the Clipboard API when available and a local fallback otherwise.
+
+Clear affects only the current display. v0.2.0 still does not create or persist a session log.
+
+If new RX arrives after Clear, Undo must not overwrite the newer received text.
+
+### 7A.4 Auto-scroll
+
+Auto-scroll defaults to ON.
+
+When ON, incoming text keeps the terminal at the latest content.
+
+When OFF, incoming text does not change the user's scroll position.
+
+Automatic pause based on manual upward scrolling and a new-log indicator remain scheduled for v0.5.0.
+
+### 7A.5 Settings validation
+
+Custom baud rate must be an integer greater than zero.
+
+Invalid custom baud values:
+
+- must prevent connection,
+- must keep the settings panel available,
+- must show a field-local explanation.
+
+Whether a numerically valid baud rate is actually supported is determined by the OS, driver, browser, and device.
+
+## 8. v0.2.0 UX requirements
 
 ### Desktop
 
@@ -212,12 +282,10 @@ The language switch changes:
 
 Technical terms such as Web Serial, USB, baud rate, VID, and PID may remain technical when translation would reduce clarity.
 
-## 10. v0.1.0 non-goals
+## 10. v0.2.0 non-goals
 
 Not included yet:
 
-- configurable baud rate and framing,
-- CR / CRLF / no-ending selection,
 - HEX RX or TX,
 - timestamps,
 - local echo,
@@ -233,7 +301,27 @@ Not included yet:
 - firmware flashing,
 - multiple simultaneous ports.
 
-## 11. v0.1.0 acceptance criteria
+## 11. v0.2.0 acceptance criteria
+
+All v0.1.0 acceptance criteria remain applicable, plus:
+
+- app metadata identifies v0.2.0.
+- baud rate can be selected from presets or entered as a custom positive integer.
+- data bits, stop bits, parity, and flow control can be changed before connection.
+- connection settings are locked while a serial connection is active.
+- valid serial settings are stored locally and restored on reload.
+- None / LF / CR / CRLF can be selected independently of the connection state.
+- Text send appends exactly the selected line ending.
+- terminal display can be copied.
+- terminal display can be cleared.
+- Clear offers Undo, but Undo does not replace data received after the Clear operation.
+- Auto-scroll can be toggled ON/OFF manually.
+- when Auto-scroll is OFF, new RX does not force the terminal to the bottom.
+- communication text is still not persisted by the app.
+- Japanese and English help describe the configurable settings and line-ending behavior.
+- repository build and standalone verification pass.
+
+### Historical v0.1.0 acceptance criteria
 
 - The repository metadata identifies Web Serial Terminal v0.1.0.
 - The starter app UI and starter copy are fully removed from the runtime app.
@@ -314,8 +402,9 @@ Prefer separate Browser Kitty applications for:
 The header help button must explain:
 
 - how to choose and connect a device,
-- the fixed v0.1.0 serial settings,
-- that Send appends LF,
+- how and when connection settings can be changed,
+- the selectable transmit line endings,
+- Copy / Clear / Auto-scroll behavior where relevant,
 - that communication stays in the browser,
 - that no connection starts automatically,
 - browser support limitations,
