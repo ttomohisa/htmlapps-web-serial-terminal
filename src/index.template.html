@@ -2631,7 +2631,7 @@
       $('#autoScrollButton').addEventListener('click', () => {
         state.autoScroll = !state.autoScroll;
         if (state.autoScroll) {
-          state.newLogLines = 0;
+          resetNewLogCount();
           flushTerminalRender();
           setProgrammaticScrollTop($('#terminal').scrollHeight);
         }
@@ -2639,7 +2639,7 @@
       });
       $('#latestLogButton').addEventListener('click', () => {
         state.autoScroll = true;
-        state.newLogLines = 0;
+        resetNewLogCount();
         flushTerminalRender();
         setProgrammaticScrollTop($('#terminal').scrollHeight);
         updateTerminalControls();
