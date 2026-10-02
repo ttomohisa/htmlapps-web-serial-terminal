@@ -2606,9 +2606,64 @@
       $('#saveJsonlButton').addEventListener('click', saveJsonlLog);
       $('#autoScrollButton').addEventListener('click', () => {
         state.autoScroll = !state.autoScroll;
+        if (state.autoScroll) {
+          state.newLogLines = 0;
+          flushTerminalRender();
+          setProgrammaticScrollTop($('#terminal').scrollHeight);
+        }
         updateTerminalControls();
-        if (state.autoScroll) $('#terminal').scrollTop = $('#terminal').scrollHeight;
       });
+      $('#latestLogButton').addEventListener('click', () => {
+        state.autoScroll = true;
+        state.newLogLines = 0;
+        flushTerminalRender();
+        setProgrammaticScrollTop($('#terminal').scrollHeight);
+        updateTerminalControls();
+      });
+      $('#searchTerminalButton').addEventListener('click', () => {
+        $('#terminalSearch').hidden = false;
+        $('#terminalSearchInput').focus();
+        $('#terminalSearchInput').select();
+      });
+      $('#closeSearchButton').addEventListener('click', () => {
+        $('#terminalSearch').hidden = true;
+        state.searchQuery = '';
+        state.searchMatches = [];
+        state.searchIndex = -1;
+        $('#terminalSearchInput').value = '';
+        $('#searchCount').textContent = '0 / 0';
+        window.getSelection().removeAllRanges();
+      });
+      $('#terminalSearchInput').addEventListener('input', event => {
+        state.searchQuery = event.currentTarget.value;
+        updateSearchMatches({ selectFirst: true });
+      });
+      $('#terminalSearchInput').addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          navigateSearch(event.shiftKey ? -1 : 1);
+        } else if (event.key === 'Escape') {
+          event.preventDefault();
+          $('#closeSearchButton').click();
+          $('#searchTerminalButton').focus();
+        }
+      });
+      $('#previousMatchButton').addEventListener('click', () => navigateSearch(-1));
+      $('#nextMatchButton').addEventListener('click', () => navigateSearch(1));
+      $('#terminal').addEventListener('scroll', () => {
+        if (state.programmaticScroll) return;
+        const terminal = $('#terminal');
+        const distance = terminal.scrollHeight - terminal.clientHeight - terminal.scrollTop;
+        if (distance > 28 && state.autoScroll) {
+          state.autoScroll = false;
+          state.newLogLines = 0;
+          updateTerminalControls();
+        } else if (distance <= 8 && !state.autoScroll) {
+          state.autoScroll = true;
+          state.newLogLines = 0;
+          updateTerminalControls();
+        }
+      }, { passive: true });
       $('#baudPreset').addEventListener('change', () => {
         const custom = $('#baudPreset').value === 'custom';
         $('#baudCustom').hidden = !custom;
@@ -2636,10 +2691,18 @@
       $('#sendButton').addEventListener('click', sendCommand);
       $('#commandInput').addEventListener('input', () => {
         $('#sendError').textContent = '';
+        if (state.commandHistoryIndex >= 0) state.commandHistoryIndex = -1;
         updateSendState();
       });
       $('#commandInput').addEventListener('keydown', event => {
-        if (event.key === 'Enter' && !event.isComposing) {
+        if (event.isComposing) return;
+        if (event.key === 'ArrowUp' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+          event.preventDefault();
+          recallCommand(-1);
+        } else if (event.key === 'ArrowDown' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+          event.preventDefault();
+          recallCommand(1);
+        } else if (event.key === 'Enter') {
           event.preventDefault();
           void sendCommand();
         }
@@ -2678,6 +2741,8 @@
       }
 
       window.addEventListener('pagehide', () => {
+        if (state.renderTimer) window.clearTimeout(state.renderTimer);
+        if (state.connectionClockTimer) window.clearInterval(state.connectionClockTimer);
         if (state.phase === 'connected') void disconnect({ silent: true });
       });
 
@@ -2701,6 +2766,8 @@
       $('#terminalEmpty').hidden = false;
       updateTerminalControls();
       updateIoStats();
+      updateLatestButton();
+      updateConnectionClock();
       resetOutputSignalUi();
       clearInputSignalUi();
       updateDeviceControlUi();
