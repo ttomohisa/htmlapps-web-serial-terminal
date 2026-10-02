@@ -45,13 +45,13 @@
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
     }
-    button, input { font: inherit; }
-    button, input { min-width: 0; }
+    button, input, select { font: inherit; }
+    button, input, select { min-width: 0; }
     button:focus-visible, input:focus-visible, summary:focus-visible {
       outline: 3px solid color-mix(in srgb, var(--focus) 42%, transparent);
       outline-offset: 2px;
     }
-    button:disabled, input:disabled { cursor: not-allowed; opacity: .48; }
+    button:disabled, input:disabled, select:disabled { cursor: not-allowed; opacity: .48; }
     .app-header {
       position: sticky;
       top: 0;
@@ -272,29 +272,100 @@
     .button.primary { border-color: var(--accent); background: var(--accent); color: #fff; }
     .button.primary:hover:not(:disabled) { border-color: var(--accent-hover); background: var(--accent-hover); }
     .button.danger { color: var(--danger); }
-    .profile-row {
+    .settings-panel {
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-subtle);
+    }
+    .settings-panel summary {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 44px;
+      padding: 9px 16px;
+      cursor: pointer;
+      list-style: none;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 760;
+    }
+    .settings-panel summary::-webkit-details-marker { display: none; }
+    .settings-panel summary::after {
+      content: "";
+      width: 8px;
+      height: 8px;
+      margin-left: auto;
+      border-right: 1.8px solid var(--muted);
+      border-bottom: 1.8px solid var(--muted);
+      transform: rotate(45deg) translateY(-2px);
+      transition: transform .15s ease;
+    }
+    .settings-panel[open] summary::after { transform: rotate(225deg) translate(-2px, -2px); }
+    .profile-summary {
+      overflow: hidden;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 560;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .settings-body {
+      display: grid;
+      grid-template-columns: minmax(220px, 1.35fr) repeat(4, minmax(120px, .75fr));
+      gap: 12px;
+      padding: 2px 16px 15px;
+    }
+    .setting-field { display: grid; align-content: start; gap: 5px; min-width: 0; }
+    .setting-label { color: var(--muted); font-size: 10px; font-weight: 760; }
+    .setting-control {
+      width: 100%;
+      min-height: 40px;
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--surface);
+      color: var(--text);
+    }
+    .setting-control:hover:not(:disabled) { border-color: var(--line-strong); }
+    .baud-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(92px, .7fr); gap: 7px; }
+    .baud-custom[hidden] { display: none; }
+    .setting-help {
+      min-height: 15px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.45;
+    }
+    .setting-error { color: var(--danger); }
+    .terminal-tools {
       display: flex;
       align-items: center;
       flex-wrap: wrap;
-      gap: 8px 14px;
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--line);
-      background: var(--surface-subtle);
-      color: var(--muted);
+      gap: 7px;
+      min-height: 44px;
+      padding: 7px 12px;
+      border-bottom: 1px solid #25322d;
+      background: #17211d;
+      color: #91a39a;
+    }
+    .terminal-tool {
+      min-height: 32px;
+      padding: 5px 9px;
+      border: 1px solid #33443d;
+      border-radius: 8px;
+      background: #111a16;
+      color: #c9d5cf;
       font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
     }
-    .profile-row strong { color: var(--text); }
-    .profile-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 8px;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      background: var(--surface);
-      color: var(--text);
-      font-weight: 680;
+    .terminal-tool:hover:not(:disabled) { border-color: #557068; background: #1b2923; }
+    .terminal-tool[aria-pressed="true"] {
+      border-color: #4b9c83;
+      background: #1b4b3d;
+      color: #e8f4ef;
     }
+    .terminal-tool-spacer { flex: 1 1 auto; }
+    .terminal-count { font-size: 10px; white-space: nowrap; }
     .terminal-wrap {
       position: relative;
       min-height: 390px;
@@ -332,7 +403,7 @@
     .terminal-empty span { max-width: 390px; font-size: 11px; line-height: 1.6; }
     .composer {
       display: grid;
-      grid-template-columns: minmax(0, 1fr) auto;
+      grid-template-columns: minmax(0, 1fr) minmax(94px, auto) auto;
       gap: 9px;
       padding: 13px 14px;
       border-top: 1px solid #25322d;
@@ -351,6 +422,17 @@
     }
     .command-field::placeholder { color: #74847d; }
     .command-field:focus { border-color: #6ba895; box-shadow: 0 0 0 3px rgba(107, 168, 149, .17); }
+    .line-ending {
+      min-height: 44px;
+      padding: 8px 9px;
+      border: 1px solid #33443d;
+      border-radius: 10px;
+      outline: none;
+      background: #0f1714;
+      color: var(--terminal-text);
+      font-size: 12px;
+    }
+    .line-ending:focus { border-color: #6ba895; box-shadow: 0 0 0 3px rgba(107, 168, 149, .17); }
     .send-button {
       min-width: 88px;
       border-color: #2f8069;
@@ -469,6 +551,8 @@
       .connection-bar { grid-template-columns: 1fr; }
       .connection-actions { justify-content: stretch; }
       .connection-actions .button { flex: 1 1 auto; }
+      .settings-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .setting-field:first-child { grid-column: 1 / -1; }
       .terminal, .terminal-wrap { min-height: 360px; }
       .terminal { height: 51vh; }
       .build-meta { display: none; }
@@ -482,10 +566,14 @@
       .intro { margin-bottom: 12px; }
       .workspace { border-radius: 13px; }
       .connection-bar { padding: 13px; }
-      .profile-row { padding-inline: 13px; }
+      .settings-panel summary { padding-inline: 13px; }
+      .settings-body { grid-template-columns: 1fr 1fr; padding: 2px 13px 13px; gap: 10px; }
+      .setting-field:first-child { grid-column: 1 / -1; }
+      .baud-row { grid-template-columns: minmax(0, 1fr) minmax(88px, .75fr); }
+      .terminal-tools { padding-inline: 10px; }
       .terminal-wrap, .terminal { min-height: 330px; }
       .terminal { height: 48vh; padding: 14px 13px 26px; font-size: 12px; }
-      .composer { grid-template-columns: minmax(0, 1fr) 76px; padding: 11px; }
+      .composer { grid-template-columns: minmax(0, 1fr) 82px 72px; padding: 11px; }
       .send-button { min-width: 0; padding-inline: 9px; }
       .status-line { padding-inline: 12px; }
       #helpDialog {
@@ -505,7 +593,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.1.0</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.2.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -562,14 +650,72 @@
         </div>
       </div>
 
-      <div class="profile-row">
-        <strong data-i18n="profile">通信設定</strong>
-        <span class="profile-pill">115200 baud</span>
-        <span class="profile-pill">8 data bits</span>
-        <span class="profile-pill">Parity: none</span>
-        <span class="profile-pill">1 stop bit</span>
-        <span class="profile-pill">Flow: none</span>
-        <span data-i18n="profileFixed">v0.1.0では固定です</span>
+      <details class="settings-panel" id="settingsPanel">
+        <summary>
+          <span data-i18n="profile">通信設定</span>
+          <span class="profile-summary" id="profileSummary">115200 · 8-N-1 · Flow none</span>
+        </summary>
+        <div class="settings-body">
+          <label class="setting-field">
+            <span class="setting-label" data-i18n="baudRate">Baud rate</span>
+            <span class="baud-row">
+              <select class="setting-control" id="baudPreset">
+                <option value="300">300</option>
+                <option value="1200">1200</option>
+                <option value="2400">2400</option>
+                <option value="4800">4800</option>
+                <option value="9600">9600</option>
+                <option value="19200">19200</option>
+                <option value="38400">38400</option>
+                <option value="57600">57600</option>
+                <option value="115200" selected>115200</option>
+                <option value="230400">230400</option>
+                <option value="460800">460800</option>
+                <option value="921600">921600</option>
+                <option value="custom" data-i18n="customBaud">自由入力</option>
+              </select>
+              <input class="setting-control baud-custom" id="baudCustom" type="number" inputmode="numeric" min="1" step="1" value="115200" aria-label="Custom baud rate" hidden>
+            </span>
+            <span class="setting-help" id="baudHelp" data-i18n="baudHelp">自由入力は1以上の整数。利用可否は機器とOSに依存します。</span>
+          </label>
+          <label class="setting-field">
+            <span class="setting-label" data-i18n="dataBits">Data bits</span>
+            <select class="setting-control" id="dataBits">
+              <option value="8" selected>8</option>
+              <option value="7">7</option>
+            </select>
+          </label>
+          <label class="setting-field">
+            <span class="setting-label" data-i18n="parity">Parity</span>
+            <select class="setting-control" id="parity">
+              <option value="none" data-i18n="noneOption">None</option>
+              <option value="even">Even</option>
+              <option value="odd">Odd</option>
+            </select>
+          </label>
+          <label class="setting-field">
+            <span class="setting-label" data-i18n="stopBits">Stop bits</span>
+            <select class="setting-control" id="stopBits">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+            </select>
+          </label>
+          <label class="setting-field">
+            <span class="setting-label" data-i18n="flowControl">Flow control</span>
+            <select class="setting-control" id="flowControl">
+              <option value="none" data-i18n="noneOption">None</option>
+              <option value="hardware">Hardware</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <div class="terminal-tools">
+        <button class="terminal-tool" id="copyTerminalButton" type="button" data-i18n="copyTerminal" disabled>コピー</button>
+        <button class="terminal-tool" id="clearTerminalButton" type="button" data-i18n="clearTerminal" disabled>消去</button>
+        <span class="terminal-tool-spacer"></span>
+        <span class="terminal-count" id="terminalCount">0 chars</span>
+        <button class="terminal-tool" id="autoScrollButton" type="button" aria-pressed="true"><span data-i18n="autoScroll">自動スクロール</span>: <strong id="autoScrollState">ON</strong></button>
       </div>
 
       <div class="terminal-wrap">
@@ -584,8 +730,15 @@
       <div class="composer">
         <label class="sr-only" for="commandInput" data-i18n="commandLabel">送信するコマンド</label>
         <input class="command-field" id="commandInput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" data-i18n-placeholder="commandPlaceholder" placeholder="command..." disabled>
+        <label class="sr-only" for="lineEnding" data-i18n="lineEnding">改行</label>
+        <select class="line-ending" id="lineEnding" data-i18n-aria-label="lineEnding">
+          <option value="none" data-i18n="lineNone">なし</option>
+          <option value="lf" selected>LF</option>
+          <option value="cr">CR</option>
+          <option value="crlf">CRLF</option>
+        </select>
         <button class="button send-button" id="sendButton" type="button" data-i18n="send" disabled>送信</button>
-        <p class="composer-note" data-i18n="sendNote">v0.1.0では送信時に LF を付加します。Enterでも送信できます。</p>
+        <p class="composer-note" id="sendNote"></p>
       </div>
 
       <div class="status-line" aria-live="polite">
@@ -613,12 +766,12 @@
       <h3 data-i18n="helpBasicsTitle">基本操作</h3>
       <ol>
         <li data-i18n="helpStep1">USBシリアル機器を接続し、「機器を選択」から対象を選びます。</li>
-        <li data-i18n="helpStep2">115200 / 8-N-1 の設定を確認して「接続」を押します。ページを開いただけでは自動接続しません。</li>
-        <li data-i18n="helpStep3">受信テキストを確認し、下の入力欄からコマンドを送信します。v0.1.0ではLFを付加します。</li>
+        <li data-i18n="helpStep2">必要なら「通信設定」を開き、Baud rate、Data bits、Parity、Stop bits、Flow controlを変更してから「接続」を押します。</li>
+        <li data-i18n="helpStep3">受信テキストを確認し、改行方式を選んで下の入力欄からコマンドを送信します。Enterでも送信できます。</li>
         <li data-i18n="helpStep4">終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。</li>
       </ol>
       <h3 data-i18n="helpPrivacyTitle">プライバシー</h3>
-      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.1.0では通信ログも永続保存しません。</p>
+      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.2.0でも通信ログは永続保存しません。通信設定のみ端末内へ保存します。</p>
       <h3 data-i18n="helpNotesTitle">注意事項</h3>
       <ul>
         <li data-i18n="helpBrowser">Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。</li>
@@ -626,7 +779,7 @@
         <li data-i18n="helpBusy">接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。</li>
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
       </ul>
-      <p class="dialog-note" data-i18n="helpFixed">v0.1.0は通信基盤の最初の版です。Baud rate変更、CR/LF切替、HEX、DTR/RTS、ログ保存などは後続版で追加します。</p>
+      <p class="dialog-note" data-i18n="helpFixed">接続中は通信設定を変更できません。設定を変更する場合はいったん切断してください。HEX、DTR/RTS、ログ保存などは後続版で追加します。</p>
       <!-- APP:HELP:END -->
     </div>
   </dialog>
@@ -687,14 +840,33 @@
           connect: '接続',
           disconnect: '切断',
           profile: '通信設定',
-          profileFixed: 'v0.1.0では固定です',
+          baudRate: 'Baud rate',
+          customBaud: '自由入力',
+          baudHelp: '自由入力は1以上の整数。利用可否は機器とOSに依存します。',
+          baudInvalid: 'Baud rateは1以上の整数で入力してください。',
+          dataBits: 'Data bits',
+          parity: 'Parity',
+          stopBits: 'Stop bits',
+          flowControl: 'Flow control',
+          noneOption: 'None',
+          settingsLocked: '接続中は通信設定を変更できません。',
+          copyTerminal: 'コピー',
+          clearTerminal: '消去',
+          autoScroll: '自動スクロール',
+          copiedTerminal: 'ターミナル内容をコピーしました。',
+          copyFailed: 'コピーできませんでした。',
+          clearedTerminal: 'ターミナル表示を消去しました。',
+          restoredTerminal: 'ターミナル表示を元に戻しました。',
+          restoreSkipped: '新しい受信データがあるため、消去前の表示には戻しませんでした。',
           terminalEmptyTitle: 'まだ受信データはありません',
           terminalEmptyBody: '機器へ接続すると、受信したテキストがここに表示されます。',
           terminalLabel: '受信ターミナル',
           commandLabel: '送信するコマンド',
           commandPlaceholder: 'command...',
           send: '送信',
-          sendNote: 'v0.1.0では送信時に LF を付加します。Enterでも送信できます。',
+          lineEnding: '改行',
+          lineNone: 'なし',
+          sendNote: '送信時の改行: {ending} · Enterでも送信できます。',
           statusLabel: '状態',
           idle: '未接続',
           deviceSelected: '接続待ち',
@@ -728,17 +900,17 @@
           close: '閉じる',
           helpBasicsTitle: '基本操作',
           helpStep1: 'USBシリアル機器を接続し、「機器を選択」から対象を選びます。',
-          helpStep2: '115200 / 8-N-1 の設定を確認して「接続」を押します。ページを開いただけでは自動接続しません。',
-          helpStep3: '受信テキストを確認し、下の入力欄からコマンドを送信します。v0.1.0ではLFを付加します。',
+          helpStep2: '必要なら「通信設定」を開き、Baud rate、Data bits、Parity、Stop bits、Flow controlを変更してから「接続」を押します。ページを開いただけでは自動接続しません。',
+          helpStep3: '受信テキストを確認し、改行方式を選んで下の入力欄からコマンドを送信します。Enterでも送信できます。',
           helpStep4: '終了時は「切断」を押します。USBが抜けた場合は状態を解除し、再接続できます。',
           helpPrivacyTitle: 'プライバシー',
-          helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.1.0では通信ログも永続保存しません。',
+          helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。v0.2.0でも通信ログは永続保存しません。通信設定のみ端末内へ保存します。',
           helpNotesTitle: '注意事項',
           helpBrowser: 'Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。',
           helpDriver: '専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。',
           helpBusy: '接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。',
           helpPortName: 'ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。',
-          helpFixed: 'v0.1.0は通信基盤の最初の版です。Baud rate変更、CR/LF切替、HEX、DTR/RTS、ログ保存などは後続版で追加します。'
+          helpFixed: '接続中は通信設定を変更できません。設定を変更する場合はいったん切断してください。HEX、DTR/RTS、ログ保存などは後続版で追加します。'
         },
         en: {
           brandMeta: 'Send and receive with USB serial devices in your browser',
@@ -752,15 +924,34 @@
           chooseDevice: 'Choose device',
           connect: 'Connect',
           disconnect: 'Disconnect',
-          profile: 'Connection',
-          profileFixed: 'Fixed in v0.1.0',
+          profile: 'Connection settings',
+          baudRate: 'Baud rate',
+          customBaud: 'Custom',
+          baudHelp: 'Custom baud rate must be a positive integer. Actual support depends on the device and OS.',
+          baudInvalid: 'Enter a baud rate as a positive integer.',
+          dataBits: 'Data bits',
+          parity: 'Parity',
+          stopBits: 'Stop bits',
+          flowControl: 'Flow control',
+          noneOption: 'None',
+          settingsLocked: 'Connection settings cannot be changed while connected.',
+          copyTerminal: 'Copy',
+          clearTerminal: 'Clear',
+          autoScroll: 'Auto-scroll',
+          copiedTerminal: 'Terminal content copied.',
+          copyFailed: 'Could not copy.',
+          clearedTerminal: 'Terminal display cleared.',
+          restoredTerminal: 'Terminal display restored.',
+          restoreSkipped: 'New received data arrived, so the cleared display was not restored.',
           terminalEmptyTitle: 'No received data yet',
           terminalEmptyBody: 'Incoming text appears here after you connect a device.',
           terminalLabel: 'Receive terminal',
           commandLabel: 'Command to send',
           commandPlaceholder: 'command...',
           send: 'Send',
-          sendNote: 'v0.1.0 appends LF when sending. You can also press Enter.',
+          lineEnding: 'Line ending',
+          lineNone: 'None',
+          sendNote: 'Line ending: {ending} · You can also press Enter.',
           statusLabel: 'Status',
           idle: 'Not connected',
           deviceSelected: 'Ready to connect',
@@ -794,17 +985,17 @@
           close: 'Close',
           helpBasicsTitle: 'Basics',
           helpStep1: 'Connect a USB serial device, then choose it with Choose device.',
-          helpStep2: 'Review the fixed 115200 / 8-N-1 profile and press Connect. Opening the page never connects automatically.',
-          helpStep3: 'Read incoming text and send commands from the field below. v0.1.0 appends LF.',
+          helpStep2: 'Open Connection settings when needed, change baud rate, data bits, parity, stop bits, or flow control, then press Connect. Opening the page never connects automatically.',
+          helpStep3: 'Read incoming text, choose the line ending, and send commands from the field below. You can also press Enter.',
           helpStep4: 'Press Disconnect when finished. If USB is removed, the app leaves the connected state so you can reconnect.',
           helpPrivacyTitle: 'Privacy',
-          helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. v0.1.0 does not persist communication logs.',
+          helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. v0.2.0 still does not persist communication logs; only connection preferences are stored locally.',
           helpNotesTitle: 'Notes',
           helpBrowser: 'A browser with Web Serial support is required. Connection actions stay disabled when the API is unavailable.',
           helpDriver: 'No dedicated terminal application is required, but some USB serial devices still require an operating-system driver.',
           helpBusy: 'If connection fails, check whether Arduino IDE or another serial terminal is already using the same port.',
           helpPortName: 'The browser may not expose a friendly port name such as a COM number.',
-          helpFixed: 'v0.1.0 is the first communication foundation. Configurable baud rate, line endings, HEX, DTR/RTS, and log export are planned for later milestones.'
+          helpFixed: 'Connection settings are locked while connected. Disconnect before changing them. HEX, DTR/RTS, and log export are planned for later milestones.'
         }
       };
 
@@ -818,7 +1009,17 @@
         readTask: null,
         closing: false,
         terminalText: '',
-        bufferNoticeShown: false
+        terminalRevision: 0,
+        bufferNoticeShown: false,
+        autoScroll: true,
+        settings: {
+          baudRate: 115200,
+          dataBits: 8,
+          stopBits: 1,
+          parity: 'none',
+          flowControl: 'none',
+          lineEnding: 'lf'
+        }
       };
 
       const MAX_DISPLAY_CHARS = 240000;
@@ -833,6 +1034,21 @@
         try { localStorage.setItem(key, value); } catch { }
       }
 
+      function readSettings() {
+        const raw = readStorage(APP_CONFIG.slug + ':serial-settings');
+        if (!raw) return null;
+        try {
+          const parsed = JSON.parse(raw);
+          return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch {
+          return null;
+        }
+      }
+
+      function persistSettings() {
+        writeStorage(APP_CONFIG.slug + ':serial-settings', JSON.stringify(state.settings));
+      }
+
       function detectLanguage() {
         if (APP_CONFIG.defaultLanguage === 'ja' || APP_CONFIG.defaultLanguage === 'en') return APP_CONFIG.defaultLanguage;
         return (navigator.language || '').toLowerCase().startsWith('ja') ? 'ja' : 'en';
@@ -845,14 +1061,38 @@
       const AppToast = (() => {
         const root = $('#appToast');
         let timer = 0;
+        let actionHandler = null;
         function dismiss() {
           window.clearTimeout(timer);
+          actionHandler = null;
           root.classList.remove('show');
+          root.replaceChildren();
         }
         function show(options) {
           const config = options || {};
           window.clearTimeout(timer);
-          root.textContent = String(config.message || '');
+          actionHandler = typeof config.onAction === 'function' ? config.onAction : null;
+          root.replaceChildren();
+          const message = document.createElement('span');
+          message.textContent = String(config.message || '');
+          root.append(message);
+          if (actionHandler && config.actionLabel) {
+            const action = document.createElement('button');
+            action.type = 'button';
+            action.textContent = String(config.actionLabel);
+            action.style.marginLeft = '10px';
+            action.style.border = '0';
+            action.style.background = 'transparent';
+            action.style.color = 'var(--accent)';
+            action.style.fontWeight = '800';
+            action.style.cursor = 'pointer';
+            action.addEventListener('click', () => {
+              const handler = actionHandler;
+              dismiss();
+              if (handler) handler();
+            }, { once: true });
+            root.append(action);
+          }
           root.classList.add('show');
           timer = window.setTimeout(dismiss, Number(config.duration || 3300));
           return Object.freeze({ dismiss });
@@ -895,6 +1135,93 @@
         };
       }
 
+      function getBaudRate() {
+        const preset = $('#baudPreset').value;
+        const raw = preset === 'custom' ? $('#baudCustom').value : preset;
+        const value = Number(raw);
+        if (!Number.isInteger(value) || value < 1) {
+          $('#baudHelp').textContent = t('baudInvalid');
+          $('#baudHelp').classList.add('setting-error');
+          return null;
+        }
+        $('#baudHelp').textContent = t('baudHelp');
+        $('#baudHelp').classList.remove('setting-error');
+        return value;
+      }
+
+      function parityCode(value) {
+        return value === 'even' ? 'E' : value === 'odd' ? 'O' : 'N';
+      }
+
+      function refreshProfileSummary() {
+        const baud = getBaudRate();
+        if (baud == null) return;
+        const bits = Number($('#dataBits').value);
+        const stop = Number($('#stopBits').value);
+        const parity = $('#parity').value;
+        const flow = $('#flowControl').value;
+        $('#profileSummary').textContent = baud + ' · ' + bits + '-' + parityCode(parity) + '-' + stop + ' · Flow ' + flow;
+      }
+
+      function updateSettingsFromControls() {
+        const baudRate = getBaudRate();
+        if (baudRate == null) return false;
+        state.settings.baudRate = baudRate;
+        state.settings.dataBits = Number($('#dataBits').value);
+        state.settings.stopBits = Number($('#stopBits').value);
+        state.settings.parity = $('#parity').value;
+        state.settings.flowControl = $('#flowControl').value;
+        state.settings.lineEnding = $('#lineEnding').value;
+        persistSettings();
+        refreshProfileSummary();
+        refreshSendNote();
+        return true;
+      }
+
+      function applySettingsToControls() {
+        const standardBaud = ['300','1200','2400','4800','9600','19200','38400','57600','115200','230400','460800','921600'];
+        const baudText = String(state.settings.baudRate);
+        const custom = !standardBaud.includes(baudText);
+        $('#baudPreset').value = custom ? 'custom' : baudText;
+        $('#baudCustom').value = baudText;
+        $('#baudCustom').hidden = !custom;
+        $('#dataBits').value = String(state.settings.dataBits);
+        $('#stopBits').value = String(state.settings.stopBits);
+        $('#parity').value = state.settings.parity;
+        $('#flowControl').value = state.settings.flowControl;
+        $('#lineEnding').value = state.settings.lineEnding;
+        refreshProfileSummary();
+        refreshSendNote();
+      }
+
+      function setSettingsDisabled(disabled) {
+        ['baudPreset','baudCustom','dataBits','parity','stopBits','flowControl'].forEach(id => {
+          $('#' + id).disabled = disabled;
+        });
+      }
+
+      function endingText(value) {
+        return value === 'crlf' ? 'CRLF' : value === 'cr' ? 'CR' : value === 'lf' ? 'LF' : t('lineNone');
+      }
+
+      function endingBytes(value) {
+        return value === 'crlf' ? '\r\n' : value === 'cr' ? '\r' : value === 'lf' ? '\n' : '';
+      }
+
+      function refreshSendNote() {
+        const label = endingText($('#lineEnding').value);
+        $('#sendNote').textContent = t('sendNote').replace('{ending}', label);
+      }
+
+      function updateTerminalControls() {
+        const hasText = state.terminalText.length > 0;
+        $('#copyTerminalButton').disabled = !hasText;
+        $('#clearTerminalButton').disabled = !hasText;
+        $('#terminalCount').textContent = new Intl.NumberFormat(state.language).format(state.terminalText.length) + (state.language === 'ja' ? ' 文字' : ' chars');
+        $('#autoScrollButton').setAttribute('aria-pressed', String(state.autoScroll));
+        $('#autoScrollState').textContent = state.autoScroll ? 'ON' : 'OFF';
+      }
+
       function setPhase(phase) {
         state.phase = phase;
         const statusKey = {
@@ -920,6 +1247,7 @@
         $('#connectButton').disabled = !supported || !state.port || busy || connected;
         $('#disconnectButton').disabled = !connected;
         $('#commandInput').disabled = !connected;
+        setSettingsDisabled(busy || connected);
         updateSendState();
       }
 
@@ -937,6 +1265,7 @@
 
       function appendTerminal(text) {
         if (!text) return;
+        state.terminalRevision += 1;
         state.terminalText += text;
         if (state.terminalText.length > MAX_DISPLAY_CHARS) {
           state.terminalText = state.terminalText.slice(state.terminalText.length - MAX_DISPLAY_CHARS);
@@ -948,7 +1277,8 @@
         const terminal = $('#terminal');
         terminal.textContent = state.terminalText;
         $('#terminalEmpty').hidden = state.terminalText.length > 0;
-        terminal.scrollTop = terminal.scrollHeight;
+        updateTerminalControls();
+        if (state.autoScroll) terminal.scrollTop = terminal.scrollHeight;
       }
 
       function applyLanguage() {
@@ -969,6 +1299,9 @@
         $('#languageButton').textContent = state.language === 'ja' ? 'EN' : '日本語';
         $('#languageButton').setAttribute('aria-label', state.language === 'ja' ? '英語に切り替え' : 'Switch to Japanese');
         refreshDeviceLabel(state.port ? 'selectedDevice' : 'noDevice');
+        refreshProfileSummary();
+        refreshSendNote();
+        updateTerminalControls();
         setPhase(state.phase);
         updateSupportState();
       }
@@ -1024,12 +1357,17 @@
         setPhase('connecting');
         state.closing = false;
         try {
+          if (!updateSettingsFromControls()) {
+            setPhase('deviceSelected');
+            $('#settingsPanel').open = true;
+            return;
+          }
           await state.port.open({
-            baudRate: 115200,
-            dataBits: 8,
-            stopBits: 1,
-            parity: 'none',
-            flowControl: 'none'
+            baudRate: state.settings.baudRate,
+            dataBits: state.settings.dataBits,
+            stopBits: state.settings.stopBits,
+            parity: state.settings.parity,
+            flowControl: state.settings.flowControl
           });
 
           if (!state.port.readable || !state.port.writable) throw new Error('Serial streams are unavailable after opening the port.');
@@ -1134,10 +1472,13 @@
         const input = $('#commandInput');
         if (state.phase !== 'connected' || !state.writer || !input.value) return;
         const text = input.value;
+        state.settings.lineEnding = $('#lineEnding').value;
+        persistSettings();
+        refreshSendNote();
         clearError();
         $('#sendButton').disabled = true;
         try {
-          await state.writer.write(encoder.encode(text + '\n'));
+          await state.writer.write(encoder.encode(text + endingBytes(state.settings.lineEnding)));
           input.value = '';
           updateSendState();
           input.focus();
@@ -1145,6 +1486,60 @@
           setNotice('error', t('writeErrorTitle'), t('writeErrorBody') + technicalSuffix(error));
           updateSendState();
         }
+      }
+
+      async function copyTerminal() {
+        if (!state.terminalText) return;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(state.terminalText);
+          } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = state.terminalText;
+            textarea.setAttribute('readonly', '');
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.append(textarea);
+            try {
+              textarea.select();
+              if (!document.execCommand('copy')) throw new Error('copy command failed');
+            } finally {
+              textarea.remove();
+            }
+          }
+          showToast(t('copiedTerminal'));
+        } catch {
+          showToast(t('copyFailed'));
+        }
+      }
+
+      function clearTerminal() {
+        if (!state.terminalText) return;
+        const before = state.terminalText;
+        state.terminalRevision += 1;
+        const clearRevision = state.terminalRevision;
+        state.terminalText = '';
+        $('#terminal').textContent = '';
+        $('#terminalEmpty').hidden = false;
+        updateTerminalControls();
+        AppToast.show({
+          message: t('clearedTerminal'),
+          actionLabel: state.language === 'ja' ? '元に戻す' : 'Undo',
+          onAction: () => {
+            if (state.terminalRevision !== clearRevision) {
+              showToast(t('restoreSkipped'), 4300);
+              return;
+            }
+            state.terminalRevision += 1;
+            state.terminalText = before;
+            $('#terminal').textContent = before;
+            $('#terminalEmpty').hidden = before.length > 0;
+            updateTerminalControls();
+            if (state.autoScroll) $('#terminal').scrollTop = $('#terminal').scrollHeight;
+            showToast(t('restoredTerminal'));
+          },
+          duration: 5000
+        });
       }
 
       function updateSupportState() {
@@ -1166,6 +1561,30 @@
       $('#chooseButton').addEventListener('click', chooseDevice);
       $('#connectButton').addEventListener('click', connect);
       $('#disconnectButton').addEventListener('click', () => disconnect());
+      $('#copyTerminalButton').addEventListener('click', copyTerminal);
+      $('#clearTerminalButton').addEventListener('click', clearTerminal);
+      $('#autoScrollButton').addEventListener('click', () => {
+        state.autoScroll = !state.autoScroll;
+        updateTerminalControls();
+        if (state.autoScroll) $('#terminal').scrollTop = $('#terminal').scrollHeight;
+      });
+      $('#baudPreset').addEventListener('change', () => {
+        const custom = $('#baudPreset').value === 'custom';
+        $('#baudCustom').hidden = !custom;
+        if (custom) {
+          requestAnimationFrame(() => $('#baudCustom').focus({ preventScroll: true }));
+        } else {
+          $('#baudCustom').value = $('#baudPreset').value;
+          updateSettingsFromControls();
+        }
+        refreshProfileSummary();
+      });
+      $('#baudCustom').addEventListener('input', refreshProfileSummary);
+      $('#baudCustom').addEventListener('change', updateSettingsFromControls);
+      ['dataBits','parity','stopBits','flowControl'].forEach(id => {
+        $('#' + id).addEventListener('change', updateSettingsFromControls);
+      });
+      $('#lineEnding').addEventListener('change', updateSettingsFromControls);
       $('#sendButton').addEventListener('click', sendCommand);
       $('#commandInput').addEventListener('input', updateSendState);
       $('#commandInput').addEventListener('keydown', event => {
@@ -1203,9 +1622,21 @@
         if (state.phase === 'connected') void disconnect({ silent: true });
       });
 
+      const savedSettings = readSettings();
+      if (savedSettings) {
+        const candidateBaud = Number(savedSettings.baudRate);
+        if (Number.isInteger(candidateBaud) && candidateBaud > 0) state.settings.baudRate = candidateBaud;
+        if (savedSettings.dataBits === 7 || savedSettings.dataBits === 8) state.settings.dataBits = savedSettings.dataBits;
+        if (savedSettings.stopBits === 1 || savedSettings.stopBits === 2) state.settings.stopBits = savedSettings.stopBits;
+        if (['none','even','odd'].includes(savedSettings.parity)) state.settings.parity = savedSettings.parity;
+        if (['none','hardware'].includes(savedSettings.flowControl)) state.settings.flowControl = savedSettings.flowControl;
+        if (['none','lf','cr','crlf'].includes(savedSettings.lineEnding)) state.settings.lineEnding = savedSettings.lineEnding;
+      }
+      applySettingsToControls();
       $('#versionBadge').textContent = 'v' + APP_CONFIG.version;
       $('#buildMeta').textContent = 'v' + APP_CONFIG.version + ' · ' + (BUILD_MANIFEST.generatedAtUtc || '');
       $('#terminalEmpty').hidden = false;
+      updateTerminalControls();
       applyLanguage();
       if (updateSupportState()) {
         setPhase('idle');
