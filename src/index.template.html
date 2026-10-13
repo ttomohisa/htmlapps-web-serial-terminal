@@ -36,6 +36,15 @@
     }
     * { box-sizing: border-box; }
     html { min-height: 100%; background: var(--bg); }
+    html.help-scroll-locked { overflow: hidden; }
+    body.help-scroll-locked {
+      position: fixed;
+      top: var(--help-scroll-offset, 0px);
+      left: 0;
+      right: 0;
+      width: 100%;
+      overflow: hidden;
+    }
     body {
       margin: 0;
       min-height: 100vh;
@@ -989,7 +998,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.8.0</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.9.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -1010,7 +1019,7 @@
       </div>
       <div class="privacy-note">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
-        <span data-i18n="privacyBadge">通信内容を外部送信しません</span>
+        <span data-i18n="privacyBadge">完全ローカル処理</span>
       </div>
     </section>
 
@@ -1317,7 +1326,7 @@
         <li data-i18n="helpStep9">USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。</li>
       </ol>
       <h3 data-i18n="helpPrivacyTitle">プライバシー</h3>
-      <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、マクロと設定だけをこの端末内へ保存します。</p>
+      <p data-i18n="helpPrivacyBody">シリアル通信データの処理は端末内で完結し、このアプリから外部サーバーへ送信しません。ページをオンラインで開く場合はHTMLの取得に通信が必要です。通信ログはセッション中のメモリにだけ保持し、明示的な操作時だけ端末に書き出します。マクロと設定はブラウザ内へ保存します。</p>
       <h3 data-i18n="helpNotesTitle">注意事項</h3>
       <ul>
         <li data-i18n="helpBrowser">デスクトップ版Chrome / Edge、およびFirefox 151以降ではWeb Serialを利用できます。実際の接続可否は起動時にnavigator.serialで判定します。</li>
@@ -1378,7 +1387,7 @@
           brandMeta: 'USBシリアル機器とブラウザで送受信',
           introTitle: 'シリアル機器へ接続',
           introBody: '機器を選択して接続すると、受信テキストを確認しながらコマンドを送信できます。',
-          privacyBadge: '通信内容を外部送信しません',
+          privacyBadge: '完全ローカル処理',
           noDevice: '機器が選択されていません',
           chooseHint: 'USBシリアル機器を選択してください',
           selectedDevice: 'シリアル機器',
@@ -1543,7 +1552,7 @@
           helpStep8: '「コマンドマクロ」には、よく使うText / HEX送信を最大12個までこの端末へ保存できます。',
           helpStep9: 'USBが抜けた場合は切断状態へ移り、同じ機器を挿し直したら「再接続」で通信を再開できます。',
           helpPrivacyTitle: 'プライバシー',
-          helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、マクロと設定だけをこの端末内へ保存します。',
+          helpPrivacyBody: 'シリアル通信データの処理は端末内で完結し、このアプリから外部サーバーへ送信しません。ページをオンラインで開く場合はHTMLの取得に通信が必要です。通信ログはセッション中のメモリにだけ保持し、明示的な操作時だけ端末に書き出します。マクロと設定はブラウザ内へ保存します。',
           helpNotesTitle: '注意事項',
           helpBrowser: 'デスクトップ版Chrome / Edge、およびFirefox 151以降ではWeb Serialを利用できます。実際の接続可否は起動時にnavigator.serialで判定します。',
           helpMobile: 'Androidでは通信方式と機器によって対応が異なります。Bluetooth RFCOMMを利用できる場合がありますが、USBシリアルは保証しません。iPhone / iPadやWeb Serialを公開しないSafari環境では接続できません。',
@@ -1556,7 +1565,7 @@
           brandMeta: 'Send and receive with USB serial devices in your browser',
           introTitle: 'Connect a serial device',
           introBody: 'Choose a device and connect to inspect incoming text while sending commands.',
-          privacyBadge: 'Serial data is not sent to a server',
+          privacyBadge: 'Fully local processing',
           noDevice: 'No device selected',
           chooseHint: 'Choose a USB serial device',
           selectedDevice: 'Serial device',
@@ -1721,7 +1730,7 @@
           helpStep8: 'Command macros can save up to 12 frequently used Text / HEX sends on this device.',
           helpStep9: 'If USB is removed, the app leaves the connected state. Reconnect the same device and press Reconnect to resume.',
           helpPrivacyTitle: 'Privacy',
-          helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. Session logs stay in memory; only macros and preferences are stored on this device.',
+          helpPrivacyBody: 'Serial data is processed entirely on your device and is not sent to an external server by this app. Opening the hosted page still requires downloading its HTML. Session logs remain in memory until you explicitly export them; macros and preferences are stored in this browser.',
           helpNotesTitle: 'Notes',
           helpBrowser: 'Desktop Chrome / Edge and Firefox 151 and later provide Web Serial. The app still checks navigator.serial at runtime before enabling connection actions.',
           helpMobile: 'Android support depends on the transport and device. Bluetooth RFCOMM may be available, but wired USB serial is not guaranteed. iPhone / iPad and Safari environments that do not expose Web Serial cannot connect.',
@@ -2841,7 +2850,7 @@
         document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
           element.setAttribute('placeholder', t(element.dataset.i18nPlaceholder));
         });
-        $('#languageButton').textContent = state.language === 'ja' ? 'EN' : '日本語';
+        $('#languageButton').textContent = state.language === 'ja' ? 'EN' : 'JA';
         $('#languageButton').setAttribute('aria-label', state.language === 'ja' ? '英語に切り替え' : 'Switch to Japanese');
         refreshDeviceLabel(state.port ? 'selectedDevice' : 'noDevice');
         refreshProfileSummary();
@@ -3281,11 +3290,19 @@
       }
 
       function saveTxtLog() {
-        if (downloadLog(buildTxtLogParts(), 'txt', 'text/plain')) showToast(t('savedTxt'));
+        try {
+          if (downloadLog(buildTxtLogParts(), 'txt', 'text/plain')) showToast(t('savedTxt'));
+        } catch {
+          showToast(t('saveFailed'), 4300);
+        }
       }
 
       function saveJsonlLog() {
-        if (downloadLog(buildJsonlLogParts(), 'jsonl', 'application/x-ndjson')) showToast(t('savedJsonl'));
+        try {
+          if (downloadLog(buildJsonlLogParts(), 'jsonl', 'application/x-ndjson')) showToast(t('savedJsonl'));
+        } catch {
+          showToast(t('saveFailed'), 4300);
+        }
       }
 
       function clearSessionLog() {
@@ -3664,8 +3681,38 @@
       });
 
       const helpDialog = $('#helpDialog');
-      $('#helpButton').addEventListener('click', () => helpDialog.showModal());
+      let helpBackgroundScrollY = null;
+
+      function lockHelpBackgroundScroll() {
+        if (helpBackgroundScrollY !== null) return;
+        helpBackgroundScrollY = window.scrollY || window.pageYOffset || 0;
+        document.body.style.setProperty('--help-scroll-offset', '-' + helpBackgroundScrollY + 'px');
+        document.documentElement.classList.add('help-scroll-locked');
+        document.body.classList.add('help-scroll-locked');
+      }
+
+      function unlockHelpBackgroundScroll() {
+        if (helpBackgroundScrollY === null) return;
+        const y = helpBackgroundScrollY;
+        helpBackgroundScrollY = null;
+        document.body.classList.remove('help-scroll-locked');
+        document.documentElement.classList.remove('help-scroll-locked');
+        document.body.style.removeProperty('--help-scroll-offset');
+        window.scrollTo(0, y);
+      }
+
+      $('#helpButton').addEventListener('click', () => {
+        if (helpDialog.open) return;
+        lockHelpBackgroundScroll();
+        try {
+          helpDialog.showModal();
+        } catch (error) {
+          unlockHelpBackgroundScroll();
+          throw error;
+        }
+      });
       $('#closeHelpButton').addEventListener('click', () => helpDialog.close());
+      helpDialog.addEventListener('close', unlockHelpBackgroundScroll);
       helpDialog.addEventListener('click', event => {
         const rect = helpDialog.getBoundingClientRect();
         const outside = event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
