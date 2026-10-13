@@ -1387,7 +1387,11 @@
           connect: '接続',
           disconnect: '切断',
           reconnect: '再接続',
-          reconnectedAvailable: '機器が再び利用可能になりました。「再接続」を押すと通信を再開できます。',
+          reconnectedAvailable: '以前の機器と識別情報が一致する候補を検出しました。「再接続」を押すと通信を再開できます。',
+          reconnectNotFound: '接続可能な以前の機器が見つかりません。USB接続を確認して再試行するか、「機器を選択」から選び直してください。',
+          reconnectAmbiguous: '同じ識別情報の機器が複数見つかりました。誤接続を避けるため「機器を選択」で対象を選んでください。',
+          reconnectUnidentified: '以前の機器を安全に判別できません。「機器を選択」で対象を選び直してください。',
+          reconnectLookupFailed: '機器一覧を確認できませんでした。再試行するか「機器を選択」から選び直してください。',
           profile: '通信設定',
           deviceControl: '機器制御',
           deviceControlDisconnected: '接続後に利用できます',
@@ -1561,7 +1565,11 @@
           connect: 'Connect',
           disconnect: 'Disconnect',
           reconnect: 'Reconnect',
-          reconnectedAvailable: 'The device is available again. Press Reconnect to resume communication.',
+          reconnectedAvailable: 'A permitted port with matching device identifiers is available. Press Reconnect to resume communication.',
+          reconnectNotFound: 'The previously selected device is not available. Check USB and try again, or use Choose device to select it again.',
+          reconnectAmbiguous: 'Multiple ports share the same device identifiers. Use Choose device to avoid connecting to the wrong device.',
+          reconnectUnidentified: 'The previous device cannot be identified safely. Use Choose device to select the correct port again.',
+          reconnectLookupFailed: 'Could not check available ports. Try again or select the device again with Choose device.',
           profile: 'Connection settings',
           deviceControl: 'Device control',
           deviceControlDisconnected: 'Available after connecting',
@@ -1735,6 +1743,8 @@
         closing: false,
         unexpectedDisconnect: false,
         devicePhysicallyAvailable: true,
+        reconnectChecking: false,
+        reconnectGeneration: 0,
         dtr: null,
         rts: null,
         inputSignals: { cts: null, dsr: null, dcd: null, ri: null },
@@ -2784,11 +2794,12 @@
         $('#statusDot').className = 'status-dot' + (phase === 'connected' ? ' connected' : (phase === 'connecting' || phase === 'disconnecting' || phase === 'requesting' ? ' busy' : ''));
 
         const supported = Boolean(navigator.serial) && window.isSecureContext;
-        const busy = phase === 'requesting' || phase === 'connecting' || phase === 'disconnecting';
+        const busy = phase === 'requesting' || phase === 'connecting' || phase === 'disconnecting' || state.reconnectChecking;
         const connected = phase === 'connected';
 
         $('#chooseButton').disabled = !supported || busy || connected;
-        $('#connectButton').disabled = !supported || !state.port || busy || connected || (state.unexpectedDisconnect && !state.devicePhysicallyAvailable);
+        // Always allow an explicit recovery check; reconnect events may arrive with a new SerialPort object or be missed.
+        $('#connectButton').disabled = !supported || !state.port || busy || connected;
         $('#connectButton').textContent = t(state.unexpectedDisconnect ? 'reconnect' : 'connect');
         $('#disconnectButton').disabled = !connected;
         $('#commandInput').disabled = !connected;
@@ -2854,6 +2865,68 @@
         return ' [' + error.name + ']';
       }
 
+      function getPortUsbIdentifiers(port) {
+        try {
+          const info = port && port.getInfo ? port.getInfo() : null;
+          if (!info || !Number.isInteger(info.usbVendorId) || !Number.isInteger(info.usbProductId)) return null;
+          return { vendor: info.usbVendorId, product: info.usbProductId };
+        } catch {
+          return null;
+        }
+      }
+
+      function selectReconnectCandidate(previousPort, availablePorts) {
+        if (!previousPort || !Array.isArray(availablePorts)) return { status: 'notFound' };
+
+        // Object identity is sufficient when the browser kept the same permitted port object.
+        if (availablePorts.includes(previousPort)) return { status: 'found', port: previousPort };
+
+        // Replugging USB can produce a different SerialPort object; VID/PID identify only
+        // a *type* of device. Never pick one when two or more candidates match.
+        const previousIds = getPortUsbIdentifiers(previousPort);
+        if (!previousIds) return { status: availablePorts.length ? 'unidentified' : 'notFound' };
+        const matches = availablePorts.filter(port => {
+          const ids = getPortUsbIdentifiers(port);
+          return ids && ids.vendor === previousIds.vendor && ids.product === previousIds.product;
+        });
+        if (matches.length === 1) return { status: 'found', port: matches[0] };
+        if (matches.length > 1) return { status: 'ambiguous' };
+        return { status: 'notFound' };
+      }
+
+      async function refreshReconnectPort(options = {}) {
+        if (!navigator.serial || !state.unexpectedDisconnect || !state.port) return 'stale';
+        const previousPort = state.port;
+        const generation = state.reconnectGeneration;
+        let ports;
+        try {
+          ports = await navigator.serial.getPorts();
+        } catch {
+          if (options.reportFailure) showToast(t('reconnectLookupFailed'), 5200);
+          return 'error';
+        }
+
+        // Never apply a stale discovery result after the user changes ports or connects.
+        if (!state.unexpectedDisconnect || state.port !== previousPort || state.reconnectGeneration !== generation) return 'stale';
+
+        const result = selectReconnectCandidate(previousPort, ports);
+        state.devicePhysicallyAvailable = result.status === 'found';
+        if (result.status === 'found') {
+          state.port = result.port;
+          refreshDeviceLabel('permittedDevice');
+          setPhase('deviceSelected');
+          if (options.announce && !state.reconnectChecking) showToast(t('reconnectedAvailable'), 5200);
+        } else {
+          setPhase('deviceSelected');
+          if (options.reportFailure) {
+            const key = result.status === 'ambiguous' ? 'reconnectAmbiguous'
+              : result.status === 'unidentified' ? 'reconnectUnidentified' : 'reconnectNotFound';
+            showToast(t(key), 5200);
+          }
+        }
+        return result.status;
+      }
+
       async function loadPermittedPort() {
         if (!navigator.serial || !window.isSecureContext) return;
         try {
@@ -2877,6 +2950,7 @@
           const selected = await navigator.serial.requestPort();
           if (selected) {
             state.port = selected;
+            state.reconnectGeneration += 1;
             state.unexpectedDisconnect = false;
             state.devicePhysicallyAvailable = true;
             resetOutputSignalUi();
@@ -2899,7 +2973,19 @@
       }
 
       async function connect() {
-        if (!state.port || state.phase === 'connected' || state.phase === 'connecting') return;
+        if (!state.port || state.phase === 'connected' || state.phase === 'connecting' || state.reconnectChecking) return;
+        if (state.unexpectedDisconnect) {
+          state.reconnectChecking = true;
+          setPhase(state.phase);
+          let result;
+          try {
+            result = await refreshReconnectPort({ reportFailure: true });
+          } finally {
+            state.reconnectChecking = false;
+            setPhase(state.phase);
+          }
+          if (result !== 'found') return;
+        }
         clearError();
         setPhase('connecting');
         state.closing = false;
@@ -2921,6 +3007,7 @@
 
           state.writer = state.port.writable.getWriter();
           state.reader = state.port.readable.getReader();
+          state.reconnectGeneration += 1;
           state.unexpectedDisconnect = false;
           state.devicePhysicallyAvailable = true;
           resetOutputSignalUi();
@@ -3014,11 +3101,14 @@
           state.readTask = null;
           state.closing = false;
           stopConnectionClock();
+          state.reconnectGeneration += 1;
           state.unexpectedDisconnect = true;
           state.devicePhysicallyAvailable = false;
           resetOutputSignalUi();
           clearInputSignalUi();
           setPhase(state.port ? 'deviceSelected' : 'disconnected');
+          // A rapid remove/replug may complete before disconnect cleanup finishes.
+          void refreshReconnectPort({ announce: true });
           if (readFailure) {
             setNotice('error', t('readErrorTitle'), t('readErrorBody') + technicalSuffix(readFailure));
           } else {
@@ -3583,13 +3673,10 @@
       });
 
       if (navigator.serial && navigator.serial.addEventListener) {
-        navigator.serial.addEventListener('connect', event => {
-          const connectedPort = event.port || event.target;
+        navigator.serial.addEventListener('connect', () => {
           if (!state.unexpectedDisconnect || !state.port) return;
-          if (connectedPort && connectedPort !== navigator.serial && connectedPort !== state.port) return;
-          state.devicePhysicallyAvailable = true;
-          setPhase('deviceSelected');
-          showToast(t('reconnectedAvailable'), 5200);
+          // Event targets can be a newly-created SerialPort; compare against getPorts() instead.
+          void refreshReconnectPort({ announce: true });
         });
         navigator.serial.addEventListener('disconnect', event => {
           if (state.phase !== 'connected' && state.phase !== 'connecting') return;
@@ -3598,6 +3685,13 @@
           void handleUnexpectedDisconnect();
         });
       }
+
+      window.addEventListener('focus', () => {
+        if (state.unexpectedDisconnect) void refreshReconnectPort({ announce: true });
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && state.unexpectedDisconnect) void refreshReconnectPort({ announce: true });
+      });
 
       window.addEventListener('pagehide', () => {
         if (state.renderTimer) window.clearTimeout(state.renderTimer);
