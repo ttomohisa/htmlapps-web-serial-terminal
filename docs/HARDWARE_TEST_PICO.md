@@ -2,6 +2,24 @@
 
 This guide provides repeatable Raspberry Pi Pico hardware checks for Web Serial Terminal.
 
+## Hardware test results — 2026-10-13
+
+User-reported Raspberry Pi Pico USB CDC results (the exact browser and MicroPython versions have not been recorded):
+
+| Test | Result | Evidence |
+| --- | --- | --- |
+| Text TX/RX | Pass | `PING` / `PONG` |
+| Exact HEX bytes | Pass | `RAW 4`, `00 01 7F FF` round-trip |
+| Burst RX | Pass | `BURST 300 80`, sequence 000000–000299 and end marker |
+| Streaming UX | Pass | `STREAM 10`, follow pause, new-lines indicator, Latest, search, Stop |
+| Text / HEX macros | Pass | User confirmed both |
+| TXT / JSONL export | Pass | User confirmed both exports |
+| Macro persistence | Pass | User confirmed reload persistence |
+| Unplug / reconnect | Pass on revised code | Old behavior required manual reselection; revised Reconnect worked |
+| Approx. 20 MiB log limit | Pass | User confirmed the planned flood/limit/warning/continued communication/export/reset test |
+
+**Not covered by USB CDC:** Physical UART framing, exact control-key bytes through MicroPython REPL, DTR/RTS/BREAK, ambiguous same-model USB devices, Firefox/Android real hardware, quantitative long-duration performance and memory profiling.
+
 ## Test layers
 
 Use `examples/pico-usb-web-serial-test.py` first. It runs over the Pico MicroPython USB serial interface and covers Web Serial connection, Text/HEX TX/RX, line endings, UTF-8, macros, logging, high-volume receive, search/follow UX, and disconnect/reconnect.
@@ -71,7 +89,7 @@ Use these to verify terminal follow/pause, Latest, search, typed-command history
 5. Press Reconnect and verify `PING` produces `PONG`.
 6. If a permitted port cannot be identified uniquely, use Choose device; never silently select one of multiple USB ports with the same VID/PID.
 
-Hardware result before the fix: USB unplug and manual Choose device + Connect worked, but the Reconnect button stayed disabled. **Retest on real Pico pending** for the updated recovery path.
+Hardware result before the fix: USB unplug and manual Choose device + Connect worked, but the Reconnect button stayed disabled. **After fix (2026-10-13): User confirmed recovery using Reconnect on the same Pico. Pass.**
 
 ## Real UART check
 
