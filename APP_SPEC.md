@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.8.0
+- Current implementation milestone: v0.9.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -880,7 +880,50 @@ Reconnect is an explicit user action that checks `navigator.serial.getPorts()` f
 
 The regression test suite covers matching port objects, new matching port objects, ambiguous candidate lists, missing devices, unidentified devices, failed permission lookups, and stale discovery responses.
 
-## 8. v0.8.0 UX requirements
+## 7H. v0.9.0 release candidate hardening
+
+v0.9.0 is feature-frozen. Fixes address verified regressions, accessibility, privacy wording, and documentation, not new product capabilities.
+
+### 7H.1 Help modal background
+
+When the Help / 使い方と注意事項 dialog is open:
+
+- body/page scrolling is locked, including touch-based scrolling behind the dialog,
+- the help dialog remains internally scrollable,
+- closing via Close, Escape, or backdrop restores the previous page scroll position,
+- locking is idempotent, and failed dialog opening cannot leave the page locked.
+
+### 7H.2 Language toggle
+
+The visible language switch is `EN` when Japanese is selected and `JA` when English is selected. Accessible language-switch labels remain descriptive.
+
+### 7H.3 Local processing claims
+
+The visible badge uses `完全ローカル処理` / `Fully local processing` **for serial payload processing**.
+
+Scope:
+
+- serial RX/TX stays between browser and user-selected port,
+- communication logs live in session memory and are only written to disk on explicit export,
+- preferences and authored macros may be kept in this browser's localStorage,
+- the hosted webpage is still downloaded through HTTPS when first opened; the claim does not imply the website can be accessed without networking,
+- runtime external API/CDN/analytics/telemetry transmission remains excluded and CSP blocks `connect-src`.
+
+If a future change introduces network-side processing, revise this claim and its associated tests before release.
+
+### 7H.4 Log export failure handling
+
+TXT and JSONL export show a user-visible failure even if serialization fails before the Blob/download stage.
+
+### 7H.5 Verification evidence
+
+Pico USB CDC user-reported tests cover Text/HEX, burst/stream receiving, macro TX, TXT/JSONL exports, macro persistence, unplug/reconnect, and the approximate 20 MiB logging limit.
+
+Hardware tests do not establish UART electrical/framing correctness, DTR/RTS/BREAK correctness, Safari/Android/Firefox behavior, or performance under every baud rate. These remain explicit v1.0 release gates.
+
+The RC includes automated regression tests for reconnect discovery, help scroll locking, language labels, absence of runtime network APIs, and export failures.
+
+## 8. v0.9.0 UX requirements
 
 ### Desktop
 
@@ -897,7 +940,7 @@ One primary workspace:
 - Terminal remains useful at 320px width and above.
 - Connection and send buttons have touch-friendly targets.
 - Help dialog remains fully scrollable.
-- The app does not require a fixed bottom bar in v0.7.0.
+- The app does not require a fixed bottom bar in v0.9.0.
 
 ### Accessibility
 
@@ -921,7 +964,7 @@ The language switch changes:
 
 Technical terms such as Web Serial, USB, baud rate, VID, and PID may remain technical when translation would reduce clarity.
 
-## 10. v0.8.0 non-goals
+## 10. v0.9.0 non-goals
 
 Not included yet:
 
@@ -931,7 +974,23 @@ Not included yet:
 - firmware flashing,
 - multiple simultaneous ports.
 
-## 11. v0.8.0 acceptance criteria
+## 11. v0.9.0 acceptance criteria
+
+Earlier acceptance criteria remain applicable. RC additions:
+
+- app version identifies v0.9.0 consistently across config, runtime, spec, help, README, and changelog;
+- Help modal locks background page scrolling on desktop and touch environments;
+- Help content remains scrollable and Escape / Close / backdrop releases the lock and restores scroll position;
+- language toggle shows EN in Japanese and JA in English, with descriptive accessible labels;
+- local-processing badge is supported by actual runtime code, CSP, and explicit scope in help;
+- hosted HTML download is not misrepresented as network-free page delivery;
+- serial data is not persisted to localStorage without a direct user-created macro;
+- failed log serialization produces visible error feedback;
+- reconnect and RC regression tests succeed in CI;
+- standalone readable and self-extract files build and verify;
+- real-device and browser-matrix gaps remain documented rather than marked as passed.
+
+### Historical v0.8.0 acceptance criteria
 
 All earlier milestone acceptance criteria remain applicable, plus:
 
@@ -1145,7 +1204,7 @@ Finish smartphone interaction, software-keyboard handling, compact settings pres
 
 ### v0.9.0 — Release Candidate
 
-Stop adding features. Perform high-rate and long-session tests, device-unplug tests, occupied-port tests, invalid-input tests, memory review, accessibility review, Japanese/English review, CSP/network review, and standalone HTML checks.
+Feature freeze, help scroll-lock fix, EN/JA switch, verified local-processing wording, log-export error handling, automated regression tests, and explicit real-device/browser verification matrix. Implemented in v0.9.0; untested hardware/browser gates remain open until exercised.
 
 ### v1.0.0 — Stable Release
 
@@ -1186,6 +1245,7 @@ The header help button must explain:
 - that macro definitions are stored only on the current device while communication stays in the browser,
 - that no connection starts automatically,
 - browser support limitations, including Firefox Desktop 151+, Android transport limitations, and unsupported iPhone / iPad environments,
+- that the local-processing claim concerns serial payloads, not initial hosted HTML retrieval,
 - unexpected disconnect recovery.
 
 Help must be updated in the same change whenever user-visible behavior changes.
