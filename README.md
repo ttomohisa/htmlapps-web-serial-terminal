@@ -2,13 +2,13 @@
 
 A small Browser Kitty tool for connecting to a serial device, inspecting Text or HEX data, sending commands, saving reusable local macros, and explicitly exporting session logs.
 
-Current development version: v0.8.0
+Current development version: v0.9.0
 
 [日本語 README](README.ja.md)
 
 ## Current milestone
 
-v0.8.0 finishes the mobile-aware interaction layer and browser guidance on top of the terminal, logging, and macro workflow:
+v0.9.0 is the feature-frozen release candidate, hardening the existing terminal, logging, macro, and mobile workflows:
 
 - Web Serial feature detection
 - device selection through the browser chooser
@@ -51,6 +51,10 @@ v0.8.0 finishes the mobile-aware interaction layer and browser guidance on top o
 - recoverable errors for open, read, write, and unexpected disconnect
 - Japanese / English UI
 - no runtime CDN or external API
+- Help modal locks background scroll and restores page position after close
+- EN / JA language switch labels
+- verified local-processing badge and explicit hosted-page qualification
+- regression-tested serial reconnect and log-export failure handling
 
 Release-candidate regression, real-device compatibility checks, and other advanced features remain scheduled for later milestones.
 
@@ -78,19 +82,19 @@ Serial RX and TX data are handled in the browser and are not sent to a Browser K
 
 The standalone build keeps runtime network connections blocked with Content Security Policy. There is no analytics, telemetry, remote font, or runtime CDN dependency.
 
-v0.8.0 keeps communication records only in memory while the page is open and bounds the exportable session log to an approximate 20 MiB memory budget. TXT / JSONL files are written only when you explicitly save them. Language, serial/display preferences, and user-created command macros may be stored locally on this browser/device.
+v0.9.0 processes serial RX/TX entirely between your browser and the selected local serial device. The app does not transmit serial content to a server. Loading the hosted HTML still requires a normal page download over HTTPS; the "Fully local processing" badge refers to serial content processing, not website delivery. Communication records stay in session memory and the exportable log is limited by an approximate 20 MiB budget. TXT / JSONL files are written only when explicitly exported. Language and connection/display preferences, and user-authored macros, may be stored locally in this browser.
 
 ## Browser support
 
 Web Serial support is feature-detected at runtime. A secure context and `navigator.serial` are required before connection controls are enabled.
 
-Desktop Chrome / Edge are supported targets. Firefox Desktop added Web Serial in Firefox 151 (May 19, 2026), and v0.8.0 includes Firefox-specific guidance; the release artifact still needs real-device regression before v1.0 claims are finalized.
+Desktop Chrome / Edge are supported targets. Firefox Desktop added Web Serial in Firefox 151 (May 19, 2026), and v0.9.0 includes Firefox-specific guidance; the release artifact still needs real-device regression before v1.0 claims are finalized.
 
 Android is transport- and device-dependent. Chrome for Android can expose Web Serial for Bluetooth RFCOMM, but this app does not claim general wired-USB serial support on Android. When `navigator.serial` exists, the app remains usable and shows a caution; otherwise it recommends desktop for USB serial work.
 
 iPhone / iPad and Safari environments that do not expose Web Serial cannot connect.
 
-## Limitations in v0.8.0
+## Limitations in v0.9.0
 
 - The 20 MiB log limit is an approximate in-memory estimate rather than a precise JavaScript heap measurement.
 - Macro import/export and synchronization are not included; clearing browser site data can remove locally saved macros.
@@ -99,7 +103,7 @@ iPhone / iPad and Safari environments that do not expose Web Serial cannot conne
 - No ANSI / VT100 emulation.
 - The browser may expose VID / PID but not a user-friendly COM port name.
 
-See APP_SPEC.md for the v0.8.0 acceptance criteria and the remaining roadmap to v1.0.0.
+See [APP_SPEC.md](APP_SPEC.md) for the v0.9.0 acceptance criteria, [RC verification checklist](docs/RC_VERIFICATION.md) for passed/open release gates, and the remaining roadmap to v1.0.0.
 
 ## Raspberry Pi Pico hardware test
 
@@ -125,4 +129,4 @@ Generated files must not be edited directly. Edit src/index.template.html and re
 
 MIT. See LICENSE.
 
-There are no third-party runtime libraries in v0.8.0.
+There are no third-party runtime libraries in v0.9.0.
