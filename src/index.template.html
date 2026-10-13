@@ -959,10 +959,10 @@
       .terminal-wrap, .terminal { min-height: 300px; }
       .terminal { height: min(48vh, calc(var(--visual-viewport-height) * .48)); padding: 14px 13px 26px; font-size: 12px; }
       .composer { grid-template-columns: minmax(0, 1fr) 82px 72px; padding: 11px; }
-      .command-field { grid-column: 1 / -1; }
-      .send-mode { grid-column: 1; }
-      .line-ending { grid-column: 2; }
-      .send-button { grid-column: 3; min-width: 0; padding-inline: 9px; }
+      .command-field { grid-column: 1 / -1; grid-row: 1; }
+      .composer .send-mode { grid-column: 1; grid-row: 2; }
+      .composer #lineEnding { grid-column: 2; grid-row: 2; }
+      .composer .send-button { grid-column: 3; grid-row: 2; min-width: 0; padding-inline: 9px; }
       .status-line { padding-inline: 12px; gap: 7px; }
       .status-line .status-spacer { flex-basis: 100%; height: 0; }
       .io-stats { margin-right: auto; }
