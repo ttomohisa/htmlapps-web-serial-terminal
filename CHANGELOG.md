@@ -21,6 +21,10 @@ All notable changes to Web Serial Terminal are documented here.
 - Help and macro dialogs use the current visual viewport height and safe-area insets.
 - Programmatic mobile scrolling respects reduced-motion preferences.
 - Web Serial capability detection remains authoritative; user-agent detection is used only for better guidance.
+- Reconnect remains actionable after unexpected USB removal even if a browser reconnect event is not delivered.
+- Reconnect now refreshes permitted ports on demand and can rebind a uniquely matching USB VID/PID port when its SerialPort object changes.
+- Missing or ambiguous port matches prompt explicit device selection rather than silently connecting to another port.
+- Added automated serial-reconnect regression cases to the standalone CI workflow.
 
 ### Compatibility
 
