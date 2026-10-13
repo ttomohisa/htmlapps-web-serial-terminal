@@ -1,4 +1,4 @@
-# One-time v1.0.0 screenshot refresh, removed after screenshots are committed.
+# One-time v1.0.0 screenshot refresh; remove after assets are committed.
 name: Capture v1 screenshots
 
 on:
@@ -9,12 +9,13 @@ on:
       - "scripts/capture-screenshots.py"
       - "src/index.template.html"
 
+permissions:
+  contents: write
+  actions: read
+
 concurrency:
   group: capture-v1-screenshots-${{ github.event.pull_request.number }}
   cancel-in-progress: true
-
-permissions:
-  contents: write
 
 jobs:
   capture:
@@ -37,33 +38,24 @@ jobs:
           python -m pip install --disable-pip-version-check playwright
           python -m playwright install --with-deps chromium
 
-      - name: Wait for deployed v1.0.0 PR Preview
+      - name: Download validated v1.0.0 standalone artifact
         env:
-          PREVIEW_URL: https://r${{ github.event.repository.id }}-pr-${{ github.event.pull_request.number }}-bk-previews.ttomohisa.workers.dev/
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          python - <<'PY'
-          import os, time, urllib.request
-          url = os.environ['PREVIEW_URL']
-          for n in range(90):
-              try:
-                  with urllib.request.urlopen(url, timeout=12) as response:
-                      data = response.read().decode('utf-8', errors='replace')
-                  if 'id="versionBadge">v1.0.0' in data and 'id="commandInput"' in data:
-                      print('Deployed release candidate is ready:', url)
-                      break
-              except Exception as exc:
-                  print('Preview not ready:', str(exc)[:180])
-              time.sleep(5)
-          else:
-              raise SystemExit('v1.0.0 preview did not become available')
-          PY
+          set -euo pipefail
+          run_id=$(gh run list --workflow build-standalone.yml --branch "$GITHUB_HEAD_REF" --json databaseId,headSha,conclusion --limit 30 | python -c 'import os,sys,json; runs=json.load(sys.stdin); match=[r for r in runs if r["headSha"]==os.environ["HEAD_SHA"] and r["conclusion"]=="success"]; print(match[0]["databaseId"] if match else "")')
+          test -n "$run_id" || { echo "No successful matching standalone build yet"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/release-html"
+          gh run download "$run_id" --name "standalone-html-$HEAD_SHA" --dir "$RUNNER_TEMP/release-html"
+          test -f "$RUNNER_TEMP/release-html/dist/index.html"
+          grep -q 'id="versionBadge">v1.0.0' "$RUNNER_TEMP/release-html/dist/index.html"
 
       - name: Capture desktop and mobile screenshots in both languages
-        env:
-          PREVIEW_URL: https://r${{ github.event.repository.id }}-pr-${{ github.event.pull_request.number }}-bk-previews.ttomohisa.workers.dev/
-        run: python scripts/capture-screenshots.py --url "$PREVIEW_URL"
+        run: |
+          python scripts/capture-screenshots.py --url "file://$RUNNER_TEMP/release-html/dist/index.html"
 
-      - name: Commit generated screenshots to the release branch
+      - name: Commit screenshots to release PR branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
