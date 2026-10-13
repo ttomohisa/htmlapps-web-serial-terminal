@@ -14,7 +14,9 @@
 
 GitHub Pagesは最初のHTMLを配信します。読み込み後のシリアル通信は、ブラウザとユーザーが許可した機器の間で直接行われます。通信内容をサーバーへアップロードしません。
 
-[![Web Serial TerminalのPC画面](assets/screenshot.png)](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
+[![Web Serial TerminalのPC画面（日本語）](assets/screenshot.png)](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
+
+[スマートフォン画面を確認](assets/screenshot-mobile.png)
 
 ## 主な機能
 
@@ -30,7 +32,7 @@ GitHub Pagesは最初のHTMLを配信します。読み込み後のシリアル�
 
 ### Webで使う
 
-[GitHub Pagesのアプリ](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)を、Web Serial対応ブラウザで開きます。登録やインストールは不要です。接続したいシリアル機器をPCに接続し、ブラウザのポート選択画面で許可してください。
+[GitHub Pagesのアプリ](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)を、Web Serial対応ブラウザで開きます。デスクトップ版Chrome/Edgeでは登録や専用ターミナルソフトのインストールは不要です。Firefoxではブラウザが生成するサイト権限アドオンのインストールが必要です。機器をPCへ接続し、ブラウザのポート選択画面で許可してください。
 
 ### 単一HTMLをダウンロードして使う
 
@@ -113,7 +115,7 @@ Pull Request時の検証は [Validate standalone HTML](.github/workflows/build-s
 
 安全なコンテキストと `navigator.serial` に対応するブラウザが必要です。起動時に実際のAPIを確認し、利用できない環境では接続操作を無効にします。
 
-デスクトップ版Chrome / Edgeを主な対象としています。Firefox Desktop 151以降にもWeb Serial APIがありますが、このアプリのFirefox実機回帰は未確認です。Androidはブラウザ・端末・通信方式で動作が異なり、Bluetooth RFCOMMを利用できる場合がありますが、**Androidの有線USBシリアル対応は保証しません**。iPhone / iPadやWeb Serialを公開しないSafari環境では接続できません。
+デスクトップ版Chrome / Edgeを主な対象としています（Pico実機テスト時のブラウザの正確なバージョンは未記録です）。Firefox Desktop 151以降もWeb Serialに対応しますが、接続時にはFirefoxが生成するサイト権限アドオンのインストールが必要です。このアプリのFirefox実機回帰は未確認です。Androidはブラウザ・端末・通信方式で動作が異なり、Bluetooth RFCOMMを利用できる場合がありますが、**Androidの有線USBシリアル対応は保証しません**。iPhone / iPadやWeb Serialを公開しないSafari環境では接続できません。
 
 Raspberry Pi PicoのMicroPython USB CDCでは、Text / HEX送受信、大量受信、マクロ、ログ、永続化、USB抜去・明示的な再接続、約20 MiBログ上限の実機テストに合格しました。ただしUSB CDCだけでは、実UARTのBaud rate / parity / stop bits、DTR/RTS/BREAK、すべての制御バイトの正確さを検証できません。これらの確認には3.3 V USB-UARTアダプタが必要です。
 

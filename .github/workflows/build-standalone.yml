@@ -39,9 +39,9 @@ jobs:
         shell: pwsh
         run: ./scripts/check-repository.ps1
 
-      - name: Run release candidate regression tests
+      - name: Run release regression tests
         shell: pwsh
-        run: node --test tests/reconnect-regression.mjs tests/rc-hardening.mjs
+        run: node --test tests/reconnect-regression.mjs tests/rc-hardening.mjs tests/release-assets.mjs
 
       - name: Upload standalone artifact
         uses: actions/upload-artifact@v7

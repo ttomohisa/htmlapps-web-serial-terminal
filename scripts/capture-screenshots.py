@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Capture real Web Serial Terminal UI screenshots from a deployed release preview.
+"""Capture real Web Serial Terminal UI screenshots from verified standalone HTML or a release preview.
 
 Development helper only. Playwright is not bundled with the application.
-Usage: python scripts/capture-screenshots.py --url https://<preview-host>/
+Usage: python scripts/capture-screenshots.py --url file:///absolute/path/to/dist/index.html
 Requires: pip install playwright && python -m playwright install chromium
 """
 import argparse
@@ -67,7 +67,7 @@ def capture(browser, url: str, lang: str, mobile: bool, filename: str) -> None:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--url", required=True, help="Deployed release preview URL")
+    parser.add_argument("--url", required=True, help="Built standalone file:// or preview URL")
     args = parser.parse_args()
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True, args=["--no-sandbox"])

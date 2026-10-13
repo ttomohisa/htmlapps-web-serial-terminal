@@ -14,7 +14,9 @@
 
 GitHub Pages delivers the initial HTML. After the page loads, serial communication takes place directly between the browser and the device you authorize. The app does not upload serial payloads to a server.
 
-[![Web Serial Terminal desktop screenshot](assets/screenshot.png)](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
+[![Web Serial Terminal desktop screenshot (English)](assets/screenshot-en.png)](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
+
+[View the mobile screenshot](assets/screenshot-mobile-en.png)
 
 ## Features
 
@@ -30,7 +32,7 @@ GitHub Pages delivers the initial HTML. After the page loads, serial communicati
 
 ### Use the web app
 
-Open the [GitHub Pages demo](https://ttomohisa.github.io/htmlapps-web-serial-terminal/) in a browser that exposes Web Serial. No installation or account is required. Connect a supported serial device to the computer; the browser asks you to authorize the port.
+Open the [GitHub Pages demo](https://ttomohisa.github.io/htmlapps-web-serial-terminal/) in a browser that exposes Web Serial. No account or companion terminal software is required in supported desktop Chrome/Edge browsers. Firefox may require installation of a browser-generated site-permission add-on. Connect the device; the browser asks you to authorize the port.
 
 ### Use a standalone HTML file
 
@@ -113,7 +115,7 @@ The build also writes `web-serial-terminal.html` to the repository root as an ex
 
 A **secure context** and the `navigator.serial` API are required. The app detects those conditions at runtime instead of enabling an unsupported connection button.
 
-Desktop Chrome and Edge are the primary hardware-tested targets. Firefox Desktop 151+ exposes Web Serial, but this application's hardware regression on Firefox remains outstanding. On Android, Web Serial availability and supported transports vary; some Bluetooth RFCOMM use cases may be possible, but **general wired USB serial support is not claimed**. Browsers on iPhone/iPad and Safari environments without Web Serial cannot connect.
+Desktop Chrome and Edge are the primary intended targets; the precise browser version used in the Pico USB CDC tests was not recorded. Firefox Desktop 151+ exposes Web Serial but requires installation of a browser-generated site-permission add-on to authorize access. This application's hardware regression on Firefox remains outstanding. On Android, Web Serial availability and supported transports vary; some Bluetooth RFCOMM use cases may be possible, but **general wired USB serial support is not claimed**. Browsers on iPhone/iPad and Safari environments without Web Serial cannot connect.
 
 The app was tested with a Raspberry Pi Pico through MicroPython USB CDC: Text/HEX round trips, streamed output, macros, TXT/JSONL exports, persistence, manual reconnection, and the log limit passed. USB CDC testing does **not** validate real UART baud/parity/stop-bit signaling, DTR/RTS/BREAK, or every control byte. A separate 3.3 V USB-UART adapter is needed for that.
 
