@@ -3,9 +3,9 @@
   "name": "Web Serial Terminal",
   "nameJa": "Web Serial Terminal / シリアル通信ターミナル",
   "slug": "web-serial-terminal",
-  "version": "0.9.0",
-  "description": "Local Web Serial terminal for Text/HEX communication, command macros, local session logs, and safe reconnect; release-candidate verification.",
-  "descriptionJa": "Text / HEX送受信、コマンドマクロ、ローカルログ、再接続に対応したWeb Serialターミナルのリリース候補版です。",
+  "version": "1.0.0",
+  "description": "Browser-based Web Serial terminal for Text/HEX, local command macros, explicit serial controls and TXT/JSONL logging with no serial data uploads.",
+  "descriptionJa": "ブラウザからシリアル機器とText / HEX送受信し、ローカルマクロ、機器制御、TXT / JSONLログを利用する単一HTMLのターミナルです。",
   "defaultLanguage": "auto",
   "repository": {
     "owner": "ttomohisa",
