@@ -9,6 +9,10 @@ on:
       - "scripts/capture-screenshots.py"
       - "src/index.template.html"
 
+concurrency:
+  group: capture-v1-screenshots-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
