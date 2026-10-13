@@ -2,6 +2,25 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 0.9.0 - 2026-10-13
+
+### Fixed
+
+- Help / 使い方と注意事項 now locks background page scrolling while preserving scrolling inside the dialog. Close, Escape, and backdrop dismissal restore the previous page position.
+- Log export now reports failures even when TXT/JSONL serialization throws before creating the Blob.
+
+### Changed
+
+- Language toggle displays EN / JA rather than EN / 日本語.
+- The privacy badge now reads 完全ローカル処理 / Fully local processing. The help explains that this applies to serial data processing, while an online page visit still downloads HTML.
+- No feature expansion for the release candidate.
+
+### Verification
+
+- Added automated regression coverage for help scroll locking, language labels, CSP/network API constraints, and export failure handling alongside existing reconnect tests.
+- Raspberry Pi Pico USB CDC testing has user-reported passes for Text/HEX, burst and continuous receiving, macros, log exports, local macro persistence, unplug/reconnect, and the approximate 20 MiB log limit.
+- Physical UART framing, DTR/RTS/BREAK, additional browsers, long-duration performance and smartphone real-device checks remain open in the RC verification matrix.
+
 ## 0.8.0 - 2026-10-03
 
 ### Added
