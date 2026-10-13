@@ -32,6 +32,7 @@
       --focus: #287a66;
       --shadow: 0 12px 34px rgba(21, 48, 40, .08);
       --radius: 14px;
+      --visual-viewport-height: 100dvh;
     }
     * { box-sizing: border-box; }
     html { min-height: 100%; background: var(--bg); }
@@ -580,6 +581,31 @@
       border-top: 1px solid var(--line);
     }
     .dialog-actions .button:first-child { margin-right: auto; }
+    .mobile-shortcuts {
+      display: none;
+      gap: 7px;
+      padding: 8px 10px;
+      overflow-x: auto;
+      border-bottom: 1px solid #25322d;
+      background: #17211d;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .mobile-shortcuts::-webkit-scrollbar { display: none; }
+    .mobile-shortcut {
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 7px 11px;
+      border: 1px solid #33443d;
+      border-radius: 9px;
+      background: #111a16;
+      color: #d4ded9;
+      font-size: 11px;
+      font-weight: 760;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .mobile-shortcut:hover { border-color: #557068; background: #1b2923; }
     .terminal-tools {
       display: flex;
       align-items: center;
@@ -870,6 +896,7 @@
       border: 0;
     }
     @media (max-width: 760px) {
+      html { scroll-padding-top: 72px; }
       .intro { flex-direction: column; gap: 10px; }
       .privacy-note { align-self: flex-start; }
       .connection-bar { grid-template-columns: 1fr; }
@@ -877,8 +904,15 @@
       .connection-actions .button { flex: 1 1 auto; }
       .settings-body { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .setting-field:first-child { grid-column: 1 / -1; }
-      .terminal, .terminal-wrap { min-height: 360px; }
-      .terminal { height: 51vh; }
+      .mobile-shortcuts { display: flex; }
+      .terminal-tool, .terminal-select { min-height: 40px; }
+      .command-field, .search-input, .macro-form-control, .setting-control, .line-ending, .signal-select { font-size: 16px; }
+      .terminal, .terminal-wrap { min-height: 320px; }
+      .terminal { height: min(51vh, calc(var(--visual-viewport-height) * .52)); }
+      body.keyboard-open .terminal-wrap,
+      body.keyboard-open .terminal { min-height: 190px; }
+      body.keyboard-open .terminal { height: min(260px, calc(var(--visual-viewport-height) * .38)); }
+      dialog { max-height: calc(var(--visual-viewport-height) - 18px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
       .build-meta { display: none; }
     }
     @media (max-width: 520px) {
@@ -899,28 +933,50 @@
       .macro-toolbar { align-items: flex-start; }
       .macro-form-row { grid-template-columns: 1fr; }
       .control-section-label { flex-basis: 100%; min-width: 0; }
-      .signal-button, .signal-select, .control-key { min-height: 40px; }
+      .signal-button, .signal-select, .control-key { min-height: 44px; }
+      .control-section.control-keys {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        width: 100%;
+      }
+      .control-section.control-keys .control-section-label { grid-column: 1 / -1; }
+      .control-section.control-keys .control-key { min-width: 0; padding-inline: 4px; }
       .setting-field:first-child { grid-column: 1 / -1; }
       .baud-row { grid-template-columns: minmax(0, 1fr) minmax(88px, .75fr); }
       .terminal-tools { padding-inline: 10px; }
       .terminal-search { grid-template-columns: minmax(0, 1fr) auto auto; padding-inline: 10px; }
       .terminal-search .search-count { grid-column: 1 / 2; text-align: left; }
       .terminal-search #closeSearchButton { grid-column: 3; grid-row: 1; }
-      .terminal-wrap, .terminal { min-height: 330px; }
-      .terminal { height: 48vh; padding: 14px 13px 26px; font-size: 12px; }
+      .terminal-wrap, .terminal { min-height: 300px; }
+      .terminal { height: min(48vh, calc(var(--visual-viewport-height) * .48)); padding: 14px 13px 26px; font-size: 12px; }
       .composer { grid-template-columns: minmax(0, 1fr) 82px 72px; padding: 11px; }
       .command-field { grid-column: 1 / -1; }
       .send-mode { grid-column: 1; }
       .line-ending { grid-column: 2; }
       .send-button { grid-column: 3; min-width: 0; padding-inline: 9px; }
-      .status-line { padding-inline: 12px; }
+      .status-line { padding-inline: 12px; gap: 7px; }
       .status-line .status-spacer { flex-basis: 100%; height: 0; }
       .io-stats { margin-right: auto; }
-      #helpDialog {
+      .status-action { min-height: 40px; }
+      #helpDialog, #macroDialog {
         width: calc(100% - 18px);
         max-height: calc(100dvh - 18px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
       }
       .toast { left: 11px; right: 11px; bottom: calc(11px + env(safe-area-inset-bottom)); max-width: none; }
+    }
+    @media (max-width: 390px) {
+      .connection-actions #chooseButton { flex-basis: 100%; }
+      .connection-actions #connectButton,
+      .connection-actions #disconnectButton { flex: 1 1 calc(50% - 4px); }
+      .settings-body { grid-template-columns: 1fr; }
+      .setting-field:first-child { grid-column: auto; }
+      .baud-row { grid-template-columns: minmax(0, 1fr) minmax(92px, .72fr); }
+      .terminal-search { grid-template-columns: minmax(0, 1fr) minmax(68px, auto); }
+      .terminal-search .search-input { grid-column: 1 / -1; grid-row: 1; }
+      .terminal-search #previousMatchButton { grid-column: 1; grid-row: 2; min-width: 0; }
+      .terminal-search #nextMatchButton { grid-column: 2; grid-row: 2; min-width: 68px; }
+      .terminal-search .search-count { grid-column: 1; grid-row: 3; }
+      .terminal-search #closeSearchButton { grid-column: 2; grid-row: 3; justify-self: end; }
     }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
@@ -933,7 +989,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.7.0</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v0.8.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -1084,7 +1140,7 @@
             </div>
             <button class="signal-button" id="refreshSignalsButton" type="button" data-i18n="refreshSignals" disabled>更新</button>
           </div>
-          <div class="control-section">
+          <div class="control-section control-keys">
             <span class="control-section-label" data-i18n="controlKeys">制御キー</span>
             <button class="control-key" type="button" data-byte="27" data-label="ESC" disabled>ESC</button>
             <button class="control-key" type="button" data-byte="3" data-label="Ctrl+C" disabled>Ctrl+C</button>
@@ -1110,6 +1166,12 @@
           <div class="macro-list" id="macroList" hidden></div>
         </div>
       </details>
+
+      <nav class="mobile-shortcuts" data-i18n-aria-label="mobileShortcutsLabel" aria-label="モバイル用クイック操作">
+        <button class="mobile-shortcut" type="button" data-open-panel="settingsPanel" data-i18n="profile">通信設定</button>
+        <button class="mobile-shortcut" type="button" data-open-panel="deviceControlPanel" data-i18n="deviceControl">機器制御</button>
+        <button class="mobile-shortcut" type="button" data-open-panel="macroPanel" data-i18n="commandMacros">コマンドマクロ</button>
+      </nav>
 
       <div class="terminal-tools">
         <label class="terminal-tool-label">
@@ -1258,7 +1320,8 @@
       <p data-i18n="helpPrivacyBody">シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、マクロと設定だけをこの端末内へ保存します。</p>
       <h3 data-i18n="helpNotesTitle">注意事項</h3>
       <ul>
-        <li data-i18n="helpBrowser">Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。</li>
+        <li data-i18n="helpBrowser">デスクトップ版Chrome / Edge、およびFirefox 151以降ではWeb Serialを利用できます。実際の接続可否は起動時にnavigator.serialで判定します。</li>
+        <li data-i18n="helpMobile">Androidでは通信方式と機器によって対応が異なります。Bluetooth RFCOMMを利用できる場合がありますが、USBシリアルは保証しません。iPhone / iPadやWeb Serialを公開しないSafari環境では接続できません。</li>
         <li data-i18n="helpDriver">専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。</li>
         <li data-i18n="helpBusy">接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。</li>
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
@@ -1324,7 +1387,11 @@
           connect: '接続',
           disconnect: '切断',
           reconnect: '再接続',
-          reconnectedAvailable: '機器が再び利用可能になりました。「再接続」を押すと通信を再開できます。',
+          reconnectedAvailable: '以前の機器と識別情報が一致する候補を検出しました。「再接続」を押すと通信を再開できます。',
+          reconnectNotFound: '接続可能な以前の機器が見つかりません。USB接続を確認して再試行するか、「機器を選択」から選び直してください。',
+          reconnectAmbiguous: '同じ識別情報の機器が複数見つかりました。誤接続を避けるため「機器を選択」で対象を選んでください。',
+          reconnectUnidentified: '以前の機器を安全に判別できません。「機器を選択」で対象を選び直してください。',
+          reconnectLookupFailed: '機器一覧を確認できませんでした。再試行するか「機器を選択」から選び直してください。',
           profile: '通信設定',
           deviceControl: '機器制御',
           deviceControlDisconnected: '接続後に利用できます',
@@ -1439,8 +1506,15 @@
           error: 'エラー',
           secureTitle: 'このページではWeb Serialを利用できません',
           secureBody: 'Web Serialには安全なコンテキストが必要です。HTTPSまたは対応するローカル環境から開いてください。',
-          unsupportedTitle: 'このブラウザではWeb Serialを利用できません',
-          unsupportedBody: 'Web Serialに対応したブラウザで開いてください。',
+          unsupportedTitle: 'この環境ではWeb Serialを利用できません',
+          unsupportedBody: 'Web Serialに対応したデスクトップブラウザで開いてください。',
+          unsupportedFirefoxBody: 'Firefox Desktop 151以降ではWeb Serialを利用できます。Firefoxを更新するか、対応するChrome / Edgeのデスクトップ版を利用してください。',
+          unsupportedSafariBody: 'このSafari環境ではWeb Serialを利用できません。対応するChrome / EdgeまたはFirefox 151以降のデスクトップ版を利用してください。',
+          unsupportedIosBody: 'このiPhone / iPad環境ではWeb Serialを利用できません。USBシリアル機器は対応するデスクトップブラウザから利用してください。',
+          unsupportedAndroidBody: 'このAndroid環境ではWeb Serialを利用できません。Androidでは利用できるシリアル方式が端末・ブラウザによって異なるため、USBシリアル用途はデスクトップ版を推奨します。',
+          androidLimitedTitle: 'Androidでは接続できる機器が限定されます',
+          androidLimitedBody: 'このブラウザはWeb Serialを公開していますが、Androidでは通信方式や機器によって利用可否が異なります。Bluetooth RFCOMMは利用できる場合がありますが、USBシリアルは保証できません。',
+          mobileShortcutsLabel: 'モバイル用クイック操作',
           cancelled: '機器は選択されませんでした。',
           permissionLoaded: '以前に許可した機器を選択しました。接続するまで通信は開始しません。',
           deviceChosen: '機器を選択しました。接続するまで通信は開始しません。',
@@ -1471,7 +1545,8 @@
           helpPrivacyTitle: 'プライバシー',
           helpPrivacyBody: 'シリアル通信内容はブラウザ内で処理し、このアプリから外部サーバーへ送信しません。通信ログはセッション中のメモリにだけ保持し、マクロと設定だけをこの端末内へ保存します。',
           helpNotesTitle: '注意事項',
-          helpBrowser: 'Web Serialに対応したブラウザが必要です。非対応の場合は接続操作を無効にして案内します。',
+          helpBrowser: 'デスクトップ版Chrome / Edge、およびFirefox 151以降ではWeb Serialを利用できます。実際の接続可否は起動時にnavigator.serialで判定します。',
+          helpMobile: 'Androidでは通信方式と機器によって対応が異なります。Bluetooth RFCOMMを利用できる場合がありますが、USBシリアルは保証しません。iPhone / iPadやWeb Serialを公開しないSafari環境では接続できません。',
           helpDriver: '専用ターミナルソフトは不要ですが、USBシリアル機器によってはOS側のドライバーが必要です。',
           helpBusy: '接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。',
           helpPortName: 'ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。',
@@ -1490,7 +1565,11 @@
           connect: 'Connect',
           disconnect: 'Disconnect',
           reconnect: 'Reconnect',
-          reconnectedAvailable: 'The device is available again. Press Reconnect to resume communication.',
+          reconnectedAvailable: 'A permitted port with matching device identifiers is available. Press Reconnect to resume communication.',
+          reconnectNotFound: 'The previously selected device is not available. Check USB and try again, or use Choose device to select it again.',
+          reconnectAmbiguous: 'Multiple ports share the same device identifiers. Use Choose device to avoid connecting to the wrong device.',
+          reconnectUnidentified: 'The previous device cannot be identified safely. Use Choose device to select the correct port again.',
+          reconnectLookupFailed: 'Could not check available ports. Try again or select the device again with Choose device.',
           profile: 'Connection settings',
           deviceControl: 'Device control',
           deviceControlDisconnected: 'Available after connecting',
@@ -1605,8 +1684,15 @@
           error: 'Error',
           secureTitle: 'Web Serial is not available on this page',
           secureBody: 'Web Serial requires a secure context. Open the app over HTTPS or in a supported local context.',
-          unsupportedTitle: 'This browser does not provide Web Serial',
-          unsupportedBody: 'Open the app in a browser that supports Web Serial.',
+          unsupportedTitle: 'Web Serial is not available in this environment',
+          unsupportedBody: 'Open the app in a supported desktop browser.',
+          unsupportedFirefoxBody: 'Firefox Desktop 151 and later provide Web Serial. Update Firefox or use a supported desktop Chrome / Edge browser.',
+          unsupportedSafariBody: 'This Safari environment does not provide Web Serial. Use a supported desktop Chrome / Edge browser or Firefox 151 and later.',
+          unsupportedIosBody: 'Web Serial is not available in this iPhone / iPad environment. Use a supported desktop browser for USB serial devices.',
+          unsupportedAndroidBody: 'Web Serial is not available in this Android environment. Android serial support varies by browser, transport, and device, so use a desktop browser for USB serial work.',
+          androidLimitedTitle: 'Android device support is limited',
+          androidLimitedBody: 'This browser exposes Web Serial, but Android support depends on the transport and device. Bluetooth RFCOMM may be available, while wired USB serial is not guaranteed.',
+          mobileShortcutsLabel: 'Mobile quick actions',
           cancelled: 'No device was selected.',
           permissionLoaded: 'A previously permitted device is selected. Communication does not start until you connect.',
           deviceChosen: 'Device selected. Communication does not start until you connect.',
@@ -1637,7 +1723,8 @@
           helpPrivacyTitle: 'Privacy',
           helpPrivacyBody: 'Serial communication is processed in the browser and is not sent to an external server by this app. Session logs stay in memory; only macros and preferences are stored on this device.',
           helpNotesTitle: 'Notes',
-          helpBrowser: 'A browser with Web Serial support is required. Connection actions stay disabled when the API is unavailable.',
+          helpBrowser: 'Desktop Chrome / Edge and Firefox 151 and later provide Web Serial. The app still checks navigator.serial at runtime before enabling connection actions.',
+          helpMobile: 'Android support depends on the transport and device. Bluetooth RFCOMM may be available, but wired USB serial is not guaranteed. iPhone / iPad and Safari environments that do not expose Web Serial cannot connect.',
           helpDriver: 'No dedicated terminal application is required, but some USB serial devices still require an operating-system driver.',
           helpBusy: 'If connection fails, check whether Arduino IDE or another serial terminal is already using the same port.',
           helpPortName: 'The browser may not expose a friendly port name such as a COM number.',
@@ -1656,6 +1743,8 @@
         closing: false,
         unexpectedDisconnect: false,
         devicePhysicallyAvailable: true,
+        reconnectChecking: false,
+        reconnectGeneration: 0,
         dtr: null,
         rts: null,
         inputSignals: { cts: null, dsr: null, dcd: null, ri: null },
@@ -2705,11 +2794,12 @@
         $('#statusDot').className = 'status-dot' + (phase === 'connected' ? ' connected' : (phase === 'connecting' || phase === 'disconnecting' || phase === 'requesting' ? ' busy' : ''));
 
         const supported = Boolean(navigator.serial) && window.isSecureContext;
-        const busy = phase === 'requesting' || phase === 'connecting' || phase === 'disconnecting';
+        const busy = phase === 'requesting' || phase === 'connecting' || phase === 'disconnecting' || state.reconnectChecking;
         const connected = phase === 'connected';
 
         $('#chooseButton').disabled = !supported || busy || connected;
-        $('#connectButton').disabled = !supported || !state.port || busy || connected || (state.unexpectedDisconnect && !state.devicePhysicallyAvailable);
+        // Always allow an explicit recovery check; reconnect events may arrive with a new SerialPort object or be missed.
+        $('#connectButton').disabled = !supported || !state.port || busy || connected;
         $('#connectButton').textContent = t(state.unexpectedDisconnect ? 'reconnect' : 'connect');
         $('#disconnectButton').disabled = !connected;
         $('#commandInput').disabled = !connected;
@@ -2775,6 +2865,68 @@
         return ' [' + error.name + ']';
       }
 
+      function getPortUsbIdentifiers(port) {
+        try {
+          const info = port && port.getInfo ? port.getInfo() : null;
+          if (!info || !Number.isInteger(info.usbVendorId) || !Number.isInteger(info.usbProductId)) return null;
+          return { vendor: info.usbVendorId, product: info.usbProductId };
+        } catch {
+          return null;
+        }
+      }
+
+      function selectReconnectCandidate(previousPort, availablePorts) {
+        if (!previousPort || !Array.isArray(availablePorts)) return { status: 'notFound' };
+
+        // Object identity is sufficient when the browser kept the same permitted port object.
+        if (availablePorts.includes(previousPort)) return { status: 'found', port: previousPort };
+
+        // Replugging USB can produce a different SerialPort object; VID/PID identify only
+        // a *type* of device. Never pick one when two or more candidates match.
+        const previousIds = getPortUsbIdentifiers(previousPort);
+        if (!previousIds) return { status: availablePorts.length ? 'unidentified' : 'notFound' };
+        const matches = availablePorts.filter(port => {
+          const ids = getPortUsbIdentifiers(port);
+          return ids && ids.vendor === previousIds.vendor && ids.product === previousIds.product;
+        });
+        if (matches.length === 1) return { status: 'found', port: matches[0] };
+        if (matches.length > 1) return { status: 'ambiguous' };
+        return { status: 'notFound' };
+      }
+
+      async function refreshReconnectPort(options = {}) {
+        if (!navigator.serial || !state.unexpectedDisconnect || !state.port) return 'stale';
+        const previousPort = state.port;
+        const generation = state.reconnectGeneration;
+        let ports;
+        try {
+          ports = await navigator.serial.getPorts();
+        } catch {
+          if (options.reportFailure) showToast(t('reconnectLookupFailed'), 5200);
+          return 'error';
+        }
+
+        // Never apply a stale discovery result after the user changes ports or connects.
+        if (!state.unexpectedDisconnect || state.port !== previousPort || state.reconnectGeneration !== generation) return 'stale';
+
+        const result = selectReconnectCandidate(previousPort, ports);
+        state.devicePhysicallyAvailable = result.status === 'found';
+        if (result.status === 'found') {
+          state.port = result.port;
+          refreshDeviceLabel('permittedDevice');
+          setPhase('deviceSelected');
+          if (options.announce && !state.reconnectChecking) showToast(t('reconnectedAvailable'), 5200);
+        } else {
+          setPhase('deviceSelected');
+          if (options.reportFailure) {
+            const key = result.status === 'ambiguous' ? 'reconnectAmbiguous'
+              : result.status === 'unidentified' ? 'reconnectUnidentified' : 'reconnectNotFound';
+            showToast(t(key), 5200);
+          }
+        }
+        return result.status;
+      }
+
       async function loadPermittedPort() {
         if (!navigator.serial || !window.isSecureContext) return;
         try {
@@ -2798,6 +2950,7 @@
           const selected = await navigator.serial.requestPort();
           if (selected) {
             state.port = selected;
+            state.reconnectGeneration += 1;
             state.unexpectedDisconnect = false;
             state.devicePhysicallyAvailable = true;
             resetOutputSignalUi();
@@ -2820,7 +2973,19 @@
       }
 
       async function connect() {
-        if (!state.port || state.phase === 'connected' || state.phase === 'connecting') return;
+        if (!state.port || state.phase === 'connected' || state.phase === 'connecting' || state.reconnectChecking) return;
+        if (state.unexpectedDisconnect) {
+          state.reconnectChecking = true;
+          setPhase(state.phase);
+          let result;
+          try {
+            result = await refreshReconnectPort({ reportFailure: true });
+          } finally {
+            state.reconnectChecking = false;
+            setPhase(state.phase);
+          }
+          if (result !== 'found') return;
+        }
         clearError();
         setPhase('connecting');
         state.closing = false;
@@ -2842,6 +3007,7 @@
 
           state.writer = state.port.writable.getWriter();
           state.reader = state.port.readable.getReader();
+          state.reconnectGeneration += 1;
           state.unexpectedDisconnect = false;
           state.devicePhysicallyAvailable = true;
           resetOutputSignalUi();
@@ -2935,11 +3101,14 @@
           state.readTask = null;
           state.closing = false;
           stopConnectionClock();
+          state.reconnectGeneration += 1;
           state.unexpectedDisconnect = true;
           state.devicePhysicallyAvailable = false;
           resetOutputSignalUi();
           clearInputSignalUi();
           setPhase(state.port ? 'deviceSelected' : 'disconnected');
+          // A rapid remove/replug may complete before disconnect cleanup finishes.
+          void refreshReconnectPort({ announce: true });
           if (readFailure) {
             setNotice('error', t('readErrorTitle'), t('readErrorBody') + technicalSuffix(readFailure));
           } else {
@@ -3205,18 +3374,77 @@
         input.setSelectionRange(input.value.length, input.value.length);
       }
 
+      let visualViewportBaseline = 0;
+
+      function updateVisualViewport(options) {
+        const config = options || {};
+        const viewport = window.visualViewport;
+        const height = Math.max(240, Math.round(viewport ? viewport.height : window.innerHeight));
+        document.documentElement.style.setProperty('--visual-viewport-height', height + 'px');
+
+        if (config.resetBaseline || !visualViewportBaseline) visualViewportBaseline = height;
+        if (height > visualViewportBaseline) visualViewportBaseline = height;
+
+        const mobileLayout = window.matchMedia('(max-width: 760px)').matches;
+        const active = document.activeElement;
+        const textInputFocused = Boolean(active && (active.matches('input:not([type="button"]):not([type="submit"]), textarea') || active.isContentEditable));
+        const keyboardOpen = mobileLayout && textInputFocused && visualViewportBaseline - height > 120;
+        document.body.classList.toggle('keyboard-open', keyboardOpen);
+      }
+
+      function revealFocusedControl(element) {
+        window.setTimeout(() => {
+          try { element.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); } catch { }
+        }, 80);
+      }
+
+      function browserEnvironment() {
+        const ua = navigator.userAgent || '';
+        const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+        const ios = /iPhone|iPad|iPod/i.test(ua) || (platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        const android = /Android/i.test(ua);
+        const firefox = /Firefox\/(\d+)/i.exec(ua);
+        const edge = /Edg\/(\d+)/i.exec(ua);
+        const chrome = /(?:Chrome|Chromium)\/(\d+)/i.exec(ua);
+        const safari = !android && /Safari\//i.test(ua) && !/(?:Chrome|Chromium|CriOS|Edg|Firefox|FxiOS)\//i.test(ua);
+        return {
+          ios,
+          android,
+          firefoxVersion: firefox ? Number(firefox[1]) : null,
+          edgeVersion: edge ? Number(edge[1]) : null,
+          chromeVersion: chrome ? Number(chrome[1]) : null,
+          safari
+        };
+      }
+
+      function unsupportedGuidance(environment) {
+        if (environment.ios) return t('unsupportedIosBody');
+        if (environment.android) return t('unsupportedAndroidBody');
+        if (environment.firefoxVersion !== null) return t('unsupportedFirefoxBody');
+        if (environment.safari) return t('unsupportedSafariBody');
+        return t('unsupportedBody');
+      }
+
       function updateSupportState() {
         if (!window.isSecureContext) {
           setNotice('support', t('secureTitle'), t('secureBody'));
           setPhase('unsupported');
           return false;
         }
+
+        const environment = browserEnvironment();
         if (!navigator.serial) {
-          setNotice('support', t('unsupportedTitle'), t('unsupportedBody'));
+          setNotice('support', t('unsupportedTitle'), unsupportedGuidance(environment));
           setPhase('unsupported');
           return false;
         }
-        setNotice('support', '', '');
+
+        if (environment.android) {
+          setNotice('support', t('androidLimitedTitle'), t('androidLimitedBody'));
+        } else {
+          setNotice('support', '', '');
+        }
+
         if (state.phase === 'unsupported') setPhase(state.port ? 'deviceSelected' : 'idle');
         return true;
       }
@@ -3398,6 +3626,37 @@
         refreshMacroDialogTitle();
       });
 
+      document.querySelectorAll('[data-open-panel]').forEach(button => {
+        button.addEventListener('click', () => {
+          const panel = document.getElementById(button.dataset.openPanel);
+          if (!panel) return;
+          panel.open = true;
+          panel.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+          const summary = panel.querySelector('summary');
+          if (summary) window.setTimeout(() => summary.focus({ preventScroll: true }), 220);
+        });
+      });
+
+      ['commandInput','macroNameInput','macroPayloadInput'].forEach(id => {
+        const element = $('#' + id);
+        element.addEventListener('focus', () => {
+          updateVisualViewport();
+          revealFocusedControl(element);
+        });
+        element.addEventListener('blur', () => {
+          window.setTimeout(() => updateVisualViewport(), 120);
+        });
+      });
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => updateVisualViewport());
+        window.visualViewport.addEventListener('scroll', () => updateVisualViewport());
+      }
+      window.addEventListener('resize', () => updateVisualViewport());
+      window.addEventListener('orientationchange', () => {
+        window.setTimeout(() => updateVisualViewport({ resetBaseline: true }), 260);
+      });
+
       $('#languageButton').addEventListener('click', () => {
         state.language = state.language === 'ja' ? 'en' : 'ja';
         writeStorage(APP_CONFIG.slug + ':language', state.language);
@@ -3414,13 +3673,10 @@
       });
 
       if (navigator.serial && navigator.serial.addEventListener) {
-        navigator.serial.addEventListener('connect', event => {
-          const connectedPort = event.port || event.target;
+        navigator.serial.addEventListener('connect', () => {
           if (!state.unexpectedDisconnect || !state.port) return;
-          if (connectedPort && connectedPort !== navigator.serial && connectedPort !== state.port) return;
-          state.devicePhysicallyAvailable = true;
-          setPhase('deviceSelected');
-          showToast(t('reconnectedAvailable'), 5200);
+          // Event targets can be a newly-created SerialPort; compare against getPorts() instead.
+          void refreshReconnectPort({ announce: true });
         });
         navigator.serial.addEventListener('disconnect', event => {
           if (state.phase !== 'connected' && state.phase !== 'connecting') return;
@@ -3430,12 +3686,20 @@
         });
       }
 
+      window.addEventListener('focus', () => {
+        if (state.unexpectedDisconnect) void refreshReconnectPort({ announce: true });
+      });
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && state.unexpectedDisconnect) void refreshReconnectPort({ announce: true });
+      });
+
       window.addEventListener('pagehide', () => {
         if (state.renderTimer) window.clearTimeout(state.renderTimer);
         if (state.connectionClockTimer) window.clearInterval(state.connectionClockTimer);
         if (state.phase === 'connected') void disconnect({ silent: true });
       });
 
+      updateVisualViewport({ resetBaseline: true });
       state.macros = readMacros();
 
       const savedSettings = readSettings();
