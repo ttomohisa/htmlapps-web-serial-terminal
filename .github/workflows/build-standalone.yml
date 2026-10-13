@@ -8,6 +8,7 @@ on:
     paths:
       - "src/**"
       - "scripts/**"
+      - "tests/**"
       - "app.config.json"
       - "dependencies.json"
       - "dependencies.lock.json"
@@ -37,6 +38,10 @@ jobs:
       - name: Build and verify standalone HTML
         shell: pwsh
         run: ./scripts/check-repository.ps1
+
+      - name: Test reconnect recovery
+        shell: pwsh
+        run: node --test tests/reconnect-regression.mjs
 
       - name: Upload standalone artifact
         uses: actions/upload-artifact@v7
