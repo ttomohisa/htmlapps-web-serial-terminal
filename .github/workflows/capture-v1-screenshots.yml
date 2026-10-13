@@ -1,0 +1,72 @@
+# One-time v1.0.0 screenshot refresh, removed after screenshots are committed.
+name: Capture v1 screenshots
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize]
+    paths:
+      - "scripts/capture-screenshots.py"
+      - "src/index.template.html"
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1.0.0-finalize'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install capture-only browser tools
+        run: |
+          python -m pip install --disable-pip-version-check playwright
+          python -m playwright install --with-deps chromium
+
+      - name: Wait for deployed v1.0.0 PR Preview
+        env:
+          PREVIEW_URL: https://r${{ github.event.repository.id }}-pr-${{ github.event.pull_request.number }}-bk-previews.ttomohisa.workers.dev/
+        run: |
+          python - <<'PY'
+          import os, time, urllib.request
+          url = os.environ['PREVIEW_URL']
+          for n in range(90):
+              try:
+                  with urllib.request.urlopen(url, timeout=12) as response:
+                      data = response.read().decode('utf-8', errors='replace')
+                  if 'id="versionBadge">v1.0.0' in data and 'id="commandInput"' in data:
+                      print('Deployed release candidate is ready:', url)
+                      break
+              except Exception as exc:
+                  print('Preview not ready:', str(exc)[:180])
+              time.sleep(5)
+          else:
+              raise SystemExit('v1.0.0 preview did not become available')
+          PY
+
+      - name: Capture desktop and mobile screenshots in both languages
+        env:
+          PREVIEW_URL: https://r${{ github.event.repository.id }}-pr-${{ github.event.pull_request.number }}-bk-previews.ttomohisa.workers.dev/
+        run: python scripts/capture-screenshots.py --url "$PREVIEW_URL"
+
+      - name: Commit generated screenshots to the release branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/screenshot.png assets/screenshot-en.png assets/screenshot-mobile.png assets/screenshot-mobile-en.png
+          if git diff --cached --quiet; then
+            echo "Screenshots already up to date"
+            exit 0
+          fi
+          git commit -m "docs: capture actual v1.0.0 screenshots in Japanese and English"
+          git push origin "HEAD:${GITHUB_HEAD_REF}"
