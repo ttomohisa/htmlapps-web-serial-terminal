@@ -3290,11 +3290,19 @@
       }
 
       function saveTxtLog() {
-        if (downloadLog(buildTxtLogParts(), 'txt', 'text/plain')) showToast(t('savedTxt'));
+        try {
+          if (downloadLog(buildTxtLogParts(), 'txt', 'text/plain')) showToast(t('savedTxt'));
+        } catch {
+          showToast(t('saveFailed'), 4300);
+        }
       }
 
       function saveJsonlLog() {
-        if (downloadLog(buildJsonlLogParts(), 'jsonl', 'application/x-ndjson')) showToast(t('savedJsonl'));
+        try {
+          if (downloadLog(buildJsonlLogParts(), 'jsonl', 'application/x-ndjson')) showToast(t('savedJsonl'));
+        } catch {
+          showToast(t('saveFailed'), 4300);
+        }
       }
 
       function clearSessionLog() {
