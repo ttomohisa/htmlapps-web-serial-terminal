@@ -17,9 +17,9 @@ function exactSource(from, to) {
   return script.slice(start, end);
 }
 
-test('release candidate metadata and source JavaScript parse', () => {
-  assert.equal(config.version, '0.9.0');
-  assert.match(html, /id="versionBadge">v0\.9\.0<\/span>/);
+test('release metadata and source JavaScript parse', () => {
+  assert.equal(config.version, '1.0.0');
+  assert.match(html, /id="versionBadge">v1\.0\.0<\/span>/);
   assert.doesNotThrow(() => new Function(script));
 });
 
