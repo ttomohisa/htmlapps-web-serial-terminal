@@ -2,6 +2,22 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## 1.0.0 - 2026-10-13
+
+### Release
+
+- Finalized the Japanese and English READMEs following the PDF Organizer documentation layout, with verified GitHub Pages and build instructions, supported features, limitations, and privacy scope.
+- Refreshed the application screenshots in Japanese and English for desktop and mobile; the v1.0.0 screenshot source is the actual deployed Web Serial Terminal UI.
+- Preserved the user-approved SVG for the browser favicon and header icon.
+- Aligned app metadata and standalone HTML version to v1.0.0.
+- Maintained the network-blocked single HTML distribution, including readable and self-extracting builds and the generated repository-root HTML copy.
+- Retained the Pico USB CDC hardware test evidence and clearly identified outstanding UART, browser and mobile real-device checks.
+
+### Verification
+
+- Standalone build, repository verification, regression tests, translation key coverage and Cloudflare preview checks are required for this release.
+- Outstanding compatibility cases remain documented in `docs/RC_VERIFICATION.md` and `docs/RC_VERIFICATION.ja.md`; publishing v1.0.0 does not imply all of those devices were tested.
+
 ## 0.9.0 - 2026-10-13
 
 ### Fixed
