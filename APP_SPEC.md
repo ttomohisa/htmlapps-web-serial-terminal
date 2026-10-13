@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v0.9.0
+- Current implementation milestone: v1.0.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -1168,6 +1168,21 @@ All earlier milestone acceptance criteria remain applicable, plus:
 - The standard repository build and standalone verification pass.
 - Hardware communication remains an explicit manual test item unless a real serial device was actually used.
 
+## 11A. v1.0.0 release checklist
+
+The v0.9.0 acceptance and regression checks remain applicable.
+
+- Version v1.0.0 matches app.config, standalone HTML fallback, README (JA/EN), specification, and changelog.
+- README (JA/EN) describes the actual app rather than the starter, matching the verified output paths and GitHub Pages workflow.
+- Desktop and mobile screenshots show the real Web Serial Terminal application, not template starter content. Japanese and English variants are stored under assets/.
+- The favicon matches the header icon in generated HTML and keeps the user-approved SVG.
+- The single-HTML readable, self-extracting, and repository-root outputs build and verify; the root alias is generated, not assumed committed.
+- CSP keeps `connect-src 'none'`, with no external runtime script, font, API, telemetry, or analytics dependency.
+- Japanese/English translation coverage, reconnect behavior, help-dialog scroll locking, and export error handling remain checked by automated tests.
+- Pico USB CDC test evidence is retained; unverified real-UART controls, other browsers/devices, mobile visual tests, and 30–60-minute high-rate testing remain honestly marked as open.
+- GitHub Actions validation and Cloudflare PR preview/probe complete successfully.
+- The repository owner merges the PR; the assistant does not merge.
+
 ## 12. Development plan
 
 ### v0.1.0 — Serial Foundation
@@ -1208,7 +1223,7 @@ Feature freeze, help scroll-lock fix, EN/JA switch, verified local-processing wo
 
 ### v1.0.0 — Stable Release
 
-Finalize README, screenshots, favicon, browser-support statements, real-device regression coverage, release artifacts, repository checks, and version consistency.
+Finalize Japanese/English README based on the PDF Organizer documentation structure, capture current application screenshots, retain the existing SVG as favicon/header icon, align version and build artifacts, and explicitly report the real-device and browser checks that have and have not been performed. The stable label does not imply that every optional Web Serial hardware signal or every browser has been tested.
 
 ## 13. Post-v1.0 candidates
 
