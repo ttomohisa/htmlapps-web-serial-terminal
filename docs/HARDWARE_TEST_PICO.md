@@ -60,7 +60,18 @@ Other useful fixture commands:
 - `STREAM 10`, then `STREAM STOP`
 - `FLOOD 2048`
 
-Use these to verify terminal follow/pause, Latest, search, typed-command history, macros, TXT/JSONL export, log limits, and reconnect after USB removal.
+Use these to verify terminal follow/pause, Latest, search, typed-command history, macros, TXT/JSONL export, and log limits.
+
+## USB unplug / reconnect regression
+
+1. Connect Pico and confirm Text/LF `PING` produces `PONG`.
+2. Unplug Pico while connected; retained terminal data should stay visible.
+3. Press Reconnect before replugging: a "device unavailable" message should appear, and the button should remain retryable.
+4. Replug Pico. Even if a connect event is missed or the browser creates a new SerialPort object, the Reconnect button should remain enabled.
+5. Press Reconnect and verify `PING` produces `PONG`.
+6. If a permitted port cannot be identified uniquely, use Choose device; never silently select one of multiple USB ports with the same VID/PID.
+
+Hardware result before the fix: USB unplug and manual Choose device + Connect worked, but the Reconnect button stayed disabled. **Retest on real Pico pending** for the updated recovery path.
 
 ## Real UART check
 
