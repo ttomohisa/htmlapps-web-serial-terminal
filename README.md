@@ -1,132 +1,143 @@
 # Web Serial Terminal
 
-A small Browser Kitty tool for connecting to a serial device, inspecting Text or HEX data, sending commands, saving reusable local macros, and explicitly exporting session logs.
+[![GitHub Pages](https://github.com/ttomohisa/htmlapps-web-serial-terminal/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/ttomohisa/htmlapps-web-serial-terminal/actions/workflows/deploy-pages.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Single HTML](https://img.shields.io/badge/distribution-single%20HTML-16624F)](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
 
-Current development version: v0.9.0
+[日本語版 README](README.ja.md)
 
-[日本語 README](README.ja.md)
+**Web Serial Terminal** connects a supported browser to a serial device. Inspect incoming Text or HEX bytes, send commands, reuse local macros, and save session logs without uploading serial data to an application server. It is distributed as a single HTML file, with Japanese and English interfaces.
 
-## Current milestone
+## Live demo
 
-v0.9.0 is the feature-frozen release candidate, hardening the existing terminal, logging, macro, and mobile workflows:
+### [Open Web Serial Terminal on GitHub Pages](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
 
-- Web Serial feature detection
-- device selection through the browser chooser
-- discovery of previously permitted ports without auto-connecting
-- configurable baud rate, including standard presets and a custom positive integer
-- configurable 7/8 data bits, 1/2 stop bits, none/even/odd parity, and none/hardware flow control
-- Text / HEX receive display
-- independent Text / HEX transmit mode
-- selectable None / LF / CR / CRLF line endings for Text transmit
-- strict HEX validation before raw-byte transmit
-- optional millisecond timestamps
-- optional Local echo with explicit RX / TX distinction
-- DTR / RTS controls that remain untouched until the user changes them
-- short BREAK pulse
-- CTS / DSR / DCD / RI inspection where available
-- ESC / Ctrl+C / Ctrl+D / Ctrl+Z / Tab one-byte control keys
-- explicit reconnect flow after unexpected USB disconnect
-- RX / TX raw-byte counters
-- terminal Copy and display-only Clear with safe Undo
-- Auto-scroll that pauses when you scroll up, with a new-line counter and Latest action
-- session-only Up / Down command history
-- up to 12 locally stored Text / HEX command macros
-- per-macro Text line-ending settings, editing, deletion confirmation, and one-tap send
-- smartphone quick navigation for Connection settings, Device control, and Command macros
-- Visual Viewport-aware terminal and dialog sizing for software keyboards
-- larger touch targets and a five-column mobile control-key row
-- environment-specific Web Serial guidance for Firefox, Safari/iPhone/iPad, and Android
-- case-insensitive terminal search with previous / next navigation
-- approximately 32 ms batched display rendering
-- display buffer capped at 50,000 line breaks / approximately 5 MiB without deleting the session log
-- live connection duration
-- in-memory session log with explicit TXT / JSONL file export
-- separate bounded terminal-display history and exportable session-log history
-- approximate 20 MiB session-log memory budget with a near-limit warning
-- automatic log-recording stop at the budget while serial communication and display continue
-- confirmed Clear log action that leaves the terminal display and RX / TX counters intact and resumes logging
-- per-record Blob-part TXT / JSONL export for long sessions
-- local persistence of connection/display preferences, but not communication records
-- explicit disconnect
-- recoverable errors for open, read, write, and unexpected disconnect
-- Japanese / English UI
-- no runtime CDN or external API
-- Help modal locks background scroll and restores page position after close
-- EN / JA language switch labels
-- verified local-processing badge and explicit hosted-page qualification
-- regression-tested serial reconnect and log-export failure handling
+GitHub Pages delivers the initial HTML. After the page loads, serial communication takes place directly between the browser and the device you authorize. The app does not upload serial payloads to a server.
 
-Release-candidate regression, real-device compatibility checks, and other advanced features remain scheduled for later milestones.
+[![Web Serial Terminal desktop screenshot](assets/screenshot.png)](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
+
+## Features
+
+- **Text and HEX serial communication** — Select a permitted device, set baud rate and framing, receive data in Text or HEX, and transmit UTF-8 Text or exact raw bytes.
+- **Configurable commands** — Choose None, LF, CR, or CRLF for Text sends; enable local echo or timestamps; use session-only command history.
+- **Device controls** — Explicitly set DTR/RTS, send a short BREAK pulse, inspect available input signals, and send ESC, Ctrl+C, Ctrl+D, Ctrl+Z, or Tab.
+- **A terminal designed for incoming streams** — Pause follow by scrolling up, jump to the newest output, search received text, copy the display, or clear it with Undo.
+- **Reusable command macros** — Save up to 12 named Text/HEX commands locally, edit their framing, and run them explicitly while connected.
+- **Exportable session logs** — Save TXT or JSONL with timestamps and raw bytes. The approximate 20 MiB export-log budget stops *recording* when full, not serial communication.
+- **Mobile-aware interface** — Larger touch targets, quick access to settings/device controls/macros, and software-keyboard-aware sizing. Actual USB serial availability still depends on the browser and device.
+
+## Quick start
+
+### Use the web app
+
+Open the [GitHub Pages demo](https://ttomohisa.github.io/htmlapps-web-serial-terminal/) in a browser that exposes Web Serial. No installation or account is required. Connect a supported serial device to the computer; the browser asks you to authorize the port.
+
+### Use a standalone HTML file
+
+1. Open this repository's [Actions](https://github.com/ttomohisa/htmlapps-web-serial-terminal/actions/workflows/deploy-pages.yml) and select a successful build.
+2. Download the `standalone-html-...` build artifact and extract it.
+3. Open `dist/index.html` or `dist/index.self-extract.html` in a browser that supports Web Serial in a local-file context.
+
+The repository also generates a readable repository-root `web-serial-terminal.html` copy during the build. Generated HTML artifacts are **not committed** to the source tree. Browser file:// permissions may differ from HTTPS; check the in-app compatibility notice.
+
+### Build it yourself (Windows)
+
+1. Download or clone this repository.
+2. Run `build-standalone.bat` (or `./build-standalone.ps1` in PowerShell).
+3. Use the generated `dist/index.html` for the readable single-file version or `dist/index.self-extract.html` for the self-extracting version.
+4. Keep the file on your device for later use; the runtime does not require a CDN or application server.
+
+The standard build uses PowerShell. There are no third-party runtime packages to download for this application.
 
 ## Usage
 
-1. Connect a serial device to the computer.
-2. Open Web Serial Terminal in a browser that supports Web Serial.
-3. Choose Device.
-4. Open Connection settings if you need to change baud rate, framing, or flow control.
-5. Connect.
-6. Choose Text or HEX display. Timestamp and Local echo are optional.
-7. Choose Text or HEX for sending. Text uses the selected line ending; HEX sends the exact byte sequence.
-8. Open Device control when you need DTR / RTS, BREAK, input signals, or control keys.
-9. Scroll upward to read older output; follow mode pauses automatically. Use Search or Up / Down command history when needed.
-10. Add frequently used Text / HEX sends under Command macros. Macro definitions stay on this browser/device and can be run only while connected.
-11. On a phone-sized screen, use the quick-action row above the terminal to jump to settings, device controls, or macros. The layout adapts when the software keyboard opens.
-12. Watch the log-usage indicator during long sessions. If logging stops at the approximate 20 MiB budget, save TXT or JSONL, then use Clear log to start a fresh saved-session log without clearing the terminal.
-13. Disconnect when finished.
+1. Attach a USB serial device (or other serial transport supported by the browser) and choose **Choose device**.
+2. Under **Connection settings**, set baud rate, data bits, stop bits, parity, and flow control as required by the hardware. Select **Connect**.
+3. Watch incoming data in **Text** or **HEX**. Optionally enable timestamps and Local echo.
+4. Set the send mode to **Text** or **HEX**. For Text, choose the desired line ending; HEX sends exactly the bytes entered, without an added line ending.
+5. Type a command and choose **Send**. Use the **Device control** panel for DTR/RTS, BREAK, input signals, and one-byte control keys.
+6. Scroll upward to pause automatic following; choose **Latest** to return to incoming output. Search and Copy operate on the visible display.
+7. Add frequently used commands under **Command macros**. Macro definitions are stored in your browser; execution requires an active connection.
+8. Save the captured session as **TXT** or **JSONL**. **Clear** affects the terminal display; **Clear log** resets recorded export data only after confirmation.
+9. Select **Disconnect** when finished. If a device is unplugged, reconnect explicitly after inserting it again; the app does not automatically reopen ports.
 
-The app never connects automatically on page load.
+### Common controls
 
-## Privacy
+| Control | Behavior |
+| --- | --- |
+| `↑` / `↓` in the command field | Recall previously typed commands from this page session |
+| Text / HEX send mode | Text is UTF-8 plus selected line ending; HEX is exact raw bytes |
+| Auto-scroll / Latest | Pauses when reading older output; Latest resumes following |
+| Clear / Undo | Hides the current terminal display; undo is available briefly |
+| Clear log | Confirms removal of in-memory records used for TXT/JSONL export |
+| EN / JA | Switches the interface language |
+| Help | Opens the internally scrollable help dialog while locking background page scrolling |
 
-Serial RX and TX data are handled in the browser and are not sent to a Browser Kitty server.
+## GitHub Pages publishing
 
-The standalone build keeps runtime network connections blocked with Content Security Policy. There is no analytics, telemetry, remote font, or runtime CDN dependency.
+The [Deploy standalone app to GitHub Pages](.github/workflows/deploy-pages.yml) workflow runs on pushes to `main` or by manual dispatch. It builds and verifies the standalone HTML, checks whether GitHub Pages is enabled, and publishes `dist/` when Pages has been configured to use GitHub Actions. A skipped deployment does not imply that the build failed.
 
-v0.9.0 processes serial RX/TX entirely between your browser and the selected local serial device. The app does not transmit serial content to a server. Loading the hosted HTML still requires a normal page download over HTTPS; the "Fully local processing" badge refers to serial content processing, not website delivery. Communication records stay in session memory and the exportable log is limited by an approximate 20 MiB budget. TXT / JSONL files are written only when explicitly exported. Language and connection/display preferences, and user-authored macros, may be stored locally in this browser.
+See [the repository validation workflow](.github/workflows/build-standalone.yml) for checks performed on pull requests.
 
-## Browser support
+## Development and build layout
 
-Web Serial support is feature-detected at runtime. A secure context and `navigator.serial` are required before connection controls are enabled.
+```text
+.
+├─ src/index.template.html             # Application source
+├─ app.config.json                     # Version, name, build outputs, privacy flags
+├─ assets/favicon.svg                  # Canonical embedded app icon
+├─ assets/screenshot*.png              # Japanese / English desktop and mobile captures
+├─ examples/pico-usb-web-serial-test.py # USB CDC hardware test fixture
+├─ examples/pico-uart-echo-test.py      # Real UART test fixture
+├─ docs/HARDWARE_TEST_PICO.md          # Pico hardware test procedure
+├─ docs/RC_VERIFICATION.md             # Verified / open acceptance checks
+├─ tests/                              # Automated regression tests
+├─ build-standalone.bat                # Windows build entry
+├─ build-standalone.ps1                # Standalone builder
+├─ dist/index.html                     # Generated readable standalone file
+├─ dist/index.self-extract.html        # Generated self-extracting version
+└─ .github/workflows/                  # Build, Pages and preview workflows
+```
 
-Desktop Chrome / Edge are supported targets. Firefox Desktop added Web Serial in Firefox 151 (May 19, 2026), and v0.9.0 includes Firefox-specific guidance; the release artifact still needs real-device regression before v1.0 claims are finalized.
+The build also writes `web-serial-terminal.html` to the repository root as an exact copy of the readable standalone build. Edit `src/index.template.html`, **not** generated output. `scripts/check-repository.ps1` validates PowerShell syntax, asset embedding, CSP, generated outputs, and artifact consistency.
 
-Android is transport- and device-dependent. Chrome for Android can expose Web Serial for Bluetooth RFCOMM, but this app does not claim general wired-USB serial support on Android. When `navigator.serial` exists, the app remains usable and shows a caution; otherwise it recommends desktop for USB serial work.
+## Privacy and runtime network protection
 
-iPhone / iPad and Safari environments that do not expose Web Serial cannot connect.
+- The selected serial device exchanges bytes with the browser directly. Serial RX/TX contents are not sent to an application server.
+- The hosted demo **downloads its HTML over HTTPS**. “Fully local processing” describes serial data operations after loading; it does not mean opening the site itself requires no network access.
+- `connect-src 'none'` in the generated HTML's Content Security Policy blocks runtime network connections. The app contains no external runtime CDN, font, analytics, or telemetry dependency.
+- Received/transmitted session records stay in memory and are written to a local TXT/JSONL file only on explicit export. The export log has an approximate 20 MiB memory budget; the display has separate size limits.
+- Display preferences, serial settings, language, and user-created macros may be stored in the browser's localStorage. Clearing site data can remove them. No serial session log is stored there.
 
-## Limitations in v0.9.0
+## Browser and hardware compatibility
 
-- The 20 MiB log limit is an approximate in-memory estimate rather than a precise JavaScript heap measurement.
-- Macro import/export and synchronization are not included; clearing browser site data can remove locally saved macros.
-- Android wired-USB serial support is not claimed; actual availability depends on the browser, transport, device, and OS.
-- Custom baud rates are accepted as positive integers, but actual support depends on the OS, driver, browser, and device.
-- No ANSI / VT100 emulation.
-- The browser may expose VID / PID but not a user-friendly COM port name.
+A **secure context** and the `navigator.serial` API are required. The app detects those conditions at runtime instead of enabling an unsupported connection button.
 
-See [APP_SPEC.md](APP_SPEC.md) for the v0.9.0 acceptance criteria, [RC verification checklist](docs/RC_VERIFICATION.md) for passed/open release gates, and the remaining roadmap to v1.0.0.
+Desktop Chrome and Edge are the primary hardware-tested targets. Firefox Desktop 151+ exposes Web Serial, but this application's hardware regression on Firefox remains outstanding. On Android, Web Serial availability and supported transports vary; some Bluetooth RFCOMM use cases may be possible, but **general wired USB serial support is not claimed**. Browsers on iPhone/iPad and Safari environments without Web Serial cannot connect.
 
-## Raspberry Pi Pico hardware test
+The app was tested with a Raspberry Pi Pico through MicroPython USB CDC: Text/HEX round trips, streamed output, macros, TXT/JSONL exports, persistence, manual reconnection, and the log limit passed. USB CDC testing does **not** validate real UART baud/parity/stop-bit signaling, DTR/RTS/BREAK, or every control byte. A separate 3.3 V USB-UART adapter is needed for that.
 
-Repeatable Pico fixtures and a step-by-step hardware matrix are included:
+See [Pico hardware test instructions](docs/HARDWARE_TEST_PICO.md) and the [release verification matrix](docs/RC_VERIFICATION.md) for evidence and remaining checks.
 
-- [Hardware test guide](docs/HARDWARE_TEST_PICO.md)
-- [USB CDC fixture](examples/pico-usb-web-serial-test.py)
-- [Real UART echo fixture](examples/pico-uart-echo-test.py)
+## Limitations
 
-Use the USB CDC fixture for Web Serial UX, Text/HEX, line endings, macros, logging, high-volume receive, and disconnect/reconnect. Use the separate 3.3 V USB-UART adapter fixture when validating real baud/parity/stop-bit behavior.
+- This is a basic raw serial terminal, **not** an ANSI/VT100 emulator, Modbus tool, plotter, or firmware flasher.
+- It works with one selected port at a time and does not automatically reconnect or transmit.
+- Device/driver/OS support determines which baud rates, line settings, USB permissions, and signal controls work.
+- USB VID/PID may be available without a friendly port name. Devices sharing identifiers may require manual selection after reattachment.
+- The approximate 20 MiB log budget estimates memory usage; it is not a precise JavaScript heap measurement. Full logs should be saved before clearing.
+- Browser preferences and macros are not synchronized, and there is no macro import/export in v1.0.0.
 
-## Build
+## Dependencies
 
-On Windows:
+The runtime uses native browser APIs with **no third-party JavaScript/WASM packages**. Build workflow actions and the template's reusable components are documented in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-    build-standalone.bat
+## Contributing
 
-The repository check performs PowerShell preflight, builds the readable and self-extracting standalone files, verifies CSP and embedding rules, and creates the repository-root readable HTML copy.
-
-Generated files must not be edited directly. Edit src/index.template.html and rebuild.
+Bug reports and feature requests are welcome through [GitHub Issues](https://github.com/ttomohisa/htmlapps-web-serial-terminal/issues). See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidance.
 
 ## License
 
-MIT. See LICENSE.
+Copyright © 2026 ttomohisa
 
-There are no third-party runtime libraries in v0.9.0.
+Licensed under the [MIT License](LICENSE).
