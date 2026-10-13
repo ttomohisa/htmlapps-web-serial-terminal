@@ -1,133 +1,143 @@
 # Web Serial Terminal / シリアル通信ターミナル
 
-USBシリアル機器へブラウザから接続し、Text / HEX送受信、よく使うコマンドの端末内保存、セッションログ書き出しを行う Browser Kitty の小さなツールです。
-
-現在の開発バージョン: v0.9.0
+[![GitHub Pages](https://github.com/ttomohisa/htmlapps-web-serial-terminal/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/ttomohisa/htmlapps-web-serial-terminal/actions/workflows/deploy-pages.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Single HTML](https://img.shields.io/badge/distribution-single%20HTML-16624F)](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
 
 [English README](README.md)
 
-## 現在のマイルストーン
+**Web Serial Terminal** は、ブラウザからシリアル機器へ接続し、Text / HEXの送受信、コマンドマクロ、通信ログの保存を行う単一HTMLのツールです。シリアル通信内容をアプリのサーバーに送信せず、日本語・英語のUIを使えます。
 
-v0.9.0 は新機能追加を止めたリリース候補版です。既存機能の不具合修正、実機検証、CSP・アクセシビリティ・日英表記の確認を進めます。
+## デモ
 
-- Web Serial 対応可否の判定
-- ブラウザの機器選択画面からシリアル機器を選択
-- 以前に許可したポートの検出。ただし自動接続はしない
-- Baud rateのプリセット＋自由入力
-- Data bits 7/8、Stop bits 1/2、Parity none/even/odd、Flow control none/hardware
-- 受信表示を Text / HEX から切替
-- 送信形式を Text / HEX から独立して選択
-- Text送信では改行を なし / LF / CR / CRLF から選択
-- HEX送信前の入力検証とraw byte送信
-- ミリ秒付き時刻表示のON/OFF
-- 送信表示（Local Echo）のON/OFFとRX / TX区別
-- 接続時には自動変更しないDTR / RTS操作
-- 短いBREAKパルス
-- 取得可能な場合のCTS / DSR / DCD / RI表示
-- ESC / Ctrl+C / Ctrl+D / Ctrl+Z / Tab の1 byte制御キー
-- USB抜去後の明示的な再接続フロー
-- RX / TX byte数
-- ターミナルのコピーと表示だけを消すUndo付きClear
-- 上へスクロールすると自動停止する追従、新着行数、「最新へ」
-- セッション中だけの↑ / ↓コマンド履歴
-- 最大12個のText / HEXコマンドマクロをこの端末内へ保存
-- マクロごとのText改行設定、編集、確認付き削除、ワンタップ送信
-- スマホ向けの通信設定 / 機器制御 / マクロへのクイック導線
-- Visual Viewportを使ったソフトウェアキーボード表示時のターミナル・ダイアログ調整
-- タップ領域拡大と5列のモバイル制御キー
-- Firefox、Safari / iPhone / iPad、AndroidごとのWeb Serial案内
-- 大文字小文字を区別しないターミナル検索と前へ / 次へ
-- 約32ms単位のまとめ描画
-- 表示を50,000改行 / 約5MiBに制限しつつセッションログは保持
-- 接続経過時間
-- メモリ内セッションログとTXT / JSONLの明示保存
-- ターミナル表示用履歴と保存用セッションログを分離
-- 保存用ログはメモリ使用量の概算20 MiBを上限に管理
-- 上限接近時の警告と、上限到達時のログ記録停止
-- ログ停止後もシリアル通信・画面表示・RX / TX byte数は継続
-- 確認付き「ログ消去」で表示を残したまま保存用ログだけを消去し、記録を再開
-- 長時間ログではレコード単位のBlob partsからTXT / JSONLを生成
-- 通信設定・表示設定は端末内へ保存。通信ログ自体は永続保存しない
-- 明示的な切断
-- 接続、受信、送信、予期しない切断のエラー表示
-- 日本語 / 英語UI
-- 実行時CDN・外部APIなし
-- 「使い方と注意事項」の表示中は背景スクロールを固定し、閉じると位置を復元
-- 言語切替の短い表記をEN / JAに統一
-- シリアル通信データの「完全ローカル処理」を確認し、ページ取得とは区別して説明
-- 再接続・ログ保存失敗を自動回帰テスト
+### [GitHub PagesでWeb Serial Terminalを開く](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
 
-リリース候補での実機回帰、対応ブラウザ確認などは後続バージョンで行います。
+GitHub Pagesは最初のHTMLを配信します。読み込み後のシリアル通信は、ブラウザとユーザーが許可した機器の間で直接行われます。通信内容をサーバーへアップロードしません。
+
+[![Web Serial TerminalのPC画面](assets/screenshot.png)](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)
+
+## 主な機能
+
+- **Text / HEXの送受信** — 接続先の機器を選び、Baud rateや通信条件を設定。受信データを文字やHEXで表示し、UTF-8テキストや指定したバイト列を送れます。
+- **送信方法を細かく設定** — Text送信の改行は「なし / LF / CR / CRLF」から選択。ローカルエコー、時刻表示、セッション内の送信履歴も利用できます。
+- **機器の制御** — DTR / RTSを明示的に変更し、BREAKパルスや制御キー（ESC、Ctrl+C、Ctrl+D、Ctrl+Z、Tab）を送信。取得できる入力信号も表示します。
+- **受信中も見返しやすい** — 上へスクロールすれば追従を一時停止。「最新へ」で戻り、検索・コピー・表示の消去とUndoもできます。
+- **よく使うコマンドをマクロ化** — Text / HEXの送信内容を最大12個、ブラウザ内に保存。名前・改行を指定して、接続中に明示的に実行します。
+- **ログを保存** — 時刻と生バイトを含むTXT / JSONLを端末へ保存。概算20 MiBの保存用ログ上限に達しても、**通信そのものは停止しません**。
+- **スマートフォンも考慮したUI** — 通信設定・機器制御・マクロへのクイック操作、タップ領域、キーボード表示時のレイアウトに対応。ただしUSBシリアルの利用可否は端末・ブラウザに依存します。
+
+## すぐに使う
+
+### Webで使う
+
+[GitHub Pagesのアプリ](https://ttomohisa.github.io/htmlapps-web-serial-terminal/)を、Web Serial対応ブラウザで開きます。登録やインストールは不要です。接続したいシリアル機器をPCに接続し、ブラウザのポート選択画面で許可してください。
+
+### 単一HTMLをダウンロードして使う
+
+1. このリポジトリの[GitHub Actions](https://github.com/ttomohisa/htmlapps-web-serial-terminal/actions/workflows/deploy-pages.yml)から、成功した実行を開きます。
+2. `standalone-html-...` というArtifactをダウンロードし、ZIPを展開します。
+3. `dist/index.html` または `dist/index.self-extract.html` を、ローカルファイルでのWeb Serialを利用できるブラウザで開きます。
+
+ビルド時にはリポジトリ直下にも `web-serial-terminal.html` が生成されます。**生成HTMLはソースリポジトリへコミットしていません**。なお、`file://` から開いたときの権限はHTTPSと異なる場合があり、アプリ内の対応判定で確認してください。
+
+### 自分でビルドする（Windows）
+
+1. このリポジトリをダウンロード、またはクローンします。
+2. `build-standalone.bat` を実行します（PowerShellなら `./build-standalone.ps1`）。
+3. `dist/index.html`（通常版）または `dist/index.self-extract.html`（自己展開版）が生成されます。
+4. 生成したHTMLファイルを保存しておけば、以降はランタイムのCDNやサーバーを使わずに実行できます。
+
+標準ビルドにはPowerShellを使います。このアプリにはダウンロードが必要なサードパーティの実行時ライブラリはありません。
 
 ## 使い方
 
-1. シリアル機器をPCへ接続します。
-2. Web Serial対応ブラウザで Web Serial Terminal を開きます。
-3. 「機器を選択」を押します。
-4. 必要なら「通信設定」を開き、Baud rateや通信条件を変更します。
-5. 「接続」を押します。
-6. 受信表示を Text / HEX から選びます。必要なら時刻や送信表示をONにします。
-7. 送信形式を Text / HEX から選びます。Textは改行方式を使い、HEXは入力したbyte列をそのまま送ります。
-8. DTR / RTS、BREAK、入力信号、制御キーが必要な場合は「機器制御」を開きます。
-9. 古いログを見るときは上へスクロールします。追従は自動停止し、検索や↑ / ↓のコマンド履歴も使えます。
-10. よく使うText / HEX送信は「コマンドマクロ」へ登録できます。マクロ定義はこのブラウザ・端末内へ保存され、実行は接続中だけ行えます。
-11. スマホ幅ではターミナル上のクイック操作から通信設定・機器制御・マクロへ移動できます。ソフトウェアキーボード表示時は画面高に合わせてレイアウトを調整します。
-12. 長時間通信ではログ使用量を確認します。概算20 MiBで記録が止まった場合はTXT / JSONLを保存し、その後「ログ消去」で画面を残したまま新しいログ記録を開始できます。
-13. 終了時に「切断」を押します。
+1. USBシリアル機器などを接続し、「**機器を選択**」からポートを選びます。
+2. 「**通信設定**」でBaud rate、Data bits、Stop bits、Parity、Flow controlを機器に合わせ、「**接続**」を押します。
+3. 受信表示を **Text / HEX** から選び、必要なら時刻表示やローカルエコーを切り替えます。
+4. 送信形式を **Text / HEX** から選びます。Textは改行方式を指定できます。HEXは入力した生バイトを追加改行なしで送ります。
+5. 内容を入力して「**送信**」。DTR / RTS、BREAK、制御キーなどは「**機器制御**」にあります。
+6. 受信内容を見返すときは上へスクロール。追従が一時停止し、「**最新へ**」で戻ります。検索とコピーも利用できます。
+7. 繰り返すコマンドは「**コマンドマクロ**」へ登録します。マクロはこのブラウザ内に保存され、接続中だけ実行できます。
+8. 記録した通信は **TXT / JSONL** で保存します。画面上の「**消去**」と保存用データを消す「**ログ消去**」は別の操作です。
+9. 終了時は「**切断**」。USBを抜き差しした場合も、アプリが勝手に接続・送信することはありません。「再接続」から明示的に復旧します。
 
-ページを開いただけで機器へ自動接続することはありません。
+### よく使う操作
 
-## プライバシー
+| 操作 | 説明 |
+| --- | --- |
+| 入力欄で `↑` / `↓` | このページで手入力したコマンドの履歴を呼び出す |
+| Text / HEX送信 | TextはUTF-8＋選択した改行、HEXは指定バイトをそのまま送信 |
+| 自動追従 / 最新へ | 過去ログを読んでいる間は追従停止。「最新へ」で再開 |
+| 消去 / 元に戻す | ターミナルの表示だけを消去。一定時間はUndo可能 |
+| ログ消去 | 保存用のセッションログだけを確認後に削除 |
+| EN / JA | 日本語・英語を切り替える |
+| 使い方と注意事項 | 背後のページは固定し、ダイアログ内だけスクロールできる |
 
-シリアル通信のRX/TXデータはブラウザ内で扱い、Browser Kittyのサーバーへ送信しません。
+## GitHub Pagesへの公開
 
-単一HTML版では Content Security Policy により実行時のネットワーク接続を遮断します。Analytics、Telemetry、外部フォント、実行時CDNも使用しません。
+[Deploy standalone app to GitHub Pages](.github/workflows/deploy-pages.yml) ワークフローは、`main` へのpushまたは手動実行で動作します。単一HTMLをビルド・検証し、PagesがGitHub Actionsを利用する設定なら `dist/` を公開します。Pages設定がない場合は公開をスキップしますが、それだけでビルド失敗という意味ではありません。
 
-v0.9.0では、シリアル通信データをブラウザと接続先の機器の間だけで処理します。このアプリが通信内容をサーバーへ送信することはありません。「完全ローカル処理」はこの通信データの処理を指し、オンラインでサイトのHTMLを取得するための通信が不要という意味ではありません。セッションログはページを開いている間だけメモリに保持し、概算20 MiBで記録を停止します。TXT / JSONLは保存を選んだときだけ端末へ書き出します。言語・通信・表示設定とユーザー作成マクロはブラウザ内に保存することがあります。
+Pull Request時の検証は [Validate standalone HTML](.github/workflows/build-standalone.yml) で行います。
 
-## ブラウザ対応
+## 開発とビルドの構成
 
-起動時に安全なコンテキストと `navigator.serial` の有無を確認し、Web Serialを利用できない環境では接続操作を無効にして理由を案内します。
+```text
+.
+├─ src/index.template.html             # アプリ本体
+├─ app.config.json                     # 名前・版数・出力先・通信制限
+├─ assets/favicon.svg                  # favicon / ヘッダー共通アイコン
+├─ assets/screenshot*.png              # 日英、PC・スマホの画面
+├─ examples/pico-usb-web-serial-test.py # Pico USB CDCテスト
+├─ examples/pico-uart-echo-test.py      # Pico実UARTテスト
+├─ docs/HARDWARE_TEST_PICO.ja.md       # Pico実機確認手順
+├─ docs/RC_VERIFICATION.ja.md          # 合格 / 未検証項目
+├─ tests/                              # 自動回帰テスト
+├─ build-standalone.bat                # Windows用ビルド
+├─ build-standalone.ps1                # 単一HTML生成処理
+├─ dist/index.html                     # 生成される通常版
+├─ dist/index.self-extract.html        # 生成される自己展開版
+└─ .github/workflows/                  # CI / Pages / Preview
+```
 
-デスクトップ版Chrome / Edgeを対応対象とします。Firefox DesktopはFirefox 151（2026年5月19日）からWeb Serialに対応しており、v0.9.0ではFirefox向けの案内も追加しています。v1.0の正式な対応表記前には、実機とリリース成果物で回帰確認を行います。
+ビルドすると通常版と同じ内容の `web-serial-terminal.html` もリポジトリ直下に生成します。生成物を直接編集せず、`src/index.template.html` を修正してください。`scripts/check-repository.ps1` はPowerShell構文、埋込アセット、CSP、生成物の整合性を検証します。
 
-Androidは通信方式・端末・ブラウザ依存です。Android版ChromeではBluetooth RFCOMM経由のWeb Serialを利用できる場合がありますが、このアプリではAndroidの有線USBシリアル対応を保証しません。`navigator.serial` がある場合は利用を妨げず注意表示を出し、ない場合はUSBシリアル用途としてデスクトップ版を案内します。
+## プライバシーと実行時の通信制限
 
-iPhone / iPadや、Web Serialを公開しないSafari環境では接続できません。
+- シリアル通信内容は、ブラウザとユーザーが選んだ機器の間で直接処理されます。このアプリから通信内容をサーバーへ送信しません。
+- オンライン版は最初に**HTTPSでHTMLを取得**します。「完全ローカル処理」は読み込み後のシリアル通信内容についての表現であり、サイト表示まで無通信という意味ではありません。
+- 生成HTMLのCSPは `connect-src 'none'`。外部API、実行時CDN、外部フォント、Analytics、Telemetryを利用しません。
+- 通信ログはページを開いている間のメモリに保持し、ユーザーが選んだ場合だけTXT / JSONLを保存します。保存用ログは概算20 MiBで記録を止めます。表示履歴には別の制限があります。
+- 言語・通信設定・表示設定・ユーザーが作成したマクロはlocalStorageに保存される場合があります。サイトデータの削除で消える場合があります。セッションの通信記録はlocalStorageには保存しません。
 
-## v0.9.0の制限
+## ブラウザ・機器の対応
 
-- 20 MiBのログ上限はJavaScriptヒープの厳密な実測値ではなく、レコード内容から算出する概算です。
-- マクロのインポート / エクスポートや同期はありません。ブラウザのサイトデータを消去すると保存したマクロも削除される場合があります。
-- Androidの有線USBシリアル対応は保証しません。実際の利用可否はブラウザ・通信方式・端末・OSに依存します。
-- 自由入力のBaud rateは1以上の整数を受け付けますが、実際に利用できる値はOS、ドライバー、ブラウザ、機器に依存します。
-- ANSI / VT100 エミュレーションは行いません。
-- ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。
+安全なコンテキストと `navigator.serial` に対応するブラウザが必要です。起動時に実際のAPIを確認し、利用できない環境では接続操作を無効にします。
 
-v0.9.0の受け入れ条件とv1.0.0までの残りの計画は [APP_SPEC.md](APP_SPEC.md)、合格・未検証項目は [RC確認表](docs/RC_VERIFICATION.ja.md) に記載しています。
+デスクトップ版Chrome / Edgeを主な対象としています。Firefox Desktop 151以降にもWeb Serial APIがありますが、このアプリのFirefox実機回帰は未確認です。Androidはブラウザ・端末・通信方式で動作が異なり、Bluetooth RFCOMMを利用できる場合がありますが、**Androidの有線USBシリアル対応は保証しません**。iPhone / iPadやWeb Serialを公開しないSafari環境では接続できません。
 
-## Raspberry Pi Pico 実機テスト
+Raspberry Pi PicoのMicroPython USB CDCでは、Text / HEX送受信、大量受信、マクロ、ログ、永続化、USB抜去・明示的な再接続、約20 MiBログ上限の実機テストに合格しました。ただしUSB CDCだけでは、実UARTのBaud rate / parity / stop bits、DTR/RTS/BREAK、すべての制御バイトの正確さを検証できません。これらの確認には3.3 V USB-UARTアダプタが必要です。
 
-再現可能なPico用fixtureと手順を同梱しています。
+[実機テスト手順](docs/HARDWARE_TEST_PICO.ja.md)と[検証状況一覧](docs/RC_VERIFICATION.ja.md)に、確認結果と未検証項目を記載しています。
 
-- [実機テスト手順](docs/HARDWARE_TEST_PICO.ja.md)
-- [USB CDCテストfixture](examples/pico-usb-web-serial-test.py)
-- [実UART echo fixture](examples/pico-uart-echo-test.py)
+## 制限事項
 
-PicoのUSB直結ではWeb Serial UI、Text / HEX、改行、マクロ、ログ、大量RX、抜去・再接続を確認できます。実際のbaud / parity / stop bitsを検証する場合は、3.3 V対応USB-UARTアダプタを使う実UART fixtureへ切り替えます。
+- 生のシリアルデータを扱うターミナルです。ANSI/VT100の画面再現、Modbus、グラフ、ファームウェア書き込みには対応していません。
+- 同時に扱うポートは1つで、自動接続・自動送信はしません。
+- 選べるBaud rateや通信条件、OSドライバー、USB権限、制御信号は機器・環境に依存します。
+- 機器名やCOM番号を取得できない場合があります。同じVID/PIDの機器が複数あれば、再接続時に選び直す必要があります。
+- 約20 MiBのログ上限はJavaScriptヒープの実測値ではなく概算です。ログを消す前に必要なファイルを保存してください。
+- 設定・マクロの端末間同期と、マクロのインポート / エクスポートはv1.0.0には含みません。
 
-## ビルド
+## 使用ライブラリ
 
-Windowsでは次を実行します。
+**サードパーティのJavaScript / WASMライブラリは使っていません**。ブラウザAPIを使用します。ビルド用Actionsやテンプレート由来の共通部品については [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) を参照してください。
 
-    build-standalone.bat
+## 開発への参加
 
-リポジトリチェックではPowerShell事前検証、通常版とSelf-extract版の単一HTML生成、CSP・埋め込みルールの検証、リポジトリ直下HTMLの生成まで行います。
-
-生成されたHTMLを直接編集せず、src/index.template.html を変更して再ビルドします。
+不具合や追加要望は [GitHub Issues](https://github.com/ttomohisa/htmlapps-web-serial-terminal/issues) へお願いします。開発方法は [CONTRIBUTING.md](CONTRIBUTING.md) にあります。
 
 ## ライセンス
 
-MIT。LICENSE を参照してください。
+Copyright © 2026 ttomohisa
 
-v0.9.0でもサードパーティの実行時ライブラリを使用していません。
+[MIT License](LICENSE) で公開しています。
