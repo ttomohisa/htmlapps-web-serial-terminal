@@ -863,6 +863,23 @@ Help and macro dialogs:
 
 Programmatic scrolling respects `prefers-reduced-motion`.
 
+### 7G.8 Unplug / reconnect recovery
+
+An unexpected USB disconnect must not leave Reconnect permanently disabled merely because a `connect` event was missed or its `SerialPort` object is not identical to the original.
+
+Reconnect is an explicit user action that checks `navigator.serial.getPorts()` for currently connected, previously permitted ports before attempting to reopen.
+
+- When the same SerialPort object is still permitted, reuse it.
+- When the browser returns a new object, a single candidate whose USB VID/PID match the previously selected port may be used.
+- When no port matches or the device cannot be identified, show a retry / Choose device message.
+- When two or more ports share the same VID/PID, do not select a candidate automatically; ask the user to Choose device.
+- Never auto-open merely because a browser `connect` event fired.
+- Discard stale discovery results after the user chooses another port or successfully connects.
+- Keep the existing terminal and in-memory session log through recovery.
+- VID/PID matching does not prove a unique physical identity, so reconnection must still require an explicit user action.
+
+The regression test suite covers matching port objects, new matching port objects, ambiguous candidate lists, missing devices, unidentified devices, failed permission lookups, and stale discovery responses.
+
 ## 8. v0.8.0 UX requirements
 
 ### Desktop
@@ -919,6 +936,13 @@ Not included yet:
 All earlier milestone acceptance criteria remain applicable, plus:
 
 - app metadata identifies v0.8.0.
+- after an unexpected disconnect, Reconnect remains actionable without relying on a second browser connect event.
+- pressing Reconnect refreshes available permitted ports before reopening one.
+- a unique VID/PID-matching re-enumerated USB port can be used when the original port object has changed.
+- missing, ambiguous, or unidentifiable reconnected ports remain safe and lead to manual Choose device rather than arbitrary selection.
+- stale asynchronous reconnect discovery never overwrites a manually changed port.
+- reconnect actions require a user gesture; no automatic serial open is introduced.
+- automated reconnect regression tests pass in CI.
 - Web Serial enablement continues to depend on secure context plus navigator.serial, not user-agent guesses.
 - unsupported Firefox guidance identifies Firefox Desktop 151+ as a Web Serial-capable target.
 - unsupported Safari / iPhone / iPad / Android environments receive concrete environment-specific guidance.
