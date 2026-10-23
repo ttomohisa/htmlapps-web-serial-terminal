@@ -2,6 +2,10 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
+## Unreleased
+
+- Hide only the informational footer at the existing 760px mobile-shortcut breakpoint. Move the existing buildMeta span to the end of the Help scroll body, retaining its existing mobile hiding. RX/TX, connection, logging and export controls stay in the operational status row; privacy scope and hardware behavior are unchanged.
+
 ## 1.0.0 - 2026-10-13
 
 ### Release

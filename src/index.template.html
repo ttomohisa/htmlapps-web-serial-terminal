@@ -905,6 +905,7 @@
       border: 0;
     }
     @media (max-width: 760px) {
+      footer { display: none; }
       html { scroll-padding-top: 72px; }
       .intro { flex-direction: column; gap: 10px; }
       .privacy-note { align-self: flex-start; }
@@ -1249,7 +1250,6 @@
         <button class="status-action" id="saveTxtButton" type="button" data-i18n="saveTxt" disabled>TXTログ</button>
         <button class="status-action" id="saveJsonlButton" type="button" data-i18n="saveJsonl" disabled>JSONL</button>
         <button class="status-action danger" id="clearSessionLogButton" type="button" data-i18n="clearSessionLog" disabled>ログ消去</button>
-        <span class="build-meta" id="buildMeta"></span>
       </div>
     </section>
   </main>
@@ -1336,6 +1336,7 @@
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
       </ul>
       <p class="dialog-note" data-i18n="helpFixed">「消去」は画面表示だけ、「ログ消去」は保存用セッションログだけを消します。ログ上限後は保存してから「ログ消去」を行うと記録を再開できます。DTR / RTSやBREAKは接続先への影響を確認して使用してください。</p>
+      <span class="build-meta" id="buildMeta"></span>
       <!-- APP:HELP:END -->
     </div>
   </dialog>
