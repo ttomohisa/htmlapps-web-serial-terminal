@@ -1264,3 +1264,9 @@ The header help button must explain:
 - unexpected disconnect recovery.
 
 Help must be updated in the same change whenever user-visible behavior changes.
+
+
+## Mobile footer and Help metadata
+
+- Hide only the informational footer at the existing 760px mobile-shortcut breakpoint. Move the existing buildMeta span to the end of the Help scroll body, retaining its existing mobile hiding. RX/TX, connection, logging and export controls stay in the operational status row; privacy scope and hardware behavior are unchanged.
+- Verify JA/EN desktop, breakpoint boundaries, narrow phones and short viewports, including Help final-item reachability, existing scrolling/dismissal, functional controls and repeated localization. No physical serial/camera capability is claimed from synthetic CI tests.
