@@ -105,13 +105,15 @@
     }
     .version-badge {
       display: inline-flex;
+      align-items: center;
       margin-left: 7px;
       padding: 1px 6px;
       border: 1px solid var(--line);
       border-radius: 999px;
-      background: var(--surface-strong);
+      background: var(--surface-muted);
       color: var(--muted);
-      font-size: 10px;
+      font-size: 11px;
+      font-weight: 650;
       vertical-align: 2px;
     }
     .brand-meta {
@@ -133,6 +135,22 @@
       background: transparent;
       color: var(--muted);
       cursor: pointer;
+    }
+    .dialog-close {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .dialog-close svg { width: 18px; height: 18px; }
+    .header-text-button, .icon-button, .dialog-close {
+      -webkit-tap-highlight-color: transparent;
     }
     .header-text-button {
       padding: 8px 2px;
@@ -179,13 +197,14 @@
       align-items: center;
       gap: 7px;
       flex: 0 0 auto;
-      padding: 7px 10px;
-      border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--line));
-      border-radius: 999px;
-      background: var(--accent-soft);
+      margin-top: 3px;
+      padding: 7px 0;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
       color: var(--accent);
       font-size: 12px;
-      font-weight: 760;
+      font-weight: 500;
       white-space: nowrap;
     }
     .privacy-note svg { width: 15px; height: 15px; }
@@ -841,7 +860,7 @@
       border-bottom: 1px solid var(--line);
     }
     .dialog-head h2 { margin: 0; font-size: 17px; }
-    .dialog-head .icon-button { margin-left: auto; }
+    .dialog-head .dialog-close { margin-left: auto; }
     .dialog-body {
       min-height: 0;
       overflow: auto;
@@ -891,7 +910,7 @@
       margin: 0 auto;
       padding: 0 clamp(14px, 2.8vw, 30px) 30px;
       color: var(--muted);
-      font-size: 11px;
+      font-size: 12px;
     }
     .sr-only {
       position: absolute;
@@ -1019,7 +1038,7 @@
         <p data-i18n="introBody">機器を選択して接続すると、受信テキストを確認しながらコマンドを送信できます。</p>
       </div>
       <div class="privacy-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8.1 7 10 4.2-1.9 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-5"/></svg>
         <span data-i18n="privacyBadge">完全ローカル処理</span>
       </div>
     </section>
@@ -1255,14 +1274,14 @@
   </main>
 
   <footer>
-    <span data-i18n="footer">Web Serial APIを使い、シリアル通信はブラウザ内で処理します。</span>
+    <span id="footerName">Web Serial Terminal</span> · MIT License · <span data-i18n="footer">シリアル通信はブラウザー内で完結</span>
   </footer>
 
   <dialog id="macroDialog">
     <div class="dialog-head">
       <h2 id="macroDialogTitle" data-i18n="addMacroTitle">マクロを追加</h2>
-      <button class="icon-button" id="closeMacroButton" type="button" data-i18n-aria-label="close" aria-label="閉じる">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+      <button class="dialog-close" id="closeMacroButton" type="button" data-i18n-aria-label="close" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"/><path d="M18 6 6 18"/></svg>
       </button>
     </div>
     <div class="dialog-body">
@@ -1307,8 +1326,8 @@
   <dialog id="helpDialog">
     <div class="dialog-head">
       <h2 data-i18n="helpTitle">使い方と注意事項</h2>
-      <button class="icon-button" id="closeHelpButton" type="button" data-i18n-aria-label="close" aria-label="閉じる">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><path d="m7 7 10 10M17 7 7 17"/></svg>
+      <button class="dialog-close" id="closeHelpButton" type="button" data-i18n-aria-label="close" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"/><path d="M18 6 6 18"/></svg>
       </button>
     </div>
     <div class="dialog-body">
@@ -1539,7 +1558,7 @@
           lostTitle: '機器との接続が切れました',
           lostBody: 'USBケーブルが抜かれたか、機器が利用できなくなった可能性があります。接続を確認して再接続してください。',
           bufferTrimmed: '表示が大きくなったため、古い受信内容を一部省略しました。',
-          footer: 'Web Serial APIを使い、シリアル通信はブラウザ内で処理します。',
+          footer: 'シリアル通信はブラウザー内で完結',
           helpTitle: '使い方と注意事項',
           close: '閉じる',
           helpBasicsTitle: '基本操作',
@@ -1717,7 +1736,7 @@
           lostTitle: 'The device connection was lost',
           lostBody: 'The USB cable may have been removed or the device became unavailable. Check the connection and reconnect.',
           bufferTrimmed: 'Older received text was omitted because the display became large.',
-          footer: 'Serial communication uses the Web Serial API and is processed in the browser.',
+          footer: 'Serial communication stays in the browser',
           helpTitle: 'How to use & notes',
           close: 'Close',
           helpBasicsTitle: 'Basics',
