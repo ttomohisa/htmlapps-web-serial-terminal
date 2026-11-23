@@ -2620,15 +2620,20 @@
         return parts.join('');
       }
 
+      function literalMatchRegex(query, global) {
+        const escaped = String(query).replace(/[|\\{}()[\]^$+*?.]/g, '\\      function filterDisplayText(fullText) {');
+        return new RegExp(escaped, global ? 'giu' : 'iu');
+      }
+
       function filterDisplayText(fullText) {
         if (!state.filterQuery) return { text: fullText, matches: 0 };
-        const query = state.filterQuery.toLocaleLowerCase();
+        const matcher = literalMatchRegex(state.filterQuery, false);
         const lines = fullText.split('\n');
         const retained = [];
         let matches = 0;
         for (let i = 0; i < lines.length; i += 1) {
           const line = lines[i];
-          const matched = line.toLocaleLowerCase().includes(query);
+          const matched = matcher.test(line);
           if (matched) matches += 1;
           if (state.filterMode !== 'only' || matched || line.startsWith('── ')) retained.push(line);
         }
@@ -2658,19 +2663,22 @@
         if (!state.filterQuery || state.filterMode !== 'highlight') return;
         const terminal = $('#terminal');
         const text = state.terminalText;
-        const needle = state.filterQuery.toLocaleLowerCase();
-        const haystack = text.toLocaleLowerCase();
+        const selection = window.getSelection();
+        // Periodic highlighting must not erase an active user/Search selection.
+        if (selection && !selection.isCollapsed &&
+            (terminal.contains(selection.anchorNode) || terminal.contains(selection.focusNode))) return;
+        const matcher = literalMatchRegex(state.filterQuery, true);
         const fragment = document.createDocumentFragment();
         let pos = 0;
         let foundCount = 0;
-        while (foundCount < MAX_HIGHLIGHT_MATCHES) {
-          const index = haystack.indexOf(needle, pos);
-          if (index < 0) break;
+        let match;
+        while (foundCount < MAX_HIGHLIGHT_MATCHES && (match = matcher.exec(text))) {
+          const index = match.index;
           if (index > pos) fragment.append(document.createTextNode(text.slice(pos, index)));
           const marked = document.createElement('mark');
-          marked.textContent = text.slice(index, index + needle.length);
+          marked.textContent = match[0];
           fragment.append(marked);
-          pos = index + needle.length;
+          pos = index + match[0].length;
           foundCount += 1;
         }
         if (!foundCount) {
@@ -2775,14 +2783,11 @@
         state.searchIndex = -1;
 
         if (query) {
-          const haystack = state.terminalText.toLocaleLowerCase();
-          const needle = query.toLocaleLowerCase();
-          let from = 0;
-          while (state.searchMatches.length < SEARCH_MATCH_LIMIT) {
-            const found = haystack.indexOf(needle, from);
-            if (found < 0) break;
-            state.searchMatches.push(found);
-            from = found + Math.max(1, needle.length);
+          const matcher = literalMatchRegex(query, true);
+          let match;
+          while (state.searchMatches.length < SEARCH_MATCH_LIMIT &&
+                 (match = matcher.exec(state.terminalText))) {
+            state.searchMatches.push(match.index);
           }
           if (state.searchMatches.length && previousPosition !== null && config.preserveIndex !== false) {
             const samePosition = state.searchMatches.indexOf(previousPosition);
@@ -2964,12 +2969,17 @@
         else if (direction === 'tx') state.txBytes += data.byteLength;
         state.terminalRevision += 1;
 
+        const visibleText = formatDisplayEntry(entry, state.displayAssembler);
         if (state.filterQuery && state.filterMode === 'only') {
+          if (visibleText && !state.autoScroll) {
+            state.newLogLines += countLineBreaks(visibleText);
+            state.newLogPartial = !visibleText.endsWith('\n');
+            updateLatestButton();
+          }
           scheduleFilterRefresh();
           updateIoStats();
           updateTerminalControls();
         } else {
-          const visibleText = formatDisplayEntry(entry, state.displayAssembler);
           if (visibleText) queueTerminalAppend(visibleText);
           else updateIoStats();
         }
@@ -3912,7 +3922,7 @@
         $('#filterTerminalButton').focus();
       });
       $('#filterQuery').addEventListener('input', event => {
-        state.filterQuery = event.currentTarget.value.trim();
+        state.filterQuery = event.currentTarget.value;
         renderTerminal();
       });
       $('#filterMode').addEventListener('change', event => {
