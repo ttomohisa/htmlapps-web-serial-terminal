@@ -81,6 +81,8 @@ GitHub Pagesは最初のHTMLを配信します。読み込み後のシリアル�
 
 Pull Request時の検証は [Validate standalone HTML](.github/workflows/build-standalone.yml) で行います。
 
+PRのマージによって `main` が更新され、ビルドと検証が成功すると、`app.config.json` のバージョンに対応するタグとGitHub Releaseを自動作成します。同じバージョンのReleaseがすでにある場合は再作成しません。Releaseには通常版と自己展開版の単一HTMLが添付されます。
+
 ## 開発とビルドの構成
 
 ```text

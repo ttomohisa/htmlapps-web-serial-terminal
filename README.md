@@ -81,6 +81,8 @@ The [Deploy standalone app to GitHub Pages](.github/workflows/deploy-pages.yml) 
 
 See [the repository validation workflow](.github/workflows/build-standalone.yml) for checks performed on pull requests.
 
+After a PR merges into `main`, a successful build and verification automatically create a version tag from `app.config.json` and publish a GitHub Release. An existing release for the same version is skipped. The release includes readable and self-extracting standalone HTML files.
+
 ## Development and build layout
 
 ```text
