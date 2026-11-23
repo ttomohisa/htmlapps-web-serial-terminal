@@ -70,6 +70,10 @@ async function verify(browser,width,language) {
     await page.locator('#filterQuery').fill('ERROR');
     await page.waitForFunction(()=>document.querySelector('#terminal mark')?.textContent==='ERROR');
     assert.equal(await page.locator('#terminal mark').count(),1);
+    await page.locator('#searchTerminalButton').click();
+    await page.locator('#terminalSearchInput').fill('ERROR');
+    await page.waitForFunction(()=>window.getSelection()?.toString()==='ERROR');
+    await page.locator('#closeSearchButton').click();
     await page.locator('#filterMode').selectOption('only');
     const filtered=await page.locator('#terminal').textContent();
     assert.ok(filtered.includes('ERROR'));
@@ -96,6 +100,14 @@ async function verify(browser,width,language) {
     assert.ok(jsonl.some(item=>item.bytes==='48454C'),'RX bytes preserved');
     await page.locator('#closeFilterButton').click();
     assert.ok((await page.locator('#terminal').textContent()).includes('HELLO'),'close filter restores all data');
+    await page.locator('#clearTerminalButton').click();
+    await page.evaluate(()=>window.__serialFeed([78,69,87,10]));
+    await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('RX  NEW\n'));
+    await page.locator('#appToast button').click();
+    await page.waitForFunction(()=>{
+      const contents=document.querySelector('#terminal').textContent;
+      return contents.includes('HELLO')&&contents.includes('NEW');
+    });
     await page.locator('#commandInput').fill('PING');
     assert.match(await page.locator('#sendPreview').textContent(),/5 bytes/);
     await page.locator('#sendButton').click();
