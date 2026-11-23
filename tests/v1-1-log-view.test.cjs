@@ -119,3 +119,24 @@ test('UI contains connection steps, send preview, accessible filter and marker d
   assert.ok(html.includes('.workspace[data-connection-step="choose"] #chooseButton'));
   assert.match(html,/helpNewLogFeatures/);
 });
+
+test('timestamped marker notes are faithfully exported to TXT and JSONL',()=>{
+  const state={sessionEntries:[{
+    time:Date.UTC(2026,10,24),direction:'marker',bytes:new Uint8Array(),text:'Checked the LED'
+  }]};
+  const ctx={
+    state,Date,TextDecoder,Uint8Array,JSON,
+    formatFileTime:()=> '2026-11-24 00:00:00',
+    bytesToHex:()=> '',
+    escapeLogText:text=>text
+  };
+  vm.runInNewContext(source('      function isReadableLogText(text) {','      function logFilename(extension) {')+
+    '\nthis.exportLog={buildTxtLogParts,buildJsonlLogParts};',ctx);
+  const txt=ctx.exportLog.buildTxtLogParts().join('');
+  assert.match(txt,/MARKER Checked the LED/);
+  assert.doesNotMatch(txt,/HEX/);
+  const jsonl=JSON.parse(ctx.exportLog.buildJsonlLogParts()[0]);
+  assert.equal(jsonl.direction,'marker');
+  assert.equal(jsonl.text,'Checked the LED');
+  assert.equal(jsonl.bytes,'');
+});
