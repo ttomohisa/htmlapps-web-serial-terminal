@@ -67,3 +67,14 @@ test('bilingual docs describe actual generated output and screenshot variants',(
  assert.match(string('README-FIRST.txt'),/Web Serial Terminal v1\.0\.1/);
  assert.match(string('THIRD_PARTY_NOTICES.md'),/No bundled third-party runtime/i);
 });
+
+test('main-only release job publishes versioned standalone artifacts',()=>{
+ const workflow=string('.github/workflows/deploy-pages.yml');
+ assert.match(workflow,/release:\s*\n\s*#.*\n\s*if:.*github\.event_name == 'push'.*refs\/heads\/main/);
+ assert.match(workflow,/contents:\s*write/);
+ assert.match(workflow,/node -p "require\('\.\/app\.config\.json'\)\.version"/);
+ assert.match(workflow,/gh release create/);
+ assert.match(workflow,/--generate-notes/);
+ assert.match(workflow,/web-serial-terminal-self-extract\.html/);
+ assert.match(workflow,/releases\/tags\/\$tag/);
+});
