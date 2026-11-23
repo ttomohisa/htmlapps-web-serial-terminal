@@ -37,6 +37,20 @@ jobs:
         shell: pwsh
         run: node --test tests/reconnect-regression.mjs tests/rc-hardening.mjs tests/release-assets.mjs tests/mobile-build-info.test.cjs tests/serial-terminal-regression.test.cjs tests/v1-1-log-view.test.cjs
 
+      - name: Verify desktop/mobile browser UI and serial operations
+        shell: pwsh
+        run: |
+          $toolsPath = Join-Path $env:RUNNER_TEMP "serial-release-browser-tests"
+          npm install --prefix $toolsPath --ignore-scripts --no-audit --no-fund --package-lock=false playwright@1.58.2
+          if ($LASTEXITCODE -ne 0) { throw "Playwright installation failed." }
+          $env:NODE_PATH = Join-Path $toolsPath "node_modules"
+          & (Join-Path $toolsPath "node_modules/.bin/playwright.cmd") install chromium
+          if ($LASTEXITCODE -ne 0) { throw "Chromium setup failed." }
+          node scripts/mobile-help.browser.cjs
+          if ($LASTEXITCODE -ne 0) { throw "Mobile and bilingual browser verification failed." }
+          node scripts/serial-features.browser.cjs
+          if ($LASTEXITCODE -ne 0) { throw "Serial browser verification failed." }
+
       - name: Check whether GitHub Pages is enabled
         id: pages-status
         shell: pwsh
