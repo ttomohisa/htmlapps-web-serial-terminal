@@ -81,7 +81,10 @@ async function verify(browser,width,language) {
     const filtered=await page.locator('#terminal').textContent();
     assert.ok(filtered.includes('ERROR'));
     assert.ok(!filtered.includes('HELLO'));
-    await page.locator('#autoScrollButton').click();
+    if(await page.locator('#autoScrollButton').getAttribute('aria-pressed')==='true') {
+      await page.locator('#autoScrollButton').click();
+    }
+    assert.equal(await page.locator('#autoScrollButton').getAttribute('aria-pressed'),'false');
     await page.evaluate(()=>window.__serialFeed([78,69,87,68,65,84,65,10]));
     await page.waitForFunction(()=>!document.querySelector('#latestLogButton').hidden);
     await page.locator('#latestLogButton').click();
