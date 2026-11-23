@@ -128,7 +128,7 @@ See [Pico hardware test instructions](docs/HARDWARE_TEST_PICO.md) and the [relea
 - Device/driver/OS support determines which baud rates, line settings, USB permissions, and signal controls work.
 - USB VID/PID may be available without a friendly port name. Devices sharing identifiers may require manual selection after reattachment.
 - The approximate 20 MiB log budget estimates memory usage; it is not a precise JavaScript heap measurement. Full logs should be saved before clearing.
-- Browser preferences and macros are not synchronized, and there is no macro import/export in v1.0.0.
+- Browser preferences and macros are not synchronized, and there is no macro import/export in v1.0.1.
 
 ## Dependencies
 

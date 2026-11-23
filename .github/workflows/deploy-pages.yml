@@ -33,6 +33,10 @@ jobs:
         shell: pwsh
         run: ./scripts/check-repository.ps1
 
+      - name: Run release regression tests
+        shell: pwsh
+        run: node --test tests/reconnect-regression.mjs tests/rc-hardening.mjs tests/release-assets.mjs tests/mobile-build-info.test.cjs tests/serial-terminal-regression.test.cjs
+
       - name: Check whether GitHub Pages is enabled
         id: pages-status
         shell: pwsh

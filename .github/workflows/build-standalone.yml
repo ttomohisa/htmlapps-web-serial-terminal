@@ -41,7 +41,7 @@ jobs:
 
       - name: Run release regression tests
         shell: pwsh
-        run: node --test tests/reconnect-regression.mjs tests/rc-hardening.mjs tests/release-assets.mjs
+        run: node --test tests/reconnect-regression.mjs tests/rc-hardening.mjs tests/release-assets.mjs tests/mobile-build-info.test.cjs tests/serial-terminal-regression.test.cjs
 
       - name: Upload standalone artifact
         uses: actions/upload-artifact@v7
