@@ -135,7 +135,7 @@ test('RX JSONL text uses streaming decoded characters and keeps exact bytes', ()
   };
   vm.runInNewContext(section('      function isReadableLogText(text) {', '      function logFilename(extension) {') +
     '\nthis.exports = { buildTxtLogParts, buildJsonlLogParts };', ctx);
-  const jsonl = ctx.exports.buildJsonlLogParts().map(line => JSON.parse(line));
+  const jsonl = Array.from(ctx.exports.buildJsonlLogParts(), line => JSON.parse(line));
   assert.deepEqual(jsonl.map(item => item.bytes), ['E381', '82', '0A']);
   assert.equal(jsonl.map(item => item.text).join(''), 'あ\n');
   assert.ok(!jsonl.some(item => item.text.includes('�')));
