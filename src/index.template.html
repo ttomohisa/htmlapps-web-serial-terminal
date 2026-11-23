@@ -3592,7 +3592,7 @@
         if (!entry) return '';
         // readLoop already decodes RX as a continuous UTF-8 stream; individual
         // read() chunks may start or end in the middle of a multibyte character.
-        if (entry.direction === 'rx') return entry.text;
+        if (entry.direction === 'rx' || entry.direction === 'marker') return entry.text;
         return entry.bytes && entry.bytes.byteLength
           ? new TextDecoder('utf-8').decode(entry.bytes) : '';
       }
