@@ -3694,7 +3694,7 @@
           String(now.getHours()).padStart(2, '0') +
           String(now.getMinutes()).padStart(2, '0') +
           String(now.getSeconds()).padStart(2, '0');
-        const custom = $('#logNameInput').value.replace(/\.(?:txt|jsonl)$/i, '');
+        const custom = $('#logNameInput').value.trim().replace(/\.(?:txt|jsonl)$/i, '');
         const safe = normalizeLogBaseFilename(custom);
         return (safe || 'serial-log-' + stamp) + '.' + extension;
       }
