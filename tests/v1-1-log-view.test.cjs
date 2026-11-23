@@ -176,6 +176,8 @@ test('filename customization removes unsafe filesystem characters and reserved n
  assert.equal(ctx.api.logFilename('txt'),'report-error-.txt');
  ctx.$=()=>({value:'CON.txt'});
  assert.equal(ctx.api.logFilename('jsonl'),'_CON.jsonl');
+ ctx.$=()=>({value:' report.txt '});
+ assert.equal(ctx.api.logFilename('jsonl'),'report.jsonl');
  ctx.$=()=>({value:'..'});
  assert.match(ctx.api.logFilename('txt'),/^serial-log-\d{8}-\d{6}\.txt$/);
 });
