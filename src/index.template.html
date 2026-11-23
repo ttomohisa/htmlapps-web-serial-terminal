@@ -1436,6 +1436,7 @@
         <li data-i18n="helpBusy">接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。</li>
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
       </ul>
+      <p data-i18n="helpNewLogFeatures">Text表示では受信した文字を改行ごとにつなぎます。「絞り込み」では行の強調表示や一致する行だけの表示ができ、「目印」で時刻付きのメモを追加できます。目印は機器へ送信されず、保存用ログにも記録されます。</p>
       <p class="dialog-note" data-i18n="helpFixed">「消去」は画面表示だけ、「ログ消去」は保存用セッションログだけを消します。ログ上限後は保存してから「ログ消去」を行うと記録を再開できます。DTR / RTSやBREAKは接続先への影響を確認して使用してください。</p>
       <span class="build-meta" id="buildMeta"></span>
       <!-- APP:HELP:END -->
@@ -1498,12 +1499,15 @@
           filterOnly: '一致する行だけ',
           closeFilter: '絞り込みを閉じる',
           filterMatches: '{count} 行が一致',
+          filterEmptyTitle: '一致する行はありません',
+          filterEmptyBody: '条件を変えるか、絞り込みを閉じてください。',
           addMarker: '目印',
           markerDialogTitle: 'ログに目印を付ける',
           markerLabel: 'メモ',
           markerPlaceholder: '動作を確認した',
           markerAdded: 'ログに目印を追加しました。',
           markerNotSaved: '表示には追加しましたが、保存用ログは上限に達しています。',
+          helpNewLogFeatures: 'Text表示では受信した文字を改行ごとにつなぎます。「絞り込み」で一致行の強調表示や抽出ができ、「目印」でメモを残せます。目印は機器へ送信されず、保存用ログにも記録されます。',
           previewText: '{count} bytes · 改行 {ending}',
           previewHex: '{count} bytes · HEX',
           previewInvalid: 'HEXの入力を確認してください。',
@@ -1694,12 +1698,15 @@
           filterOnly: 'Matching lines',
           closeFilter: 'Close filter',
           filterMatches: '{count} matching lines',
+          filterEmptyTitle: 'No matching lines',
+          filterEmptyBody: 'Change the filter or close it to show all data.',
           addMarker: 'Marker',
           markerDialogTitle: 'Add a log marker',
           markerLabel: 'Note',
           markerPlaceholder: 'Checked the device',
           markerAdded: 'Marker added to the log.',
           markerNotSaved: 'Marker shown, but the saved log is full.',
+          helpNewLogFeatures: 'Text display joins received characters into lines. Filter to highlight or show matching lines, and add timestamped notes with Marker. Markers are never sent to the device and are included in saved logs.',
           previewText: '{count} bytes · ending {ending}',
           previewHex: '{count} bytes · HEX',
           previewInvalid: 'Check the HEX bytes.',
@@ -2635,6 +2642,16 @@
           : '';
       }
 
+      function updateTerminalEmptyState() {
+        const filtered = state.filterQuery && state.filterMode === 'only';
+        const title = $('#terminalEmpty strong');
+        const body = $('#terminalEmpty span');
+        title.dataset.i18n = filtered ? 'filterEmptyTitle' : 'terminalEmptyTitle';
+        body.dataset.i18n = filtered ? 'filterEmptyBody' : 'terminalEmptyBody';
+        title.textContent = t(title.dataset.i18n);
+        body.textContent = t(body.dataset.i18n);
+      }
+
       // Only untrusted Text is placed in text nodes; highlights are not HTML.
       function paintFilterHighlights() {
         if (!state.filterQuery || state.filterMode !== 'highlight') return;
@@ -2868,6 +2885,7 @@
         }
 
         $('#terminalEmpty').hidden = state.terminalText.length > 0;
+        updateTerminalEmptyState();
         updateIoStats();
         updateTerminalControls();
 
@@ -2915,6 +2933,7 @@
         const terminal = $('#terminal');
         terminal.textContent = built.text;
         $('#terminalEmpty').hidden = built.text.length > 0;
+        updateTerminalEmptyState();
         if (built.omitted && !state.bufferNoticeShown) {
           state.bufferNoticeShown = true;
           showToast(t('displayTrimmed'), 5200);
@@ -3871,6 +3890,55 @@
         setProgrammaticScrollTop($('#terminal').scrollHeight);
         updateTerminalControls();
       });
+      $('#filterTerminalButton').addEventListener('click', () => {
+        const panel = $('#terminalFilter');
+        panel.hidden = !panel.hidden;
+        $('#filterTerminalButton').setAttribute('aria-expanded', String(!panel.hidden));
+        if (!panel.hidden) $('#filterQuery').focus();
+      });
+      $('#closeFilterButton').addEventListener('click', () => {
+        $('#terminalFilter').hidden = true;
+        $('#filterTerminalButton').setAttribute('aria-expanded', 'false');
+        state.filterQuery = '';
+        $('#filterQuery').value = '';
+        renderTerminal();
+        $('#filterTerminalButton').focus();
+      });
+      $('#filterQuery').addEventListener('input', event => {
+        state.filterQuery = event.currentTarget.value.trim();
+        renderTerminal();
+      });
+      $('#filterMode').addEventListener('change', event => {
+        state.filterMode = event.currentTarget.value === 'only' ? 'only' : 'highlight';
+        renderTerminal();
+      });
+
+      const markerDialog = $('#markerDialog');
+      $('#addMarkerButton').addEventListener('click', () => {
+        if (state.phase !== 'connected' && !state.displayEntries.length) return;
+        $('#markerInput').value = '';
+        markerDialog.showModal();
+        $('#markerInput').focus();
+      });
+      $('#markerForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const label = $('#markerInput').value.trim().slice(0, 120);
+        if (!label) {
+          $('#markerInput').focus();
+          return;
+        }
+        const wasRecording = state.loggingActive;
+        addSessionEntry('marker', new Uint8Array(), label);
+        markerDialog.close();
+        showToast(t(wasRecording ? 'markerAdded' : 'markerNotSaved'), 3500);
+      });
+      $('#closeMarkerButton').addEventListener('click', () => markerDialog.close());
+      $('#cancelMarkerButton').addEventListener('click', () => markerDialog.close());
+      markerDialog.addEventListener('click', event => {
+        const rect = markerDialog.getBoundingClientRect();
+        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) markerDialog.close();
+      });
+
       $('#searchTerminalButton').addEventListener('click', () => {
         $('#terminalSearch').hidden = false;
         $('#terminalSearchInput').focus();
@@ -4101,6 +4169,7 @@
       window.addEventListener('pagehide', () => {
         if (state.renderTimer) window.clearTimeout(state.renderTimer);
         if (state.searchRefreshTimer) window.clearTimeout(state.searchRefreshTimer);
+        if (state.filterRefreshTimer) window.clearTimeout(state.filterRefreshTimer);
         if (state.connectionClockTimer) window.clearInterval(state.connectionClockTimer);
         if (state.phase === 'connected') void disconnect({ silent: true });
       });
