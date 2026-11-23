@@ -12,6 +12,7 @@ All notable changes to Web Serial Terminal are documented here.
 - Added matching-line filtering and capped, safe Text highlighting; receive data remains in the session log.
 - Added timestamped marker notes to the display and TXT / JSONL logs, without sending data to the device.
 - Added bilingual guidance and regression tests for stream splitting, filtering, and markers.
+- Fixed the toast notification's pointer handling so Clear Undo is clickable during incoming data.
 
 ## 1.0.1 - 2026-11-24
 

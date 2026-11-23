@@ -143,3 +143,8 @@ test('timestamped marker notes are faithfully exported to TXT and JSONL',()=>{
     bytes:new Uint8Array(),text:'A�B'});
   assert.match(ctx.exportLog.buildTxtLogParts().join(''),/MARKER A�B/);
 });
+
+test('visible toast actions accept pointer input for Undo',()=>{
+  const style=html.match(/<style>([\s\S]*?)<\/style>/)[1];
+  assert.match(style,/\.toast\.show\s*\{[^}]*pointer-events:\s*auto;/);
+});
