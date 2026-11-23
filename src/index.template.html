@@ -2590,12 +2590,10 @@
         const label = state.showTimestamp || state.localEcho;
         const prefix = (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + 'RX  ';
         const parts = [];
-        let fragmentStart = 0;
         for (let i = 0; i < text.length; i += 1) {
           const ch = text[i];
           if (ch === '\n' && assembler.afterCr) {
             assembler.afterCr = false;
-            fragmentStart = i + 1;
             continue;
           }
           assembler.afterCr = false;
@@ -2613,9 +2611,7 @@
           parts.push('\n');
           assembler.rxOpen = false;
           assembler.afterCr = ch === '\r';
-          fragmentStart = i + 1;
         }
-        void fragmentStart;
         return parts.join('');
       }
 
@@ -2931,6 +2927,7 @@
         state.terminalText = built.text;
         state.displayLineCount = countLineBreaks(built.text);
         const terminal = $('#terminal');
+        const previousScrollTop = terminal.scrollTop;
         terminal.textContent = built.text;
         $('#terminalEmpty').hidden = built.text.length > 0;
         updateTerminalEmptyState();
@@ -2945,6 +2942,8 @@
         if (state.autoScroll) {
           resetNewLogCount();
           setProgrammaticScrollTop(terminal.scrollHeight);
+        } else {
+          setProgrammaticScrollTop(previousScrollTop);
         }
         updateLatestButton();
       }
@@ -2954,7 +2953,7 @@
         const entry = { time: Date.now(), direction, bytes: data, text: String(text || ''), displayText: displayText ? String(displayText) : '' };
 
         appendDisplayEntry(entry);
-        recordSessionEntry(entry);
+        const recorded = recordSessionEntry(entry);
 
         if (direction === 'rx') state.rxBytes += data.byteLength;
         else if (direction === 'tx') state.txBytes += data.byteLength;
@@ -2969,6 +2968,7 @@
           if (visibleText) queueTerminalAppend(visibleText);
           else updateIoStats();
         }
+        return recorded;
       }
 
       function updateTerminalControls() {
@@ -3927,10 +3927,9 @@
           $('#markerInput').focus();
           return;
         }
-        const wasRecording = state.loggingActive;
-        addSessionEntry('marker', new Uint8Array(), label);
+        const recorded = addSessionEntry('marker', new Uint8Array(), label);
         markerDialog.close();
-        showToast(t(wasRecording ? 'markerAdded' : 'markerNotSaved'), 3500);
+        showToast(t(recorded ? 'markerAdded' : 'markerNotSaved'), 3500);
       });
       $('#closeMarkerButton').addEventListener('click', () => markerDialog.close());
       $('#cancelMarkerButton').addEventListener('click', () => markerDialog.close());
