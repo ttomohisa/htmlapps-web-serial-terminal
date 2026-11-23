@@ -62,6 +62,8 @@ async function capture(browser,[lang,width,height,file]) {
    await page.locator('#filterQuery').fill('ERROR');
    await page.waitForFunction(()=>document.querySelector('#terminal mark')?.textContent==='ERROR');
    if(width===1440) await page.locator('#settingsPanel').evaluate(el=>{el.open=true;});
+   // Close the temporary marker confirmation before taking documentation screenshots.
+   await page.evaluate(()=>window.AppToast.show({message:''}).dismiss());
    await page.evaluate(()=>window.scrollTo(0,0));
    await page.waitForTimeout(200);
    const data=await page.screenshot({fullPage:true,animations:'disabled'});
