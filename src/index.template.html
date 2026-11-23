@@ -717,6 +717,7 @@
     .terminal-filter[hidden] { display: none; }
     .filter-input { flex: 1 1 200px; min-width: 0; }
     .filter-mode { flex: 0 0 auto; }
+    .terminal-filter .terminal-tool svg { width: 14px; height: 14px; display: block; }
     .filter-help { color: #91a39a; font-size: 10px; }
     .terminal mark {
       background: #386e54;
@@ -1287,7 +1288,9 @@
           <option value="highlight" data-i18n="filterHighlight">強調表示</option>
           <option value="only" data-i18n="filterOnly">一致する行だけ</option>
         </select>
-        <button class="terminal-tool" id="closeFilterButton" type="button" data-i18n-aria-label="closeFilter" aria-label="絞り込みを閉じる">×</button>
+        <button class="terminal-tool" id="closeFilterButton" type="button" data-i18n-aria-label="closeFilter" aria-label="絞り込みを閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5 19 19M19 5 5 19"/></svg>
+        </button>
         <span class="filter-help" id="filterCount" aria-live="polite"></span>
       </div>
 
