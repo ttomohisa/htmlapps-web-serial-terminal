@@ -53,6 +53,7 @@ async function verify(browser,width,language) {
     }
     await page.locator('#connectButton').click();
     await page.waitForFunction(()=>document.querySelector('.workspace').dataset.connectionStep==='connected');
+    assert.equal(await page.locator('#addMarkerButton').isEnabled(),true,'markers available immediately after connection');
     await page.locator('#timestampButton').click();
     await page.evaluate(()=>{
       window.__serialFeed([72,69,76]);
