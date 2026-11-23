@@ -64,6 +64,6 @@ test('bilingual docs describe actual generated output and screenshot variants',(
   }
   assert.doesNotMatch(s,/Single HTML App Template|スターター作業領域/);
  }
- assert.match(string('README-FIRST.txt'),/Web Serial Terminal v1\.0\.0/);
+ assert.match(string('README-FIRST.txt'),/Web Serial Terminal v1\.0\.1/);
  assert.match(string('THIRD_PARTY_NOTICES.md'),/No bundled third-party runtime/i);
 });
