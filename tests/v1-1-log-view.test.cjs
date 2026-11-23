@@ -148,3 +148,34 @@ test('visible toast actions accept pointer input for Undo',()=>{
   const style=html.match(/<style>([\s\S]*?)<\/style>/)[1];
   assert.match(style,/\.toast\.show\s*\{[^}]*pointer-events:\s*auto;/);
 });
+
+test('filter matches are literal, Unicode-safe, and do not shift original string offsets',()=>{
+ const ctx={};
+ vm.runInNewContext(source('      function literalMatchRegex(query, global) {',
+    '      function filterDisplayText(fullText) {')+'\nthis.literalMatchRegex=literalMatchRegex;',ctx);
+ for (const needle of ['[ERR]+','a.b','(X)','^','\\']) {
+   const sample='prefix '+needle+' suffix';
+   const match=ctx.literalMatchRegex(needle,true).exec(sample);
+   assert.equal(match?.index,7,'literal match position for '+needle);
+   assert.equal(match[0],needle);
+ }
+ assert.equal(ctx.literalMatchRegex('X',true).exec('İX')[0],'X');
+ assert.equal(ctx.literalMatchRegex('X',true).exec('İX').index,1,'Unicode casefold must not move offsets');
+ const f=formatter({filterQuery:'[ERR]+',filterMode:'only'});
+ assert.equal(f.filterDisplayText('INFO\n[ERR]+ bad\nok\n').text,'[ERR]+ bad');
+});
+test('filename customization removes unsafe filesystem characters and reserved names',()=>{
+ const ctx={Date,$:()=>({value:''})};
+ vm.runInNewContext(source('      function normalizeLogBaseFilename(value) {',
+    '      function downloadLog(parts, extension, mime) {')+'\nthis.api={normalizeLogBaseFilename,logFilename};',ctx);
+ assert.equal(ctx.api.normalizeLogBaseFilename('report/error:?*.txt'),'report-error----.txt');
+ assert.equal(ctx.api.normalizeLogBaseFilename('CON'),'_CON');
+ assert.equal(ctx.api.normalizeLogBaseFilename('.....'),'');
+ assert.equal(ctx.api.normalizeLogBaseFilename('a'.repeat(150)).length,100);
+ ctx.$=()=>({value:'report/error?.jsonl'});
+ assert.equal(ctx.api.logFilename('txt'),'report-error-.txt');
+ ctx.$=()=>({value:'CON.txt'});
+ assert.equal(ctx.api.logFilename('jsonl'),'_CON.jsonl');
+ ctx.$=()=>({value:'..'});
+ assert.match(ctx.api.logFilename('txt'),/^serial-log-\d{8}-\d{6}\.txt$/);
+});

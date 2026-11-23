@@ -73,11 +73,18 @@ async function verify(browser,width,language) {
     await page.locator('#searchTerminalButton').click();
     await page.locator('#terminalSearchInput').fill('ERROR');
     await page.waitForFunction(()=>window.getSelection()?.toString()==='ERROR');
+    await page.evaluate(()=>window.__serialFeed([73,78,70,79,10]));
+    await page.waitForTimeout(650);
+    assert.equal(await page.evaluate(()=>window.getSelection()?.toString()),'ERROR','search selection survives streamed highlighting');
     await page.locator('#closeSearchButton').click();
     await page.locator('#filterMode').selectOption('only');
     const filtered=await page.locator('#terminal').textContent();
     assert.ok(filtered.includes('ERROR'));
     assert.ok(!filtered.includes('HELLO'));
+    await page.locator('#autoScrollButton').click();
+    await page.evaluate(()=>window.__serialFeed([78,69,87,68,65,84,65,10]));
+    await page.waitForFunction(()=>!document.querySelector('#latestLogButton').hidden);
+    await page.locator('#latestLogButton').click();
     await page.locator('#addMarkerButton').click();
     await page.locator('#markerInput').fill('Checked the LED');
     if(width<=393) {
@@ -89,15 +96,23 @@ async function verify(browser,width,language) {
     }
     await page.locator('#markerForm').evaluate(form=>form.requestSubmit());
     await page.waitForFunction(()=>document.querySelector('#terminal').textContent.includes('Checked the LED'));
+    await page.locator('#logNameControl summary').click();
+    await page.locator('#logNameInput').fill('report/error:log');
     const downloadPromise=page.waitForEvent('download');
     await page.locator('#saveJsonlButton').click();
     const download=await downloadPromise;
+    assert.equal(download.suggestedFilename(),'report-error-log.jsonl');
     const jsonl=fs.readFileSync(await download.path(),'utf8').trim().split(/\r?\n/).map(line=>JSON.parse(line));
     const marker=jsonl.find(item=>item.direction==='marker');
     assert.ok(marker);
     assert.equal(marker.text,'Checked the LED');
     assert.equal(marker.bytes,'');
     assert.ok(jsonl.some(item=>item.bytes==='48454C'),'RX bytes preserved');
+    const txtDownloadPromise=page.waitForEvent('download');
+    await page.locator('#saveTxtButton').click();
+    const txtDownload=await txtDownloadPromise;
+    assert.equal(txtDownload.suggestedFilename(),'report-error-log.txt');
+    assert.match(fs.readFileSync(await txtDownload.path(),'utf8'),/MARKER Checked the LED/);
     await page.locator('#closeFilterButton').click();
     assert.ok((await page.locator('#terminal').textContent()).includes('HELLO'),'close filter restores all data');
     await page.locator('#clearTerminalButton').click();
