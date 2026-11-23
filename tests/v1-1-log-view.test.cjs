@@ -139,4 +139,7 @@ test('timestamped marker notes are faithfully exported to TXT and JSONL',()=>{
   assert.equal(jsonl.direction,'marker');
   assert.equal(jsonl.text,'Checked the LED');
   assert.equal(jsonl.bytes,'');
+  state.sessionEntries.push({time:Date.UTC(2026,10,24),direction:'marker',
+    bytes:new Uint8Array(),text:'A�B'});
+  assert.match(ctx.exportLog.buildTxtLogParts().join(''),/MARKER A�B/);
 });

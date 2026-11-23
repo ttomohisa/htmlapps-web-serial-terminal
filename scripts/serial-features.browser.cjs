@@ -8,7 +8,7 @@ const {chromium}=require('playwright');
 
 async function verify(browser,width,language) {
   const context=await browser.newContext({
-    viewport:{width,height:width===320?640:820},
+    viewport:{width,height:width===320?640:width===393?252:820},
     locale:language==='ja'?'ja-JP':'en-US',
     acceptDownloads:true,
     reducedMotion:'reduce'
@@ -75,7 +75,7 @@ async function verify(browser,width,language) {
     assert.ok(!filtered.includes('HELLO'));
     await page.locator('#addMarkerButton').click();
     await page.locator('#markerInput').fill('Checked the LED');
-    if(width===320) {
+    if(width<=393) {
       const inside=await page.locator('#markerDialog').evaluate(el=>{
         const b=el.getBoundingClientRect();
         return b.left>=0&&b.right<=innerWidth+1&&b.top>=0&&b.bottom<=innerHeight+1;
@@ -122,5 +122,6 @@ async function verify(browser,width,language) {
   try {
     await verify(browser,1360,'ja');
     await verify(browser,320,'en');
+    await verify(browser,393,'ja');
   } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;});
