@@ -78,3 +78,19 @@ test('main-only release job publishes versioned standalone artifacts',()=>{
  assert.match(workflow,/web-serial-terminal-self-extract\.html/);
  assert.match(workflow,/releases\/tags\/\$tag/);
 });
+
+test('v1.1 release docs, screenshot disclosure and editable exports',()=>{
+ const en=string('README.md'),ja=string('README.ja.md'),html=string('src/index.template.html');
+ for(const doc of [en,ja]) {
+  assert.match(doc,/RELEASE_VERIFICATION_V1_1/);
+  assert.match(doc,/mocked serial|模擬シリアル/);
+ }
+ for(const file of ['docs/RELEASE_VERIFICATION_V1_1.ja.md','docs/RELEASE_VERIFICATION_V1_1.md']) {
+  assert.match(string(file),/v1\.1\.0/);
+ }
+ assert.match(html,/id="logNameInput"/);
+ assert.match(html,/function normalizeLogBaseFilename\(/);
+ const workflow=string('.github/workflows/deploy-pages.yml');
+ assert.match(workflow,/node scripts\/mobile-help\.browser\.cjs/);
+ assert.match(workflow,/node scripts\/serial-features\.browser\.cjs/);
+});

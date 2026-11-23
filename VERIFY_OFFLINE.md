@@ -5,10 +5,14 @@
 3. Check both HTML files in a browser with the network disconnected. No CDN, external fonts, API, or analytics requests should be required. CSP includes `connect-src 'none'`.
 4. Feature-detect Web Serial: local `file://` permissions differ from HTTPS. An unsupported state is expected when the browser does not expose `navigator.serial`; this is not a failed download.
 5. On a supported browser, connect a Raspberry Pi Pico USB CDC device and test Text/LF `PING` → `PONG` and HEX `RAW 4` → `00 01 7F FF`.
-6. Test a stream using `STREAM 10` / `STREAM STOP`, scrolling pause/Latest, search, Text/HEX macros, TXT/JSONL export, unplug/replug and explicit Reconnect.
-7. Verify that the Help dialog allows internal scrolling but locks background scrolling. Close, Escape and backdrop click must restore the previous page position.
-8. Confirm that only user-created macros and preferences persist across reload; serial RX/TX records should not persist.
-9. Repeat Japanese and English UI checks, including the mobile 320–390px layout, portrait/landscape, long labels, and software keyboard on real hardware.
-10. On GitHub Pages, distinguish the initial HTTPS HTML transfer from serial-data operations. Verify in DevTools Network that user RX/TX content is not transmitted.
+6. Test a stream using `STREAM 10` / `STREAM STOP`; verify split CR / LF / CRLF and that Text joins RX chunks while HEX retains original bytes.
+7. During streaming, pause following and test Latest, Search, Filter (highlight / matching-only), Clear/Undo, and Text/HEX command macros.
+8. Add a timestamped Marker. Confirm that nothing is transmitted; compare TXT/JSONL contents and check the original RX bytes in JSONL.
+9. Expand Filename, customize TXT/JSONL download names (including unsafe filesystem characters), and verify extensions. Test invalid HEX and the send preview.
+10. Unplug/replug, then use explicit Reconnect. Neither connection nor transmission should start automatically.
+11. Verify that the Help dialog allows internal scrolling but locks background scrolling. Close, Escape and backdrop click must restore the previous page position.
+12. Confirm that only user-created macros and preferences persist across reload; serial RX/TX records should not persist.
+13. Repeat Japanese and English UI checks, including the mobile 320–390px layout, portrait/landscape, long labels, and software keyboard on real hardware.
+14. On GitHub Pages, distinguish the initial HTTPS HTML transfer from serial-data operations. Verify in DevTools Network that user RX/TX content is not transmitted.
 
-USB CDC tests do not establish physical UART baud/parity/stop bits, control-signal electrical behavior, or all browser compatibility. See `docs/RELEASE_VERIFICATION.md`.
+USB CDC tests do not establish physical UART baud/parity/stop bits, control-signal electrical behavior, or all browser compatibility. See `docs/RELEASE_VERIFICATION_V1_1.md` for current release checks. The older `docs/RELEASE_VERIFICATION.md` is the v1.0.0 release record.

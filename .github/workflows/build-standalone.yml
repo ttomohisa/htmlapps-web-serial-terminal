@@ -7,6 +7,14 @@ on:
       - main
     paths:
       - "src/**"
+      - "assets/**"
+      - "docs/**"
+      - "README.md"
+      - "README.ja.md"
+      - "README-FIRST.txt"
+      - "APP_SPEC.md"
+      - "CHANGELOG.md"
+      - "VERIFY_OFFLINE.md"
       - "scripts/**"
       - "tests/**"
       - "app.config.json"

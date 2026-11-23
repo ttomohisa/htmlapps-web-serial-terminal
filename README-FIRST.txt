@@ -16,4 +16,6 @@ Generated artifacts:
 Edit src/index.template.html, never generated HTML. The app never connects to a device automatically.
 
 Pico USB CDC test: docs/HARDWARE_TEST_PICO.ja.md
-Release verification matrix: docs/RELEASE_VERIFICATION.ja.md
+v1.1.0 verification: docs/RELEASE_VERIFICATION_V1_1.ja.md
+English verification: docs/RELEASE_VERIFICATION_V1_1.md
+Historical v1.0.0 record: docs/RELEASE_VERIFICATION.ja.md

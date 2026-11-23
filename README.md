@@ -18,6 +18,8 @@ GitHub Pages delivers the initial HTML. After the page loads, serial communicati
 
 [View the mobile screenshot](assets/screenshot-mobile-en.png)
 
+*The screenshots use sample traffic from a mocked serial device. They are not evidence of a physical hardware test.*
+
 ## Features
 
 - **Text and HEX serial communication** — Select a permitted device, set baud rate and framing, receive data in Text or HEX, and transmit UTF-8 Text or exact raw bytes.
@@ -58,11 +60,13 @@ The standard build uses PowerShell. There are no third-party runtime packages to
 2. Under **Connection settings**, set baud rate, data bits, stop bits, parity, and flow control as required by the hardware. Select **Connect**.
 3. Watch incoming data in **Text** or **HEX**. Optionally enable timestamps and Local echo.
 4. Set the send mode to **Text** or **HEX**. For Text, choose the desired line ending; HEX sends exactly the bytes entered, without an added line ending.
-5. Type a command and choose **Send**. Use the **Device control** panel for DTR/RTS, BREAK, input signals, and one-byte control keys.
-6. Scroll upward to pause automatic following; choose **Latest** to return to incoming output. Search and Copy operate on the visible display.
-7. Add frequently used commands under **Command macros**. Macro definitions are stored in your browser; execution requires an active connection.
-8. Save the captured session as **TXT** or **JSONL**. **Clear** affects the terminal display; **Clear log** resets recorded export data only after confirmation.
-9. Select **Disconnect** when finished. If a device is unplugged, reconnect explicitly after inserting it again; the app does not automatically reopen ports.
+5. Review the byte count and line ending, then press **Send**. **Device control** provides DTR/RTS, BREAK, input signals and control keys.
+6. Text view joins incoming data into lines at CR / LF / CRLF (including treating CR as a newline). HEX view shows received bytes.
+7. Scroll upward to pause following and choose **Latest** to return. **Search** finds literal text. **Filter** highlights matches or shows only matching lines.
+8. Use **Marker** to add a timestamped note. Nothing is sent to the device; the note is included in saved logs unless recording has reached its limit.
+9. Save commands under **Command macros** for reuse while connected.
+10. Save the session as **TXT** or **JSONL**. Expand **Filename** to customize the download name. **Clear** affects only the display; **Clear log** removes recorded export data after confirmation.
+11. Select **Disconnect** when finished. After unplugging, reconnect explicitly; the app never automatically reopens or transmits.
 
 ### Common controls
 
@@ -71,6 +75,9 @@ The standard build uses PowerShell. There are no third-party runtime packages to
 | `↑` / `↓` in the command field | Recall previously typed commands from this page session |
 | Text / HEX send mode | Text is UTF-8 plus selected line ending; HEX is exact raw bytes |
 | Auto-scroll / Latest | Pauses when reading older output; Latest resumes following |
+| Filter / Search | Display matching lines or highlights; Copy uses the currently displayed text |
+| Marker | Timestamped local note; never transmitted to the device |
+| Filename | Set the TXT/JSONL download base name; the correct extension is appended |
 | Clear / Undo | Hides the current terminal display; undo is available briefly |
 | Clear log | Confirms removal of in-memory records used for TXT/JSONL export |
 | EN / JA | Switches the interface language |
@@ -80,9 +87,9 @@ The standard build uses PowerShell. There are no third-party runtime packages to
 
 The [Deploy standalone app to GitHub Pages](.github/workflows/deploy-pages.yml) workflow runs on pushes to `main` or by manual dispatch. It builds and verifies the standalone HTML, checks whether GitHub Pages is enabled, and publishes `dist/` when Pages has been configured to use GitHub Actions. A skipped deployment does not imply that the build failed.
 
-See [the repository validation workflow](.github/workflows/build-standalone.yml) for checks performed on pull requests.
+Pull requests run [source/Node validation](.github/workflows/build-standalone.yml) and [browser tests with a mocked serial port](.github/workflows/preview.yml) for mobile, desktop and both languages.
 
-After a PR merges into `main`, a successful build and verification automatically create a version tag from `app.config.json` and publish a GitHub Release. An existing release for the same version is skipped. The release includes readable and self-extracting standalone HTML files.
+After a PR merges into `main`, a successful standalone build, regression tests and browser verification automatically create a version tag from `app.config.json` and publish a GitHub Release. An existing release for the same version is skipped. The release includes readable and self-extracting standalone HTML files.
 
 ## Development and build layout
 
@@ -95,7 +102,7 @@ After a PR merges into `main`, a successful build and verification automatically
 ├─ examples/pico-usb-web-serial-test.py # USB CDC hardware test fixture
 ├─ examples/pico-uart-echo-test.py      # Real UART test fixture
 ├─ docs/HARDWARE_TEST_PICO.md          # Pico hardware test procedure
-├─ docs/RC_VERIFICATION.md             # Verified / open acceptance checks
+├─ docs/RELEASE_VERIFICATION_V1_1.md # v1.1.0 checks
 ├─ tests/                              # Automated regression tests
 ├─ build-standalone.bat                # Windows build entry
 ├─ build-standalone.ps1                # Standalone builder
@@ -122,7 +129,7 @@ Desktop Chrome and Edge are the primary intended targets; the precise browser ve
 
 The app was tested with a Raspberry Pi Pico through MicroPython USB CDC: Text/HEX round trips, streamed output, macros, TXT/JSONL exports, persistence, manual reconnection, and the log limit passed. USB CDC testing does **not** validate real UART baud/parity/stop-bit signaling, DTR/RTS/BREAK, or every control byte. A separate 3.3 V USB-UART adapter is needed for that.
 
-See [Pico hardware test instructions](docs/HARDWARE_TEST_PICO.md) and the [release verification matrix](docs/RC_VERIFICATION.md) for evidence and remaining checks.
+See [Pico hardware test instructions](docs/HARDWARE_TEST_PICO.md) and the [v1.1.0 pre-release verification matrix](docs/RELEASE_VERIFICATION_V1_1.md). Earlier hardware results are historical evidence.
 
 ## Limitations
 
@@ -130,7 +137,8 @@ See [Pico hardware test instructions](docs/HARDWARE_TEST_PICO.md) and the [relea
 - It works with one selected port at a time and does not automatically reconnect or transmit.
 - Device/driver/OS support determines which baud rates, line settings, USB permissions, and signal controls work.
 - USB VID/PID may be available without a friendly port name. Devices sharing identifiers may require manual selection after reattachment.
-- The approximate 20 MiB log budget estimates memory usage; it is not a precise JavaScript heap measurement. Full logs should be saved before clearing.
+- The approximate 20 MiB log budget estimates memory usage, not precise JavaScript heap use. Markers added after recording stops are not exported. Save required logs before clearing.
+- The Text display normalizes CR / LF / CRLF to visual newlines. JSONL retains original incoming bytes and read boundaries. Filtering changes only the display and highlighting is capped at the first 400 matches.
 - Browser preferences and macros are not synchronized, and there is no macro import/export in v1.1.0.
 
 ## Dependencies
