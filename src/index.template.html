@@ -1396,12 +1396,12 @@
     <form id="markerForm" class="dialog-body">
       <label class="macro-form-field" for="markerInput">
         <span data-i18n="markerLabel">メモ</span>
-        <input class="macro-form-control" id="markerInput" type="text" maxlength="120" autocomplete="off" data-i18n-placeholder="markerPlaceholder" placeholder="動作を確認した">
+        <input class="macro-form-control" id="markerInput" type="text" maxlength="120" required autocomplete="off" data-i18n-placeholder="markerPlaceholder" placeholder="動作を確認した">
       </label>
     </form>
     <div class="dialog-actions">
       <button class="button" id="cancelMarkerButton" type="button" data-i18n="cancel">キャンセル</button>
-      <button class="button primary" type="submit" form="markerForm" data-i18n="addMarker">目印を追加</button>
+      <button class="button primary" type="submit" form="markerForm" data-i18n="confirmMarker">追加</button>
     </div>
   </dialog>
 
@@ -1505,6 +1505,7 @@
           markerDialogTitle: 'ログに目印を付ける',
           markerLabel: 'メモ',
           markerPlaceholder: '動作を確認した',
+          confirmMarker: '追加',
           markerAdded: 'ログに目印を追加しました。',
           markerNotSaved: '表示には追加しましたが、保存用ログは上限に達しています。',
           helpNewLogFeatures: 'Text表示では受信した文字を改行ごとにつなぎます。「絞り込み」で一致行の強調表示や抽出ができ、「目印」でメモを残せます。目印は機器へ送信されず、保存用ログにも記録されます。',
@@ -1704,6 +1705,7 @@
           markerDialogTitle: 'Add a log marker',
           markerLabel: 'Note',
           markerPlaceholder: 'Checked the device',
+          confirmMarker: 'Add marker',
           markerAdded: 'Marker added to the log.',
           markerNotSaved: 'Marker shown, but the saved log is full.',
           helpNewLogFeatures: 'Text display joins received characters into lines. Filter to highlight or show matching lines, and add timestamped notes with Marker. Markers are never sent to the device and are included in saved logs.',
@@ -3164,6 +3166,7 @@
         const info = describePort(state.port, fallbackKey);
         $('#deviceName').textContent = info.name;
         $('#deviceDetail').textContent = info.detail;
+        $('#deviceDetail').hidden = !state.port;
       }
 
       function appendReceived(bytes, text) {
@@ -3601,7 +3604,7 @@
         const parts = [];
         for (const entry of state.sessionEntries) {
           const exactText = exactTextForLog(entry);
-          const readable = isReadableLogText(exactText);
+          const readable = entry.direction === 'marker' || isReadableLogText(exactText);
           const payload = readable ? escapeLogText(exactText) : 'HEX ' + bytesToHex(entry.bytes);
           parts.push(formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload + '\n');
         }
