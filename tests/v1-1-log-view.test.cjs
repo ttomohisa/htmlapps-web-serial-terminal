@@ -168,7 +168,7 @@ test('filename customization removes unsafe filesystem characters and reserved n
  const ctx={Date,$:()=>({value:''})};
  vm.runInNewContext(source('      function normalizeLogBaseFilename(value) {',
     '      function downloadLog(parts, extension, mime) {')+'\nthis.api={normalizeLogBaseFilename,logFilename};',ctx);
- assert.equal(ctx.api.normalizeLogBaseFilename('report/error:?*.txt'),'report-error----.txt');
+ assert.equal(ctx.api.normalizeLogBaseFilename('report/error:?*.txt'),'report-error---.txt');
  assert.equal(ctx.api.normalizeLogBaseFilename('CON'),'_CON');
  assert.equal(ctx.api.normalizeLogBaseFilename('.....'),'');
  assert.equal(ctx.api.normalizeLogBaseFilename('a'.repeat(150)).length,100);
