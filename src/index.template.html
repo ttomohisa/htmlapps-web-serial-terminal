@@ -1790,12 +1790,16 @@
         searchQuery: '',
         searchMatches: [],
         searchIndex: -1,
+        searchRefreshTimer: 0,
         commandHistory: [],
         commandHistoryIndex: -1,
         commandDraft: '',
         macros: [],
         editingMacroId: null,
         macroSending: false,
+        txBusy: false,
+        commandInputRevision: 0,
+        clearUndoGeneration: 0,
         connectedAt: null,
         connectionClockTimer: 0,
         displayEntries: [],
@@ -1837,6 +1841,7 @@
       const MACRO_NAME_LIMIT = 40;
       const MACRO_PAYLOAD_LIMIT = 8192;
       const SEARCH_MATCH_LIMIT = 5000;
+      const SEARCH_REFRESH_INTERVAL_MS = 350;
       const decoder = new TextDecoder('utf-8');
       const encoder = new TextEncoder();
 
@@ -2148,7 +2153,7 @@
       }
 
       function updateMacroRunState() {
-        const disabled = state.phase !== 'connected' || !state.writer || state.macroSending;
+        const disabled = state.phase !== 'connected' || !state.writer || state.macroSending || state.txBusy;
         document.querySelectorAll('[data-macro-run]').forEach(button => { button.disabled = disabled; });
       }
 
@@ -2282,7 +2287,7 @@
 
       async function executeMacro(macroId) {
         const macro = state.macros.find(item => item.id === macroId);
-        if (!macro || state.phase !== 'connected' || !state.writer || state.macroSending) return;
+        if (!macro || state.phase !== 'connected' || !state.writer || state.macroSending || state.txBusy) return;
 
         let bytes;
         let text;
@@ -2302,7 +2307,7 @@
         updateMacroRunState();
         clearError();
         try {
-          await state.writer.write(bytes);
+          if (!await writeSerialBytes(bytes)) return;
           addSessionEntry('tx', bytes, text);
           showToast(t('macroSent').replace('{name}', macro.name), 2200);
         } catch (error) {
@@ -2507,7 +2512,15 @@
         $('#searchCount').textContent = current + ' / ' + total + (total === SEARCH_MATCH_LIMIT ? '+' : '');
         $('#previousMatchButton').disabled = total === 0;
         $('#nextMatchButton').disabled = total === 0;
-        if (state.searchIndex >= 0) selectSearchMatch();
+        if (state.searchIndex >= 0 && !config.skipSelection) selectSearchMatch();
+      }
+
+      function scheduleSearchRefresh() {
+        if (!state.searchQuery || state.searchRefreshTimer) return;
+        state.searchRefreshTimer = window.setTimeout(() => {
+          state.searchRefreshTimer = 0;
+          if (state.searchQuery) updateSearchMatches({ preserveIndex: true, skipSelection: true });
+        }, SEARCH_REFRESH_INTERVAL_MS);
       }
 
       function selectSearchMatch() {
@@ -2583,6 +2596,7 @@
           setProgrammaticScrollTop(terminal.scrollHeight);
         }
         updateLatestButton();
+        scheduleSearchRefresh();
       }
 
       function queueTerminalAppend(text) {
@@ -2720,7 +2734,7 @@
         $('#dtrSelect').disabled = !supportedSignals;
         $('#rtsSelect').disabled = !supportedSignals;
         $('#breakButton').disabled = !supportedSignals || state.breakActive;
-        document.querySelectorAll('.control-key').forEach(button => { button.disabled = !connected || !state.writer; });
+        document.querySelectorAll('.control-key').forEach(button => { button.disabled = !connected || !state.writer || state.txBusy; });
         $('#refreshSignalsButton').disabled = !(connected && state.port && typeof state.port.getSignals === 'function');
         $('#deviceControlSummary').textContent = t(connected ? 'deviceControlConnected' : 'deviceControlDisconnected');
         updateOutputSignalSelect('dtr');
@@ -2794,10 +2808,10 @@
       }
 
       async function sendControlByte(byteValue, label) {
-        if (state.phase !== 'connected' || !state.writer) return;
+        if (state.phase !== 'connected' || !state.writer || state.txBusy) return;
         const bytes = new Uint8Array([byteValue]);
         try {
-          await state.writer.write(bytes);
+          if (!await writeSerialBytes(bytes)) return;
           addSessionEntry('tx', bytes, String.fromCharCode(byteValue), '<' + label + '>');
           showToast(t('controlSent').replace('{label}', label), 1800);
         } catch (error) {
@@ -2841,7 +2855,7 @@
       function updateSendState() {
         const connected = state.phase === 'connected';
         const hasText = $('#commandInput').value.length > 0;
-        $('#sendButton').disabled = !connected || !hasText;
+        $('#sendButton').disabled = !connected || !hasText || state.txBusy;
       }
 
       function refreshDeviceLabel(fallbackKey) {
@@ -3064,7 +3078,10 @@
         } catch (error) {
           if (!state.closing) readFailure = error;
         } finally {
-          try { decoder.decode(); } catch { }
+          try {
+            const trailingText = decoder.decode();
+            if (trailingText) appendReceived(new Uint8Array(), trailingText);
+          } catch { }
           if (state.reader) {
             try { state.reader.releaseLock(); } catch { }
             state.reader = null;
@@ -3146,9 +3163,27 @@
         }
       }
 
+      async function writeSerialBytes(bytes) {
+        if (state.phase !== 'connected' || !state.writer || state.txBusy) return false;
+        const writer = state.writer;
+        state.txBusy = true;
+        updateSendState();
+        updateMacroRunState();
+        updateDeviceControlUi();
+        try {
+          await writer.write(bytes);
+          return true;
+        } finally {
+          state.txBusy = false;
+          updateSendState();
+          updateMacroRunState();
+          updateDeviceControlUi();
+        }
+      }
+
       async function sendCommand() {
         const input = $('#commandInput');
-        if (state.phase !== 'connected' || !state.writer || !input.value) return;
+        if (state.phase !== 'connected' || !state.writer || state.txBusy || !input.value) return;
         state.settings.lineEnding = $('#lineEnding').value;
         state.settings.sendMode = $('#sendMode').value;
         persistSettings();
@@ -3170,14 +3205,17 @@
         }
 
         $('#sendError').textContent = '';
-        $('#sendButton').disabled = true;
+        const submittedInput = input.value;
+        const submittedRevision = state.commandInputRevision;
         try {
-          await state.writer.write(bytes);
+          if (!await writeSerialBytes(bytes)) return;
           addSessionEntry('tx', bytes, text);
-          rememberCommand(input.value);
-          input.value = '';
+          rememberCommand(submittedInput);
+          if (state.commandInputRevision === submittedRevision && input.value === submittedInput) {
+            input.value = '';
+            input.focus();
+          }
           updateSendState();
-          input.focus();
         } catch (error) {
           setNotice('error', t('writeErrorTitle'), t('writeErrorBody') + technicalSuffix(error));
           updateSendState();
@@ -3213,20 +3251,24 @@
         flushTerminalRender();
         if (!state.terminalText) return;
         const beforeStart = state.displayStartIndex;
+        const restoreAnchor = state.displayEntries[beforeStart];
+        const undoGeneration = ++state.clearUndoGeneration;
         state.displayStartIndex = state.displayEntries.length;
         state.terminalRevision += 1;
         resetNewLogCount();
-        const clearRevision = state.terminalRevision;
         renderTerminal();
         AppToast.show({
           message: t('clearedTerminal'),
           actionLabel: state.language === 'ja' ? '元に戻す' : 'Undo',
           onAction: () => {
-            if (state.terminalRevision !== clearRevision) {
+            // New receive data must not invalidate Undo. A subsequent Clear does.
+            const restoreIndex = state.displayEntries.indexOf(restoreAnchor);
+            if (state.clearUndoGeneration !== undoGeneration || restoreIndex < 0) {
               showToast(t('restoreSkipped'), 4300);
               return;
             }
-            state.displayStartIndex = beforeStart;
+            state.clearUndoGeneration += 1;
+            state.displayStartIndex = restoreIndex;
             state.terminalRevision += 1;
             renderTerminal();
             showToast(t('restoredTerminal'));
@@ -3244,15 +3286,19 @@
         return true;
       }
 
-      function exactTextForLog(bytes) {
-        if (!bytes || bytes.byteLength === 0) return '';
-        return new TextDecoder('utf-8').decode(bytes);
+      function exactTextForLog(entry) {
+        if (!entry) return '';
+        // readLoop already decodes RX as a continuous UTF-8 stream; individual
+        // read() chunks may start or end in the middle of a multibyte character.
+        if (entry.direction === 'rx') return entry.text;
+        return entry.bytes && entry.bytes.byteLength
+          ? new TextDecoder('utf-8').decode(entry.bytes) : '';
       }
 
       function buildTxtLogParts() {
         const parts = [];
         for (const entry of state.sessionEntries) {
-          const exactText = exactTextForLog(entry.bytes);
+          const exactText = exactTextForLog(entry);
           const readable = isReadableLogText(exactText);
           const payload = readable ? escapeLogText(exactText) : 'HEX ' + bytesToHex(entry.bytes);
           parts.push(formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload + '\n');
@@ -3267,7 +3313,7 @@
             time: new Date(entry.time).toISOString(),
             direction: entry.direction,
             bytes: bytesToHex(entry.bytes, true),
-            text: exactTextForLog(entry.bytes)
+            text: exactTextForLog(entry)
           }) + '\n');
         }
         return parts;
@@ -3406,6 +3452,7 @@
           state.settings.lineEnding = item.lineEnding;
           refreshSendNote();
         }
+        state.commandInputRevision += 1;
         $('#sendError').textContent = '';
         updateSendState();
         input.setSelectionRange(input.value.length, input.value.length);
@@ -3549,6 +3596,10 @@
       $('#closeSearchButton').addEventListener('click', () => {
         $('#terminalSearch').hidden = true;
         state.searchQuery = '';
+        if (state.searchRefreshTimer) {
+          window.clearTimeout(state.searchRefreshTimer);
+          state.searchRefreshTimer = 0;
+        }
         state.searchMatches = [];
         state.searchIndex = -1;
         $('#terminalSearchInput').value = '';
@@ -3612,6 +3663,7 @@
       });
       $('#sendButton').addEventListener('click', sendCommand);
       $('#commandInput').addEventListener('input', () => {
+        state.commandInputRevision += 1;
         $('#sendError').textContent = '';
         if (state.commandHistoryIndex >= 0) state.commandHistoryIndex = -1;
         updateSendState();
@@ -3762,6 +3814,7 @@
 
       window.addEventListener('pagehide', () => {
         if (state.renderTimer) window.clearTimeout(state.renderTimer);
+        if (state.searchRefreshTimer) window.clearTimeout(state.searchRefreshTimer);
         if (state.connectionClockTimer) window.clearInterval(state.connectionClockTimer);
         if (state.phase === 'connected') void disconnect({ silent: true });
       });
