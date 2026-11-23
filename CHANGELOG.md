@@ -2,7 +2,22 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
-## Unreleased
+## Unreleased (v1.0.1)
+
+### Fixed
+
+- Prevent duplicate or overlapping serial writes across manual commands, macros, and control-key buttons. Allow editing the next command while a write is pending without erasing its draft.
+- Preserve streamed UTF-8 text in TXT/JSONL logs when a character spans multiple serial read chunks, while keeping exact raw bytes in JSONL.
+- Refresh live terminal search results at a bounded rate without forcibly moving the current selection.
+- Keep the terminal Clear Undo usable when new serial data arrives.
+- Include mobile layout and serial I/O regression tests in both pull-request and Pages-deploy CI.
+
+### Changed
+
+- Replaced the visible hero heading with a concise Japanese/English description while keeping a screen-reader heading.
+- Hid the local-processing note on narrow screens and made workspace and macro cards less prominent.
+- Added version-based tag and GitHub Release publishing after a successful `main` push, with both standalone HTML variants attached.
+
 
 - Hide only the informational footer at the existing 760px mobile-shortcut breakpoint. Move the existing buildMeta span to the end of the Help scroll body, retaining its existing mobile hiding. RX/TX, connection, logging and export controls stay in the operational status row; privacy scope and hardware behavior are unchanged.
 

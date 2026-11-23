@@ -7,3 +7,17 @@ test('exact build span is final Help item; mobile hiding and functional status r
  const block='<span class="build-meta" id="buildMeta"></span>';assert.equal(html.split(block).length-1,1);const body=helpBody('dialog-body');assert.ok(body.includes(block));assert.match(body.slice(body.indexOf(block)+block.length),/^\s*(?:<!--[^]*?-->\s*)?$/);assert.match(media(760),/\.build-meta\s*\{\s*display:\s*none;/);
  const main=html.match(/<main\b[^>]*>([^]*?)<\/main>/)[1];assert.doesNotMatch(main,/id="buildMeta"/);for(const id of ['statusText','connectionDuration','ioStats','logStatus','saveTxtButton','saveJsonlButton','clearSessionLogButton'])assert.match(main,new RegExp('id="'+id+'"'));
 });
+
+test('hero retains accessible heading and short Japanese/English body',()=>{
+ const hero=html.match(/<section class="intro"[^>]*>([\s\S]*?)<\/section>/)[1];
+ assert.match(hero,/<h1 id="introTitle" class="sr-only"/);
+ assert.doesNotMatch(hero,/<h2\b/);
+ assert.match(hero,/シリアル機器を選んで接続し、受信データを確認したりコマンドを送ったりできます。/);
+ assert.match(html,/introBody: 'Select a serial device, connect, then view incoming data or send commands.'/);
+});
+test('mobile-only privacy hiding and restrained card borders are preserved',()=>{
+ assert.match(media(760),/\.privacy-note\s*\{\s*display:\s*none;\s*\}/);
+ const css=html.match(/<style>([\s\S]*?)<\/style>/)[1];
+ assert.match(css,/\.workspace\s*\{[^}]*box-shadow:\s*none;/);
+ assert.match(css,/\.macro-run\s*\{[^}]*background:\s*var\(--surface-subtle\)/);
+});

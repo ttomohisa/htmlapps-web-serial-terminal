@@ -81,6 +81,8 @@ The [Deploy standalone app to GitHub Pages](.github/workflows/deploy-pages.yml) 
 
 See [the repository validation workflow](.github/workflows/build-standalone.yml) for checks performed on pull requests.
 
+After a PR merges into `main`, a successful build and verification automatically create a version tag from `app.config.json` and publish a GitHub Release. An existing release for the same version is skipped. The release includes readable and self-extracting standalone HTML files.
+
 ## Development and build layout
 
 ```text
@@ -128,7 +130,7 @@ See [Pico hardware test instructions](docs/HARDWARE_TEST_PICO.md) and the [relea
 - Device/driver/OS support determines which baud rates, line settings, USB permissions, and signal controls work.
 - USB VID/PID may be available without a friendly port name. Devices sharing identifiers may require manual selection after reattachment.
 - The approximate 20 MiB log budget estimates memory usage; it is not a precise JavaScript heap measurement. Full logs should be saved before clearing.
-- Browser preferences and macros are not synchronized, and there is no macro import/export in v1.0.0.
+- Browser preferences and macros are not synchronized, and there is no macro import/export in v1.0.1.
 
 ## Dependencies
 

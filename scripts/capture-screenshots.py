@@ -7,11 +7,13 @@ Requires: pip install playwright && python -m playwright install chromium
 """
 import argparse
 import hashlib
+import json
 from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
+APP_VERSION = json.loads((ROOT / "app.config.json").read_text(encoding="utf-8"))["version"]
 DEST = ROOT / "assets"
 SHOTS = [
     ("ja", False, "screenshot.png"),
@@ -36,7 +38,8 @@ def capture(browser, url: str, lang: str, mobile: bool, filename: str) -> None:
         page.goto(url, wait_until="domcontentloaded", timeout=60000)
         page.locator("#versionBadge").wait_for(timeout=20000)
         page.wait_for_function(
-            "() => document.querySelector('#versionBadge')?.textContent.trim() === 'v1.0.0'",
+            "(expected) => document.querySelector('#versionBadge')?.textContent.trim() === expected",
+            arg=f"v{APP_VERSION}",
             timeout=20000,
         )
         assert page.locator("#chooseButton").count() == 1, "Not the Web Serial Terminal UI"

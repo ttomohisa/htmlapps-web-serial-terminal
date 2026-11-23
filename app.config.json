@@ -3,7 +3,7 @@
   "name": "Web Serial Terminal",
   "nameJa": "Web Serial Terminal / シリアル通信ターミナル",
   "slug": "web-serial-terminal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Browser-based Web Serial terminal for Text/HEX, local command macros, explicit serial controls and TXT/JSONL logging with no serial data uploads.",
   "descriptionJa": "ブラウザからシリアル機器とText / HEX送受信し、ローカルマクロ、機器制御、TXT / JSONLログを利用する単一HTMLのターミナルです。",
   "defaultLanguage": "auto",

@@ -81,6 +81,8 @@ GitHub Pagesは最初のHTMLを配信します。読み込み後のシリアル�
 
 Pull Request時の検証は [Validate standalone HTML](.github/workflows/build-standalone.yml) で行います。
 
+PRのマージによって `main` が更新され、ビルドと検証が成功すると、`app.config.json` のバージョンに対応するタグとGitHub Releaseを自動作成します。同じバージョンのReleaseがすでにある場合は再作成しません。Releaseには通常版と自己展開版の単一HTMLが添付されます。
+
 ## 開発とビルドの構成
 
 ```text
@@ -128,7 +130,7 @@ Raspberry Pi PicoのMicroPython USB CDCでは、Text / HEX送受信、大量受�
 - 選べるBaud rateや通信条件、OSドライバー、USB権限、制御信号は機器・環境に依存します。
 - 機器名やCOM番号を取得できない場合があります。同じVID/PIDの機器が複数あれば、再接続時に選び直す必要があります。
 - 約20 MiBのログ上限はJavaScriptヒープの実測値ではなく概算です。ログを消す前に必要なファイルを保存してください。
-- 設定・マクロの端末間同期と、マクロのインポート / エクスポートはv1.0.0には含みません。
+- 設定・マクロの端末間同期と、マクロのインポート / エクスポートはv1.0.1には含みません。
 
 ## 使用ライブラリ
 

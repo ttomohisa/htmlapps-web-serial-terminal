@@ -30,7 +30,7 @@
       --terminal-text: #e7efeb;
       --terminal-muted: #8fa099;
       --focus: #287a66;
-      --shadow: 0 12px 34px rgba(21, 48, 40, .08);
+      --shadow: 0 2px 10px rgba(21, 48, 40, .06);
       --radius: 14px;
       --visual-viewport-height: 100dvh;
     }
@@ -91,7 +91,7 @@
       flex: 0 0 auto;
       overflow: hidden;
       border-radius: 11px;
-      box-shadow: 0 2px 8px rgba(22, 98, 79, .16);
+      box-shadow: none;
     }
     .brand-mark img { display: block; width: 100%; height: 100%; }
     .brand-copy { min-width: 0; }
@@ -180,17 +180,12 @@
       gap: 20px;
       margin-bottom: 16px;
     }
-    .intro h2 {
-      margin: 0;
-      font-size: clamp(21px, 3vw, 27px);
-      line-height: 1.25;
-      letter-spacing: -.025em;
-    }
     .intro p {
-      max-width: 760px;
-      margin: 6px 0 0;
-      color: var(--muted);
-      font-size: 13px;
+      max-width: 780px;
+      margin: 0;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.65;
     }
     .privacy-note {
       display: inline-flex;
@@ -227,9 +222,9 @@
     .workspace {
       overflow: hidden;
       border: 1px solid var(--line);
-      border-radius: 16px;
+      border-radius: 12px;
       background: var(--surface);
-      box-shadow: var(--shadow);
+      box-shadow: none;
     }
     .connection-bar {
       display: grid;
@@ -526,14 +521,14 @@
     .macro-run {
       min-width: 0;
       padding: 9px 10px;
-      border: 1px solid var(--line);
-      border-radius: 10px;
-      background: var(--surface);
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: var(--surface-subtle);
       color: var(--text);
       text-align: left;
       cursor: pointer;
     }
-    .macro-run:hover:not(:disabled) { border-color: var(--accent); background: var(--accent-soft); }
+    .macro-run:hover:not(:disabled) { border-color: var(--line-strong); background: var(--surface-strong); }
     .macro-run:disabled { cursor: not-allowed; opacity: .58; }
     .macro-name {
       display: block;
@@ -927,7 +922,7 @@
       footer { display: none; }
       html { scroll-padding-top: 72px; }
       .intro { flex-direction: column; gap: 10px; }
-      .privacy-note { align-self: flex-start; }
+      .privacy-note { display: none; }
       .connection-bar { grid-template-columns: 1fr; }
       .connection-actions { justify-content: stretch; }
       .connection-actions .button { flex: 1 1 auto; }
@@ -951,7 +946,7 @@
       .brand-meta { display: none; }
       main { padding-top: 16px; padding-bottom: 28px; }
       .intro { margin-bottom: 12px; }
-      .workspace { border-radius: 13px; }
+      .workspace { border-radius: 10px; }
       .connection-bar { padding: 13px; }
       .settings-panel summary { padding-inline: 13px; }
       .settings-body { grid-template-columns: 1fr 1fr; padding: 2px 13px 13px; gap: 10px; }
@@ -1018,7 +1013,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v1.0.0</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v1.0.1</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -1034,8 +1029,8 @@
   <main>
     <section class="intro" aria-labelledby="introTitle">
       <div>
-        <h2 id="introTitle" data-i18n="introTitle">シリアル機器へ接続</h2>
-        <p data-i18n="introBody">機器を選択して接続すると、受信テキストを確認しながらコマンドを送信できます。</p>
+        <h1 id="introTitle" class="sr-only" data-i18n="introTitle">シリアル機器へ接続</h1>
+        <p data-i18n="introBody">シリアル機器を選んで接続し、受信データを確認したりコマンドを送ったりできます。</p>
       </div>
       <div class="privacy-note">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 5 6v5c0 4.6 2.8 8 7 10 4.2-2 7-5.4 7-10V6z"/><path d="m9 12 2 2 4-5"/></svg>
@@ -1406,7 +1401,7 @@
         ja: {
           brandMeta: 'USBシリアル機器とブラウザで送受信',
           introTitle: 'シリアル機器へ接続',
-          introBody: '機器を選択して接続すると、受信テキストを確認しながらコマンドを送信できます。',
+          introBody: 'シリアル機器を選んで接続し、受信データを確認したりコマンドを送ったりできます。',
           privacyBadge: '完全ローカル処理',
           noDevice: '機器が選択されていません',
           chooseHint: 'USBシリアル機器を選択してください',
@@ -1584,7 +1579,7 @@
         en: {
           brandMeta: 'Send and receive with USB serial devices in your browser',
           introTitle: 'Connect a serial device',
-          introBody: 'Choose a device and connect to inspect incoming text while sending commands.',
+          introBody: 'Select a serial device, connect, then view incoming data or send commands.',
           privacyBadge: 'Fully local processing',
           noDevice: 'No device selected',
           chooseHint: 'Choose a USB serial device',
@@ -1790,12 +1785,16 @@
         searchQuery: '',
         searchMatches: [],
         searchIndex: -1,
+        searchRefreshTimer: 0,
         commandHistory: [],
         commandHistoryIndex: -1,
         commandDraft: '',
         macros: [],
         editingMacroId: null,
         macroSending: false,
+        txBusy: false,
+        commandInputRevision: 0,
+        clearUndoGeneration: 0,
         connectedAt: null,
         connectionClockTimer: 0,
         displayEntries: [],
@@ -1837,6 +1836,7 @@
       const MACRO_NAME_LIMIT = 40;
       const MACRO_PAYLOAD_LIMIT = 8192;
       const SEARCH_MATCH_LIMIT = 5000;
+      const SEARCH_REFRESH_INTERVAL_MS = 350;
       const decoder = new TextDecoder('utf-8');
       const encoder = new TextEncoder();
 
@@ -2148,7 +2148,7 @@
       }
 
       function updateMacroRunState() {
-        const disabled = state.phase !== 'connected' || !state.writer || state.macroSending;
+        const disabled = state.phase !== 'connected' || !state.writer || state.macroSending || state.txBusy;
         document.querySelectorAll('[data-macro-run]').forEach(button => { button.disabled = disabled; });
       }
 
@@ -2282,7 +2282,7 @@
 
       async function executeMacro(macroId) {
         const macro = state.macros.find(item => item.id === macroId);
-        if (!macro || state.phase !== 'connected' || !state.writer || state.macroSending) return;
+        if (!macro || state.phase !== 'connected' || !state.writer || state.macroSending || state.txBusy) return;
 
         let bytes;
         let text;
@@ -2302,7 +2302,7 @@
         updateMacroRunState();
         clearError();
         try {
-          await state.writer.write(bytes);
+          if (!await writeSerialBytes(bytes)) return;
           addSessionEntry('tx', bytes, text);
           showToast(t('macroSent').replace('{name}', macro.name), 2200);
         } catch (error) {
@@ -2507,7 +2507,15 @@
         $('#searchCount').textContent = current + ' / ' + total + (total === SEARCH_MATCH_LIMIT ? '+' : '');
         $('#previousMatchButton').disabled = total === 0;
         $('#nextMatchButton').disabled = total === 0;
-        if (state.searchIndex >= 0) selectSearchMatch();
+        if (state.searchIndex >= 0 && !config.skipSelection) selectSearchMatch();
+      }
+
+      function scheduleSearchRefresh() {
+        if (!state.searchQuery || state.searchRefreshTimer) return;
+        state.searchRefreshTimer = window.setTimeout(() => {
+          state.searchRefreshTimer = 0;
+          if (state.searchQuery) updateSearchMatches({ preserveIndex: true, skipSelection: true });
+        }, SEARCH_REFRESH_INTERVAL_MS);
       }
 
       function selectSearchMatch() {
@@ -2583,6 +2591,7 @@
           setProgrammaticScrollTop(terminal.scrollHeight);
         }
         updateLatestButton();
+        scheduleSearchRefresh();
       }
 
       function queueTerminalAppend(text) {
@@ -2720,7 +2729,7 @@
         $('#dtrSelect').disabled = !supportedSignals;
         $('#rtsSelect').disabled = !supportedSignals;
         $('#breakButton').disabled = !supportedSignals || state.breakActive;
-        document.querySelectorAll('.control-key').forEach(button => { button.disabled = !connected || !state.writer; });
+        document.querySelectorAll('.control-key').forEach(button => { button.disabled = !connected || !state.writer || state.txBusy; });
         $('#refreshSignalsButton').disabled = !(connected && state.port && typeof state.port.getSignals === 'function');
         $('#deviceControlSummary').textContent = t(connected ? 'deviceControlConnected' : 'deviceControlDisconnected');
         updateOutputSignalSelect('dtr');
@@ -2794,10 +2803,10 @@
       }
 
       async function sendControlByte(byteValue, label) {
-        if (state.phase !== 'connected' || !state.writer) return;
+        if (state.phase !== 'connected' || !state.writer || state.txBusy) return;
         const bytes = new Uint8Array([byteValue]);
         try {
-          await state.writer.write(bytes);
+          if (!await writeSerialBytes(bytes)) return;
           addSessionEntry('tx', bytes, String.fromCharCode(byteValue), '<' + label + '>');
           showToast(t('controlSent').replace('{label}', label), 1800);
         } catch (error) {
@@ -2841,7 +2850,7 @@
       function updateSendState() {
         const connected = state.phase === 'connected';
         const hasText = $('#commandInput').value.length > 0;
-        $('#sendButton').disabled = !connected || !hasText;
+        $('#sendButton').disabled = !connected || !hasText || state.txBusy;
       }
 
       function refreshDeviceLabel(fallbackKey) {
@@ -3064,7 +3073,10 @@
         } catch (error) {
           if (!state.closing) readFailure = error;
         } finally {
-          try { decoder.decode(); } catch { }
+          try {
+            const trailingText = decoder.decode();
+            if (trailingText) appendReceived(new Uint8Array(), trailingText);
+          } catch { }
           if (state.reader) {
             try { state.reader.releaseLock(); } catch { }
             state.reader = null;
@@ -3146,9 +3158,27 @@
         }
       }
 
+      async function writeSerialBytes(bytes) {
+        if (state.phase !== 'connected' || !state.writer || state.txBusy) return false;
+        const writer = state.writer;
+        state.txBusy = true;
+        updateSendState();
+        updateMacroRunState();
+        updateDeviceControlUi();
+        try {
+          await writer.write(bytes);
+          return true;
+        } finally {
+          state.txBusy = false;
+          updateSendState();
+          updateMacroRunState();
+          updateDeviceControlUi();
+        }
+      }
+
       async function sendCommand() {
         const input = $('#commandInput');
-        if (state.phase !== 'connected' || !state.writer || !input.value) return;
+        if (state.phase !== 'connected' || !state.writer || state.txBusy || !input.value) return;
         state.settings.lineEnding = $('#lineEnding').value;
         state.settings.sendMode = $('#sendMode').value;
         persistSettings();
@@ -3170,14 +3200,17 @@
         }
 
         $('#sendError').textContent = '';
-        $('#sendButton').disabled = true;
+        const submittedInput = input.value;
+        const submittedRevision = state.commandInputRevision;
         try {
-          await state.writer.write(bytes);
+          if (!await writeSerialBytes(bytes)) return;
           addSessionEntry('tx', bytes, text);
-          rememberCommand(input.value);
-          input.value = '';
+          rememberCommand(submittedInput);
+          if (state.commandInputRevision === submittedRevision && input.value === submittedInput) {
+            input.value = '';
+            input.focus();
+          }
           updateSendState();
-          input.focus();
         } catch (error) {
           setNotice('error', t('writeErrorTitle'), t('writeErrorBody') + technicalSuffix(error));
           updateSendState();
@@ -3213,20 +3246,24 @@
         flushTerminalRender();
         if (!state.terminalText) return;
         const beforeStart = state.displayStartIndex;
+        const restoreAnchor = state.displayEntries[beforeStart];
+        const undoGeneration = ++state.clearUndoGeneration;
         state.displayStartIndex = state.displayEntries.length;
         state.terminalRevision += 1;
         resetNewLogCount();
-        const clearRevision = state.terminalRevision;
         renderTerminal();
         AppToast.show({
           message: t('clearedTerminal'),
           actionLabel: state.language === 'ja' ? '元に戻す' : 'Undo',
           onAction: () => {
-            if (state.terminalRevision !== clearRevision) {
+            // New receive data must not invalidate Undo. A subsequent Clear does.
+            const restoreIndex = state.displayEntries.indexOf(restoreAnchor);
+            if (state.clearUndoGeneration !== undoGeneration || restoreIndex < 0) {
               showToast(t('restoreSkipped'), 4300);
               return;
             }
-            state.displayStartIndex = beforeStart;
+            state.clearUndoGeneration += 1;
+            state.displayStartIndex = restoreIndex;
             state.terminalRevision += 1;
             renderTerminal();
             showToast(t('restoredTerminal'));
@@ -3244,15 +3281,19 @@
         return true;
       }
 
-      function exactTextForLog(bytes) {
-        if (!bytes || bytes.byteLength === 0) return '';
-        return new TextDecoder('utf-8').decode(bytes);
+      function exactTextForLog(entry) {
+        if (!entry) return '';
+        // readLoop already decodes RX as a continuous UTF-8 stream; individual
+        // read() chunks may start or end in the middle of a multibyte character.
+        if (entry.direction === 'rx') return entry.text;
+        return entry.bytes && entry.bytes.byteLength
+          ? new TextDecoder('utf-8').decode(entry.bytes) : '';
       }
 
       function buildTxtLogParts() {
         const parts = [];
         for (const entry of state.sessionEntries) {
-          const exactText = exactTextForLog(entry.bytes);
+          const exactText = exactTextForLog(entry);
           const readable = isReadableLogText(exactText);
           const payload = readable ? escapeLogText(exactText) : 'HEX ' + bytesToHex(entry.bytes);
           parts.push(formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload + '\n');
@@ -3267,7 +3308,7 @@
             time: new Date(entry.time).toISOString(),
             direction: entry.direction,
             bytes: bytesToHex(entry.bytes, true),
-            text: exactTextForLog(entry.bytes)
+            text: exactTextForLog(entry)
           }) + '\n');
         }
         return parts;
@@ -3406,6 +3447,7 @@
           state.settings.lineEnding = item.lineEnding;
           refreshSendNote();
         }
+        state.commandInputRevision += 1;
         $('#sendError').textContent = '';
         updateSendState();
         input.setSelectionRange(input.value.length, input.value.length);
@@ -3549,6 +3591,10 @@
       $('#closeSearchButton').addEventListener('click', () => {
         $('#terminalSearch').hidden = true;
         state.searchQuery = '';
+        if (state.searchRefreshTimer) {
+          window.clearTimeout(state.searchRefreshTimer);
+          state.searchRefreshTimer = 0;
+        }
         state.searchMatches = [];
         state.searchIndex = -1;
         $('#terminalSearchInput').value = '';
@@ -3612,6 +3658,7 @@
       });
       $('#sendButton').addEventListener('click', sendCommand);
       $('#commandInput').addEventListener('input', () => {
+        state.commandInputRevision += 1;
         $('#sendError').textContent = '';
         if (state.commandHistoryIndex >= 0) state.commandHistoryIndex = -1;
         updateSendState();
@@ -3762,6 +3809,7 @@
 
       window.addEventListener('pagehide', () => {
         if (state.renderTimer) window.clearTimeout(state.renderTimer);
+        if (state.searchRefreshTimer) window.clearTimeout(state.searchRefreshTimer);
         if (state.connectionClockTimer) window.clearInterval(state.connectionClockTimer);
         if (state.phase === 'connected') void disconnect({ silent: true });
       });

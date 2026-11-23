@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Web Serial Terminal v1.0.0 is implemented using native browser APIs, HTML/CSS/JavaScript, the user-approved SVG icon, and system fonts.
+Web Serial Terminal v1.0.1 is implemented using native browser APIs, HTML/CSS/JavaScript, the user-approved SVG icon, and system fonts.
 
 **No bundled third-party runtime JavaScript, CSS, or WebAssembly dependencies** are declared by the current `dependencies.json` and `dependencies.lock.json` files.
 
