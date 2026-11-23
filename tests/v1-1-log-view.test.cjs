@@ -116,6 +116,6 @@ test('UI contains connection steps, send preview, accessible filter and marker d
   }
   assert.match(script,/const valid = refreshSendPreview\(\)/);
   assert.match(script,/state\.filterMode === 'only'/);
-  assert.match(html,/\\.workspace\[data-connection-step="choose"\] #chooseButton/);
+  assert.ok(html.includes('.workspace[data-connection-step="choose"] #chooseButton'));
   assert.match(html,/helpNewLogFeatures/);
 });
