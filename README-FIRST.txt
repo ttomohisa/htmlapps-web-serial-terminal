@@ -1,4 +1,4 @@
-Web Serial Terminal v1.0.1
+Web Serial Terminal v1.1.0
 ==========================
 
 Browser Kitty's browser-only serial terminal: Text/HEX transmit and receive, command macros, local session logging.

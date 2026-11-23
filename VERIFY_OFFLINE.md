@@ -1,7 +1,7 @@
 # Offline and Standalone Verification — Web Serial Terminal
 
 1. Build with `build-standalone.bat` or download a verified CI Artifact.
-2. Open `dist/index.html` and `dist/index.self-extract.html` directly. Confirm v1.0.1 and identical favicon/header SVGs. The build-generated `web-serial-terminal.html` should be identical to `dist/index.html`.
+2. Open `dist/index.html` and `dist/index.self-extract.html` directly. Confirm v1.1.0 and identical favicon/header SVGs. The build-generated `web-serial-terminal.html` should be identical to `dist/index.html`.
 3. Check both HTML files in a browser with the network disconnected. No CDN, external fonts, API, or analytics requests should be required. CSP includes `connect-src 'none'`.
 4. Feature-detect Web Serial: local `file://` permissions differ from HTTPS. An unsupported state is expected when the browser does not expose `navigator.serial`; this is not a failed download.
 5. On a supported browser, connect a Raspberry Pi Pico USB CDC device and test Text/LF `PING` → `PONG` and HEX `RAW 4` → `00 01 7F FF`.

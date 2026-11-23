@@ -23,7 +23,8 @@ GitHub Pages delivers the initial HTML. After the page loads, serial communicati
 - **Text and HEX serial communication** — Select a permitted device, set baud rate and framing, receive data in Text or HEX, and transmit UTF-8 Text or exact raw bytes.
 - **Configurable commands** — Choose None, LF, CR, or CRLF for Text sends; enable local echo or timestamps; use session-only command history.
 - **Device controls** — Explicitly set DTR/RTS, send a short BREAK pulse, inspect available input signals, and send ESC, Ctrl+C, Ctrl+D, Ctrl+Z, or Tab.
-- **A terminal designed for incoming streams** — Pause follow by scrolling up, jump to the newest output, search received text, copy the display, or clear it with Undo.
+- **Readable receive logs** — Text display joins read chunks into lines. Pause follow by scrolling, search, filter to matching lines or highlight text, copy, or clear with Undo.
+- **Send preview and notes** — Preview the bytes and line ending before sending. Add timestamped markers to the displayed and saved logs without transmitting to the device.
 - **Reusable command macros** — Save up to 12 named Text/HEX commands locally, edit their framing, and run them explicitly while connected.
 - **Exportable session logs** — Save TXT or JSONL with timestamps and raw bytes. The approximate 20 MiB export-log budget stops *recording* when full, not serial communication.
 - **Mobile-aware interface** — Larger touch targets, quick access to settings/device controls/macros, and software-keyboard-aware sizing. Actual USB serial availability still depends on the browser and device.
@@ -130,7 +131,7 @@ See [Pico hardware test instructions](docs/HARDWARE_TEST_PICO.md) and the [relea
 - Device/driver/OS support determines which baud rates, line settings, USB permissions, and signal controls work.
 - USB VID/PID may be available without a friendly port name. Devices sharing identifiers may require manual selection after reattachment.
 - The approximate 20 MiB log budget estimates memory usage; it is not a precise JavaScript heap measurement. Full logs should be saved before clearing.
-- Browser preferences and macros are not synchronized, and there is no macro import/export in v1.0.1.
+- Browser preferences and macros are not synchronized, and there is no macro import/export in v1.1.0.
 
 ## Dependencies
 

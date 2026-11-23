@@ -2,7 +2,18 @@
 
 All notable changes to Web Serial Terminal are documented here.
 
-## Unreleased (v1.0.1)
+## Unreleased (v1.1.0)
+
+### Added
+
+- Simplified the disconnected-to-connected workflow with clearer device selection and connect guidance.
+- Added a live send preview showing encoded bytes and line-ending choice, with early invalid-HEX feedback.
+- Assemble received Text into logical lines (LF, CR, CRLF) across arbitrary serial reads without altering raw saved bytes.
+- Added matching-line filtering and capped, safe Text highlighting; receive data remains in the session log.
+- Added timestamped marker notes to the display and TXT / JSONL logs, without sending data to the device.
+- Added bilingual guidance and regression tests for stream splitting, filtering, and markers.
+
+## 1.0.1 - 2026-11-24
 
 ### Fixed
 

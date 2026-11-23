@@ -1034,7 +1034,7 @@
       .status-line .status-spacer { flex-basis: 100%; height: 0; }
       .io-stats { margin-right: auto; }
       .status-action { min-height: 40px; }
-      #helpDialog, #macroDialog {
+      #helpDialog, #macroDialog, #markerDialog {
         width: calc(100% - 18px);
         max-height: calc(100dvh - 18px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
       }
@@ -1065,7 +1065,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v1.0.1</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v1.1.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -4079,7 +4079,7 @@
         });
       });
 
-      ['commandInput','macroNameInput','macroPayloadInput'].forEach(id => {
+      ['commandInput','macroNameInput','macroPayloadInput','markerInput'].forEach(id => {
         const element = $('#' + id);
         element.addEventListener('focus', () => {
           updateVisualViewport();

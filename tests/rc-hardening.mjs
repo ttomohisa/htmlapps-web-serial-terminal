@@ -18,8 +18,8 @@ function exactSource(from, to) {
 }
 
 test('release metadata and source JavaScript parse', () => {
-  assert.equal(config.version, '1.0.1');
-  assert.match(html, /id="versionBadge">v1\.0\.1<\/span>/);
+  assert.equal(config.version, '1.1.0');
+  assert.match(html, /id="versionBadge">v1\.1\.0<\/span>/);
   assert.doesNotThrow(() => new Function(script));
 });
 

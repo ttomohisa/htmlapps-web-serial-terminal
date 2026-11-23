@@ -34,7 +34,7 @@ jobs:
       shell: pwsh
       run: |
         ./scripts/check-repository.ps1
-        node --test tests/mobile-build-info.test.cjs
+        node --test tests/mobile-build-info.test.cjs tests/v1-1-log-view.test.cjs
         if ($LASTEXITCODE -ne 0) { throw "Mobile build information regression failed." }
     - name: Verify mobile Help in Chromium
       shell: pwsh

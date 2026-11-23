@@ -11,16 +11,16 @@ test('v1 metadata, HTML, and icon',()=>{
  const config=JSON.parse(string('app.config.json'));
  const html=string('src/index.template.html');
  const icon=string('assets/favicon.svg');
- assert.equal(config.version,'1.0.1');
+ assert.equal(config.version,'1.1.0');
  assert.equal(config.build.blockRuntimeNetwork,true);
- assert.match(html,/id="versionBadge">v1\.0\.1<\/span>/);
+ assert.match(html,/id="versionBadge">v1\.1\.0<\/span>/);
  assert.match(html,/connect-src\s+'none'/);
  assert.match(icon,/viewBox="0 0 64 64"/);
  assert.match(icon,/rx="16"/);
  assert.match(icon,/#16624f/i);
  assert.equal([...html.matchAll(/__APP_ICON_DATA_URI__/g)].length,2);
  assert.match(html,/\.composer \.send-mode \{ grid-column: 1; grid-row: 2; \}/);
- assert.match(string('APP_SPEC.md'),/Current implementation milestone: v1\.0\.1/);
+ assert.match(string('APP_SPEC.md'),/Current implementation milestone: v1\.1\.0/);
  const inline=html.slice(html.indexOf('<script>')+8,html.lastIndexOf('</script>'));
  assert.doesNotThrow(()=>new Function(inline));
  const keys=[...new Set([
@@ -58,13 +58,13 @@ test('bilingual docs describe actual generated output and screenshot variants',(
  assert.match(ja,/assets\/screenshot\.png/);
  assert.match(ja,/assets\/screenshot-mobile\.png/);
  for(const s of [en,ja]){
-  for(const term of ['dist/index.html','dist/index.self-extract.html','web-serial-terminal.html','v1.0.1']){
-    if(term==='v1.0.1') assert.match(s,/1\.0\.1/);
+  for(const term of ['dist/index.html','dist/index.self-extract.html','web-serial-terminal.html','v1.1.0']){
+    if(term==='v1.1.0') assert.match(s,/1\.1\.0/);
     else assert.ok(s.includes(term));
   }
   assert.doesNotMatch(s,/Single HTML App Template|スターター作業領域/);
  }
- assert.match(string('README-FIRST.txt'),/Web Serial Terminal v1\.0\.1/);
+ assert.match(string('README-FIRST.txt'),/Web Serial Terminal v1\.1\.0/);
  assert.match(string('THIRD_PARTY_NOTICES.md'),/No bundled third-party runtime/i);
 });
 
