@@ -1918,6 +1918,10 @@
         txBusy: false,
         commandInputRevision: 0,
         clearUndoGeneration: 0,
+        filterQuery: '',
+        filterMode: 'highlight',
+        filterRefreshTimer: 0,
+        displayAssembler: { rxOpen: false, afterCr: false },
         connectedAt: null,
         connectionClockTimer: 0,
         displayEntries: [],
@@ -1960,6 +1964,8 @@
       const MACRO_PAYLOAD_LIMIT = 8192;
       const SEARCH_MATCH_LIMIT = 5000;
       const SEARCH_REFRESH_INTERVAL_MS = 350;
+      const FILTER_REFRESH_INTERVAL_MS = 350;
+      const MAX_HIGHLIGHT_MATCHES = 400;
       const decoder = new TextDecoder('utf-8');
       const encoder = new TextEncoder();
 
@@ -2546,11 +2552,131 @@
         return true;
       }
 
-      function displayEntryText(entry) {
-        if (state.displayMode === 'text' && !state.showTimestamp && !state.localEcho && entry.direction === 'rx') return entry.text;
-        const prefix = (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + entry.direction.toUpperCase() + '  ';
-        const payload = state.displayMode === 'hex' ? bytesToHex(entry.bytes) : (entry.displayText || entry.text);
-        return prefix + payload + (payload.endsWith('\n') ? '' : '\n');
+      function newDisplayAssembler() {
+        return { rxOpen: false, afterCr: false };
+      }
+
+      // RX reads are arbitrary chunks, not lines. Build Text lines across reads
+      // without altering their original bytes in the saved session entries.
+      function formatDisplayEntry(entry, assembler) {
+        if (entry.direction === 'marker') {
+          const before = assembler.rxOpen ? '\n' : '';
+          assembler.rxOpen = false;
+          assembler.afterCr = false;
+          return before + '── ' + formatDisplayTime(entry.time) + '  ' + entry.text + ' ──\n';
+        }
+        if (entry.direction !== 'rx') {
+          if (!state.localEcho) return '';
+          const before = assembler.rxOpen ? '\n' : '';
+          assembler.rxOpen = false;
+          assembler.afterCr = false;
+          const prefix = (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + 'TX  ';
+          const payload = state.displayMode === 'hex' ? bytesToHex(entry.bytes) : (entry.displayText || entry.text);
+          return before + prefix + payload + (payload.endsWith('\n') ? '' : '\n');
+        }
+        if (state.displayMode === 'hex') {
+          if (!entry.bytes.length) return '';
+          return (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + 'RX  ' + bytesToHex(entry.bytes) + '\n';
+        }
+        const text = entry.text || '';
+        if (!text) return '';
+        const label = state.showTimestamp || state.localEcho;
+        const prefix = (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + 'RX  ';
+        const parts = [];
+        let fragmentStart = 0;
+        for (let i = 0; i < text.length; i += 1) {
+          const ch = text[i];
+          if (ch === '\n' && assembler.afterCr) {
+            assembler.afterCr = false;
+            fragmentStart = i + 1;
+            continue;
+          }
+          assembler.afterCr = false;
+          if (ch !== '\r' && ch !== '\n') {
+            if (!assembler.rxOpen && label) parts.push(prefix);
+            assembler.rxOpen = true;
+            // Append ordinary characters in groups in the next iteration.
+            let end = i + 1;
+            while (end < text.length && text[end] !== '\r' && text[end] !== '\n') end += 1;
+            parts.push(text.slice(i, end));
+            i = end - 1;
+            continue;
+          }
+          if (!assembler.rxOpen && label) parts.push(prefix);
+          parts.push('\n');
+          assembler.rxOpen = false;
+          assembler.afterCr = ch === '\r';
+          fragmentStart = i + 1;
+        }
+        void fragmentStart;
+        return parts.join('');
+      }
+
+      function filterDisplayText(fullText) {
+        if (!state.filterQuery) return { text: fullText, matches: 0 };
+        const query = state.filterQuery.toLocaleLowerCase();
+        const lines = fullText.split('\n');
+        const retained = [];
+        let matches = 0;
+        for (let i = 0; i < lines.length; i += 1) {
+          const line = lines[i];
+          const matched = line.toLocaleLowerCase().includes(query);
+          if (matched) matches += 1;
+          if (state.filterMode !== 'only' || matched || line.startsWith('── ')) retained.push(line);
+        }
+        const output = retained.join('\n');
+        return { text: output, matches };
+      }
+
+      function updateFilterCount(matches) {
+        const counter = $('#filterCount');
+        counter.textContent = state.filterQuery
+          ? t('filterMatches').replace('{count}', new Intl.NumberFormat(state.language).format(matches))
+          : '';
+      }
+
+      // Only untrusted Text is placed in text nodes; highlights are not HTML.
+      function paintFilterHighlights() {
+        if (!state.filterQuery || state.filterMode !== 'highlight') return;
+        const terminal = $('#terminal');
+        const text = state.terminalText;
+        const needle = state.filterQuery.toLocaleLowerCase();
+        const haystack = text.toLocaleLowerCase();
+        const fragment = document.createDocumentFragment();
+        let pos = 0;
+        let foundCount = 0;
+        while (foundCount < MAX_HIGHLIGHT_MATCHES) {
+          const index = haystack.indexOf(needle, pos);
+          if (index < 0) break;
+          if (index > pos) fragment.append(document.createTextNode(text.slice(pos, index)));
+          const marked = document.createElement('mark');
+          marked.textContent = text.slice(index, index + needle.length);
+          fragment.append(marked);
+          pos = index + needle.length;
+          foundCount += 1;
+        }
+        if (!foundCount) {
+          terminal.textContent = text;
+          return;
+        }
+        if (pos < text.length) fragment.append(document.createTextNode(text.slice(pos)));
+        const top = terminal.scrollTop;
+        terminal.replaceChildren(fragment);
+        terminal.scrollTop = top;
+      }
+
+      function scheduleFilterRefresh() {
+        if (!state.filterQuery || state.filterRefreshTimer) return;
+        state.filterRefreshTimer = window.setTimeout(() => {
+          state.filterRefreshTimer = 0;
+          if (!state.filterQuery) return;
+          if (state.filterMode === 'only') {
+            renderTerminal();
+          } else {
+            updateFilterCount(filterDisplayText(state.terminalText).matches);
+            paintFilterHighlights();
+          }
+        }, FILTER_REFRESH_INTERVAL_MS);
       }
 
       function countLineBreaks(text) {
@@ -2667,16 +2793,27 @@
       function selectSearchMatch() {
         if (state.searchIndex < 0 || !state.searchMatches.length || !state.searchQuery) return;
         const terminal = $('#terminal');
-        const node = terminal.firstChild;
-        if (!node || node.nodeType !== Node.TEXT_NODE) return;
         const start = state.searchMatches[state.searchIndex];
         const end = start + state.searchQuery.length;
-        if (end > node.data.length) return;
+        if (end > state.terminalText.length) return;
 
+        const position = offset => {
+          const walker = document.createTreeWalker(terminal, NodeFilter.SHOW_TEXT);
+          let remaining = offset;
+          let node;
+          while ((node = walker.nextNode())) {
+            if (remaining <= node.data.length) return { node, offset: remaining };
+            remaining -= node.data.length;
+          }
+          return null;
+        };
+        const from = position(start);
+        const to = position(end);
+        if (!from || !to) return;
         const selection = window.getSelection();
         const range = document.createRange();
-        range.setStart(node, start);
-        range.setEnd(node, end);
+        range.setStart(from.node, from.offset);
+        range.setEnd(to.node, to.offset);
         selection.removeAllRanges();
         selection.addRange(range);
 
@@ -2719,6 +2856,8 @@
         const terminal = $('#terminal');
         if (!trimmed.omitted && terminal.childNodes.length === 1 && terminal.firstChild.nodeType === Node.TEXT_NODE && terminal.firstChild.data.length === previousLength) {
           terminal.firstChild.appendData(pending);
+        } else if (!trimmed.omitted && state.filterQuery && state.filterMode === 'highlight' && terminal.textContent.length === previousLength) {
+          terminal.append(document.createTextNode(pending));
         } else {
           terminal.textContent = state.terminalText;
         }
@@ -2738,6 +2877,7 @@
         }
         updateLatestButton();
         scheduleSearchRefresh();
+        scheduleFilterRefresh();
       }
 
       function queueTerminalAppend(text) {
@@ -2751,35 +2891,25 @@
       }
 
       function buildDisplayTextFromHistory() {
+        const assembler = newDisplayAssembler();
         const parts = [];
-        let chars = 0;
-        let lines = 0;
-        let omitted = false;
-        for (let i = state.displayEntries.length - 1; i >= state.displayStartIndex; i -= 1) {
-          const entry = state.displayEntries[i];
-          if (entry.direction !== 'rx' && !state.localEcho) continue;
-          const piece = displayEntryText(entry);
-          const pieceLines = countLineBreaks(piece);
-          if (parts.length && (chars + piece.length > MAX_DISPLAY_CHARS || lines + pieceLines > MAX_DISPLAY_LINES)) {
-            omitted = true;
-            break;
-          }
-          parts.push(piece);
-          chars += piece.length;
-          lines += pieceLines;
-          if (chars >= MAX_DISPLAY_CHARS || lines >= MAX_DISPLAY_LINES) {
-            omitted = i > state.displayStartIndex;
-            break;
-          }
+        for (let i = state.displayStartIndex; i < state.displayEntries.length; i += 1) {
+          const piece = formatDisplayEntry(state.displayEntries[i], assembler);
+          if (piece) parts.push(piece);
         }
-        const joined = parts.reverse().join('');
-        const bounded = trimDisplayToBudget(joined, countLineBreaks(joined));
-        return { text: bounded.text, omitted: omitted || bounded.omitted };
+        const filtered = filterDisplayText(parts.join(''));
+        const bounded = trimDisplayToBudget(filtered.text, countLineBreaks(filtered.text));
+        return { text: bounded.text, omitted: bounded.omitted, assembler, matches: filtered.matches };
       }
 
       function renderTerminal() {
         cancelPendingRender();
+        if (state.filterRefreshTimer) {
+          window.clearTimeout(state.filterRefreshTimer);
+          state.filterRefreshTimer = 0;
+        }
         const built = buildDisplayTextFromHistory();
+        state.displayAssembler = built.assembler;
         state.terminalText = built.text;
         state.displayLineCount = countLineBreaks(built.text);
         const terminal = $('#terminal');
@@ -2789,8 +2919,10 @@
           state.bufferNoticeShown = true;
           showToast(t('displayTrimmed'), 5200);
         }
+        updateFilterCount(built.matches);
+        paintFilterHighlights();
         updateTerminalControls();
-        updateSearchMatches();
+        updateSearchMatches({ preserveIndex: true, skipSelection: true });
         if (state.autoScroll) {
           resetNewLogCount();
           setProgrammaticScrollTop(terminal.scrollHeight);
@@ -2806,22 +2938,24 @@
         recordSessionEntry(entry);
 
         if (direction === 'rx') state.rxBytes += data.byteLength;
-        else state.txBytes += data.byteLength;
+        else if (direction === 'tx') state.txBytes += data.byteLength;
         state.terminalRevision += 1;
 
-        if (direction === 'rx' || state.localEcho) {
-          const visibleText = displayEntryText(entry);
-          if (visibleText) queueTerminalAppend(visibleText);
-          else updateIoStats();
-        } else {
+        if (state.filterQuery && state.filterMode === 'only') {
+          scheduleFilterRefresh();
           updateIoStats();
           updateTerminalControls();
+        } else {
+          const visibleText = formatDisplayEntry(entry, state.displayAssembler);
+          if (visibleText) queueTerminalAppend(visibleText);
+          else updateIoStats();
         }
       }
 
       function updateTerminalControls() {
         const hasText = state.terminalText.length > 0;
         $('#copyTerminalButton').disabled = !hasText;
+        $('#addMarkerButton').disabled = state.phase !== 'connected' && !state.displayEntries.length;
         $('#clearTerminalButton').disabled = !hasText;
         $('#terminalCount').textContent = new Intl.NumberFormat(state.language).format(state.terminalText.length) + (state.language === 'ja' ? ' 文字' : ' chars');
         $('#autoScrollButton').setAttribute('aria-pressed', String(state.autoScroll));
