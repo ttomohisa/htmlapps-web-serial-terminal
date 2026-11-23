@@ -240,6 +240,24 @@
       min-width: 0;
       gap: 11px;
     }
+    .connection-guide {
+      margin: 4px 0 0;
+      color: var(--accent);
+      font-size: 11px;
+    }
+    .connection-guide[hidden] { display: none; }
+    .workspace[data-connection-step="choose"] #chooseButton {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 750;
+    }
+    .workspace[data-connection-step="choose"] #chooseButton:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+    .workspace[data-connection-step="connected"] .connection-bar {
+      padding-block: 11px;
+    }
     .status-dot {
       width: 10px;
       height: 10px;
@@ -687,6 +705,29 @@
       background: #131d19;
     }
     .terminal-search[hidden] { display: none; }
+    .terminal-filter {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #25322d;
+      background: #131d19;
+    }
+    .terminal-filter[hidden] { display: none; }
+    .filter-input { flex: 1 1 200px; min-width: 0; }
+    .filter-mode { flex: 0 0 auto; }
+    .filter-help { color: #91a39a; font-size: 10px; }
+    .terminal mark {
+      background: #386e54;
+      color: #fff;
+      border-radius: 2px;
+      font: inherit;
+    }
+    .terminal-tool[aria-expanded="true"] {
+      border-color: #4b9c83;
+      color: #e8f4ef;
+    }
     .search-input {
       min-height: 34px;
       padding: 6px 9px;
@@ -795,6 +836,15 @@
       color: #90a39a;
       font-size: 10px;
     }
+    .composer-preview {
+      grid-column: 1 / -1;
+      margin: -4px 2px 0;
+      color: #d4e7de;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .composer-preview[hidden] { display: none; }
+    .composer-preview[data-invalid="true"] { color: #ffb4ac; }
     .composer-error {
       grid-column: 1 / -1;
       margin: -3px 2px 0;
@@ -969,6 +1019,8 @@
       .baud-row { grid-template-columns: minmax(0, 1fr) minmax(88px, .75fr); }
       .terminal-tools { padding-inline: 10px; }
       .terminal-search { grid-template-columns: minmax(0, 1fr) auto auto; padding-inline: 10px; }
+      .terminal-filter { padding-inline: 10px; }
+      .filter-input { flex-basis: 100%; }
       .terminal-search .search-count { grid-column: 1 / 2; text-align: left; }
       .terminal-search #closeSearchButton { grid-column: 3; grid-row: 1; }
       .terminal-wrap, .terminal { min-height: 300px; }
@@ -1054,13 +1106,14 @@
       </div>
     </div>
 
-    <section class="workspace" aria-label="Serial terminal">
+    <section class="workspace" data-connection-step="choose" aria-label="Serial terminal">
       <div class="connection-bar">
         <div class="device-block">
           <span class="status-dot" id="statusDot" aria-hidden="true"></span>
           <div class="device-copy">
             <p class="device-name" id="deviceName" data-i18n="noDevice">機器が選択されていません</p>
             <p class="device-detail" id="deviceDetail" data-i18n="chooseHint">USBシリアル機器を選択してください</p>
+            <p class="connection-guide" id="connectionGuide" data-i18n="connectionGuideChoose">まず機器を選択してください。</p>
           </div>
         </div>
         <div class="connection-actions">
@@ -1210,6 +1263,8 @@
         <button class="terminal-tool" id="copyTerminalButton" type="button" data-i18n="copyTerminal" disabled>コピー</button>
         <button class="terminal-tool" id="clearTerminalButton" type="button" data-i18n="clearTerminal" disabled>消去</button>
         <button class="terminal-tool" id="searchTerminalButton" type="button" data-i18n="searchTerminal">検索</button>
+        <button class="terminal-tool" id="filterTerminalButton" type="button" data-i18n="filterTerminal" aria-expanded="false" aria-controls="terminalFilter">絞り込み</button>
+        <button class="terminal-tool" id="addMarkerButton" type="button" data-i18n="addMarker" disabled>目印</button>
         <span class="terminal-tool-spacer"></span>
         <span class="terminal-count" id="terminalCount">0 chars</span>
         <button class="terminal-tool" id="autoScrollButton" type="button" aria-pressed="true"><span data-i18n="autoScroll">自動スクロール</span>: <strong id="autoScrollState">ON</strong></button>
@@ -1222,6 +1277,18 @@
         <button class="terminal-tool" id="nextMatchButton" type="button" data-i18n="nextMatch" disabled>次へ</button>
         <span class="search-count" id="searchCount">0 / 0</span>
         <button class="terminal-tool" id="closeSearchButton" type="button" data-i18n-aria-label="closeSearch" aria-label="検索を閉じる">×</button>
+      </div>
+
+      <div class="terminal-filter" id="terminalFilter" hidden>
+        <label class="sr-only" for="filterQuery" data-i18n="filterTerminal">絞り込み</label>
+        <input class="search-input filter-input" id="filterQuery" type="search" maxlength="120" autocomplete="off" spellcheck="false" data-i18n-placeholder="filterPlaceholder" placeholder="含む文字を入力">
+        <label class="sr-only" for="filterMode" data-i18n="filterModeLabel">表示方法</label>
+        <select class="terminal-select filter-mode" id="filterMode">
+          <option value="highlight" data-i18n="filterHighlight">強調表示</option>
+          <option value="only" data-i18n="filterOnly">一致する行だけ</option>
+        </select>
+        <button class="terminal-tool" id="closeFilterButton" type="button" data-i18n-aria-label="closeFilter" aria-label="絞り込みを閉じる">×</button>
+        <span class="filter-help" id="filterCount" aria-live="polite"></span>
       </div>
 
       <div class="terminal-wrap">
@@ -1251,6 +1318,7 @@
         </select>
         <button class="button send-button" id="sendButton" type="button" data-i18n="send" disabled>送信</button>
         <p class="composer-note" id="sendNote"></p>
+        <p class="composer-preview" id="sendPreview" hidden role="status"></p>
         <p class="composer-error" id="sendError" role="status"></p>
       </div>
 
@@ -1315,6 +1383,25 @@
       <button class="button danger" id="deleteMacroButton" type="button" data-i18n="deleteMacro" hidden>削除</button>
       <button class="button" id="cancelMacroButton" type="button" data-i18n="cancel">キャンセル</button>
       <button class="button primary" id="saveMacroButton" type="submit" form="macroForm" data-i18n="saveMacro">保存</button>
+    </div>
+  </dialog>
+
+  <dialog id="markerDialog">
+    <div class="dialog-head">
+      <h2 data-i18n="markerDialogTitle">ログに目印を付ける</h2>
+      <button class="dialog-close" id="closeMarkerButton" type="button" data-i18n-aria-label="close" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"/><path d="M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <form id="markerForm" class="dialog-body">
+      <label class="macro-form-field" for="markerInput">
+        <span data-i18n="markerLabel">メモ</span>
+        <input class="macro-form-control" id="markerInput" type="text" maxlength="120" autocomplete="off" data-i18n-placeholder="markerPlaceholder" placeholder="動作を確認した">
+      </label>
+    </form>
+    <div class="dialog-actions">
+      <button class="button" id="cancelMarkerButton" type="button" data-i18n="cancel">キャンセル</button>
+      <button class="button primary" type="submit" form="markerForm" data-i18n="addMarker">目印を追加</button>
     </div>
   </dialog>
 
@@ -1402,6 +1489,24 @@
           brandMeta: 'USBシリアル機器とブラウザで送受信',
           introTitle: 'シリアル機器へ接続',
           introBody: 'シリアル機器を選んで接続し、受信データを確認したりコマンドを送ったりできます。',
+          connectionGuideChoose: 'まず機器を選択してください。',
+          connectionGuideReady: '通信設定を確認して「接続」を押します。',
+          filterTerminal: '絞り込み',
+          filterPlaceholder: '含む文字を入力',
+          filterModeLabel: '表示方法',
+          filterHighlight: '強調表示',
+          filterOnly: '一致する行だけ',
+          closeFilter: '絞り込みを閉じる',
+          filterMatches: '{count} 行が一致',
+          addMarker: '目印',
+          markerDialogTitle: 'ログに目印を付ける',
+          markerLabel: 'メモ',
+          markerPlaceholder: '動作を確認した',
+          markerAdded: 'ログに目印を追加しました。',
+          markerNotSaved: '表示には追加しましたが、保存用ログは上限に達しています。',
+          previewText: '{count} bytes · 改行 {ending}',
+          previewHex: '{count} bytes · HEX',
+          previewInvalid: 'HEXの入力を確認してください。',
           privacyBadge: '完全ローカル処理',
           noDevice: '機器が選択されていません',
           chooseHint: 'USBシリアル機器を選択してください',
@@ -1580,6 +1685,24 @@
           brandMeta: 'Send and receive with USB serial devices in your browser',
           introTitle: 'Connect a serial device',
           introBody: 'Select a serial device, connect, then view incoming data or send commands.',
+          connectionGuideChoose: 'Choose a device to get started.',
+          connectionGuideReady: 'Review settings, then press Connect.',
+          filterTerminal: 'Filter',
+          filterPlaceholder: 'Text to match',
+          filterModeLabel: 'Filter mode',
+          filterHighlight: 'Highlight',
+          filterOnly: 'Matching lines',
+          closeFilter: 'Close filter',
+          filterMatches: '{count} matching lines',
+          addMarker: 'Marker',
+          markerDialogTitle: 'Add a log marker',
+          markerLabel: 'Note',
+          markerPlaceholder: 'Checked the device',
+          markerAdded: 'Marker added to the log.',
+          markerNotSaved: 'Marker shown, but the saved log is full.',
+          previewText: '{count} bytes · ending {ending}',
+          previewHex: '{count} bytes · HEX',
+          previewInvalid: 'Check the HEX bytes.',
           privacyBadge: 'Fully local processing',
           noDevice: 'No device selected',
           chooseHint: 'Choose a USB serial device',
@@ -2126,6 +2249,29 @@
         $('#commandInput').setAttribute('placeholder', t(hexMode ? 'hexPlaceholder' : 'commandPlaceholder'));
         $('#sendNote').textContent = hexMode ? t('sendNoteHex') : t('sendNote').replace('{ending}', endingText($('#lineEnding').value));
         if (!hexMode) $('#sendError').textContent = '';
+        refreshSendPreview();
+      }
+
+      function refreshSendPreview() {
+        const input = $('#commandInput').value;
+        const output = $('#sendPreview');
+        output.hidden = !input;
+        output.dataset.invalid = 'false';
+        if (!input) {
+          output.textContent = '';
+          return true;
+        }
+        const hex = $('#sendMode').value === 'hex';
+        const bytes = hex ? parseHexInput(input) : encoder.encode(input + endingBytes($('#lineEnding').value));
+        if (!bytes) {
+          output.textContent = t('previewInvalid');
+          output.dataset.invalid = 'true';
+          return false;
+        }
+        output.textContent = t(hex ? 'previewHex' : 'previewText')
+          .replace('{count}', new Intl.NumberFormat(state.language).format(bytes.byteLength))
+          .replace('{ending}', endingText($('#lineEnding').value));
+        return true;
       }
 
       function macroPayloadPreview(payload) {
@@ -2839,6 +2985,13 @@
         // Always allow an explicit recovery check; reconnect events may arrive with a new SerialPort object or be missed.
         $('#connectButton').disabled = !supported || !state.port || busy || connected;
         $('#connectButton').textContent = t(state.unexpectedDisconnect ? 'reconnect' : 'connect');
+        const step = !supported ? 'unavailable' : connected ? 'connected' : state.port ? 'ready' : 'choose';
+        $('.workspace').dataset.connectionStep = step;
+        const guide = $('#connectionGuide');
+        const guideKey = step === 'choose' ? 'connectionGuideChoose' : 'connectionGuideReady';
+        guide.dataset.i18n = guideKey;
+        guide.textContent = t(guideKey);
+        guide.hidden = step !== 'choose' && step !== 'ready';
         $('#disconnectButton').disabled = !connected;
         $('#commandInput').disabled = !connected;
         setSettingsDisabled(busy || connected);
@@ -2850,7 +3003,8 @@
       function updateSendState() {
         const connected = state.phase === 'connected';
         const hasText = $('#commandInput').value.length > 0;
-        $('#sendButton').disabled = !connected || !hasText || state.txBusy;
+        const valid = refreshSendPreview();
+        $('#sendButton').disabled = !connected || !hasText || !valid || state.txBusy;
       }
 
       function refreshDeviceLabel(fallbackKey) {
@@ -3648,7 +3802,10 @@
       ['dataBits','parity','stopBits','flowControl'].forEach(id => {
         $('#' + id).addEventListener('change', updateSettingsFromControls);
       });
-      $('#lineEnding').addEventListener('change', updateSettingsFromControls);
+      $('#lineEnding').addEventListener('change', () => {
+        updateSettingsFromControls();
+        updateSendState();
+      });
       $('#sendMode').addEventListener('change', () => {
         state.settings.sendMode = $('#sendMode').value;
         persistSettings();
