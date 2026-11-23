@@ -50,6 +50,9 @@ jobs:
         if ($LASTEXITCODE -ne 0) { throw "Mobile Help browser regression failed." }
         node scripts/serial-features.browser.cjs 2>&1 | Tee-Object -FilePath test-results/mobile-help/serial-features.log
         if ($LASTEXITCODE -ne 0) { throw "Serial features browser regression failed." }
+        $env:EMIT_PNG_CHUNKS = "1"
+        node scripts/capture-release-screenshots.browser.cjs 2>&1 | Tee-Object -FilePath test-results/mobile-help/capture.log
+        if ($LASTEXITCODE -ne 0) { throw "Documentation screenshot capture failed." }
     - name: Upload mobile Help browser evidence
       if: always()
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
