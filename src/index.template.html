@@ -2621,7 +2621,7 @@
       }
 
       function literalMatchRegex(query, global) {
-        const escaped = String(query).replace(/[|\\{}()[\]^$+*?.]/g, '\\      function filterDisplayText(fullText) {');
+        const escaped = String(query).replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
         return new RegExp(escaped, global ? 'giu' : 'iu');
       }
 
