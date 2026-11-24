@@ -6,7 +6,7 @@
 - Japanese label: Web Serial Terminal / シリアル通信ターミナル
 - Repository: ttomohisa/htmlapps-web-serial-terminal
 - Target stable release: v1.0.0
-- Current implementation milestone: v1.0.1
+- Current implementation milestone: v1.1.0
 - Primary color: #16624F
 - Distribution: readable single HTML, self-extracting single HTML, and repository-root readable HTML copy
 
@@ -1270,3 +1270,17 @@ Help must be updated in the same change whenever user-visible behavior changes.
 
 - Hide only the informational footer at the existing 760px mobile-shortcut breakpoint. Move the existing buildMeta span to the end of the Help scroll body, retaining its existing mobile hiding. RX/TX, connection, logging and export controls stay in the operational status row; privacy scope and hardware behavior are unchanged.
 - Verify JA/EN desktop, breakpoint boundaries, narrow phones and short viewports, including Help final-item reachability, existing scrolling/dismissal, functional controls and repeated localization. No physical serial/camera capability is claimed from synthetic CI tests.
+
+## 15. v1.1.0 — Terminal readability and workflow
+
+- Initial connection state emphasizes the explicit device selection step and shows concise instructions for selecting and connecting; it never automatically opens a port.
+- The command composer previews the actual UTF-8/selected-ending or HEX byte count and disables the Send button for invalid HEX.
+- In Text mode, received read() chunks are combined into logical lines separated by LF, CR, or CRLF. RX prefixes and optional timestamps appear at the start of a logical line rather than at each transport read. HEX mode preserves raw per-read byte groups.
+- The terminal filter offers case-insensitive matching-line display or up to 400 safe text-node highlights. New data refreshes the filtered view at most once per 350ms, and the original stream and saved log are not discarded. Markers remain visible when filtering by matching lines.
+- Users can add a timestamped marker/note (120 characters maximum) without transmitting anything. Markers are saved as direction `marker` in JSONL and as MARKER lines in TXT when in-memory recording is active. When log recording has stopped because of the size limit, the marker is displayed but not saved and the UI informs the user.
+- Search treats queries as literal text, including punctuation and Unicode. Active text selections are not overwritten by periodic highlighting. Paused follow still counts arrivals in matching-only filtering mode.
+- Users may edit the base filename before TXT/JSONL download. Unsafe filesystem characters and reserved names are sanitized, a timestamped name is used when blank, and the extension reflects the format.
+- Search, local echo, scroll-follow, Clear/Undo, and terminal memory limits remain available. New display/filter logic is for UI only: logs retain original receive bytes and session data.
+- No external runtime communication or dependency is added. Keep mobile keyboard and dialog reachability and Japanese/English labels verified.
+
+The four Japanese/English desktop/mobile README screenshots use a synthetic Web Serial port and example messages, not physical hardware. Historical v1.0.0 test evidence remains in its original release files. Current gates are in `docs/RELEASE_VERIFICATION_V1_1.md` and its Japanese counterpart.

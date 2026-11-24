@@ -240,6 +240,24 @@
       min-width: 0;
       gap: 11px;
     }
+    .connection-guide {
+      margin: 4px 0 0;
+      color: var(--accent);
+      font-size: 11px;
+    }
+    .connection-guide[hidden] { display: none; }
+    .workspace[data-connection-step="choose"] #chooseButton {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+      font-weight: 750;
+    }
+    .workspace[data-connection-step="choose"] #chooseButton:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+    .workspace[data-connection-step="connected"] .connection-bar {
+      padding-block: 11px;
+    }
     .status-dot {
       width: 10px;
       height: 10px;
@@ -687,6 +705,30 @@
       background: #131d19;
     }
     .terminal-search[hidden] { display: none; }
+    .terminal-filter {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #25322d;
+      background: #131d19;
+    }
+    .terminal-filter[hidden] { display: none; }
+    .filter-input { flex: 1 1 200px; min-width: 0; }
+    .filter-mode { flex: 0 0 auto; }
+    .terminal-filter .terminal-tool svg { width: 14px; height: 14px; display: block; }
+    .filter-help { color: #91a39a; font-size: 10px; }
+    .terminal mark {
+      background: #386e54;
+      color: #fff;
+      border-radius: 2px;
+      font: inherit;
+    }
+    .terminal-tool[aria-expanded="true"] {
+      border-color: #4b9c83;
+      color: #e8f4ef;
+    }
     .search-input {
       min-height: 34px;
       padding: 6px 9px;
@@ -795,6 +837,15 @@
       color: #90a39a;
       font-size: 10px;
     }
+    .composer-preview {
+      grid-column: 1 / -1;
+      margin: -4px 2px 0;
+      color: #d4e7de;
+      font-size: 11px;
+      font-variant-numeric: tabular-nums;
+    }
+    .composer-preview[hidden] { display: none; }
+    .composer-preview[data-invalid="true"] { color: #ffb4ac; }
     .composer-error {
       grid-column: 1 / -1;
       margin: -3px 2px 0;
@@ -815,6 +866,33 @@
       font-size: 11px;
     }
     .status-line strong { color: var(--text); }
+    .log-name-control { min-width: 0; font-size: 11px; }
+    .log-name-control summary {
+      min-height: 30px;
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .log-name-control[open] { flex: 1 1 100%; }
+    .log-name-editor { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 7px 0 4px; }
+    .log-name-editor label { flex: 0 0 auto; }
+    .log-name-editor input {
+      flex: 1 1 180px;
+      min-width: 0;
+      max-width: 420px;
+      min-height: 40px;
+      padding: 8px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+    }
     .status-spacer { flex: 1 1 auto; }
     .io-stats, .connection-duration, .log-status { color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
     .log-status[data-state="warning"] { color: var(--warning); }
@@ -899,7 +977,7 @@
       pointer-events: none;
       transition: opacity .16s ease, transform .16s ease;
     }
-    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
     footer {
       width: min(1180px, 100%);
       margin: 0 auto;
@@ -969,6 +1047,8 @@
       .baud-row { grid-template-columns: minmax(0, 1fr) minmax(88px, .75fr); }
       .terminal-tools { padding-inline: 10px; }
       .terminal-search { grid-template-columns: minmax(0, 1fr) auto auto; padding-inline: 10px; }
+      .terminal-filter { padding-inline: 10px; }
+      .filter-input { flex-basis: 100%; }
       .terminal-search .search-count { grid-column: 1 / 2; text-align: left; }
       .terminal-search #closeSearchButton { grid-column: 3; grid-row: 1; }
       .terminal-wrap, .terminal { min-height: 300px; }
@@ -982,7 +1062,7 @@
       .status-line .status-spacer { flex-basis: 100%; height: 0; }
       .io-stats { margin-right: auto; }
       .status-action { min-height: 40px; }
-      #helpDialog, #macroDialog {
+      #helpDialog, #macroDialog, #markerDialog {
         width: calc(100% - 18px);
         max-height: calc(100dvh - 18px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
       }
@@ -1013,7 +1093,7 @@
       <div class="brand">
         <div class="brand-mark" aria-hidden="true"><img id="appBrandIcon" src="__APP_ICON_DATA_URI__" alt=""></div>
         <div class="brand-copy">
-          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v1.0.1</span></p>
+          <p class="brand-name"><span>Web Serial Terminal</span><span class="version-badge" id="versionBadge">v1.1.0</span></p>
           <p class="brand-meta" data-i18n="brandMeta">USBシリアル機器とブラウザで送受信</p>
         </div>
       </div>
@@ -1054,13 +1134,14 @@
       </div>
     </div>
 
-    <section class="workspace" aria-label="Serial terminal">
+    <section class="workspace" data-connection-step="choose" aria-label="Serial terminal">
       <div class="connection-bar">
         <div class="device-block">
           <span class="status-dot" id="statusDot" aria-hidden="true"></span>
           <div class="device-copy">
             <p class="device-name" id="deviceName" data-i18n="noDevice">機器が選択されていません</p>
             <p class="device-detail" id="deviceDetail" data-i18n="chooseHint">USBシリアル機器を選択してください</p>
+            <p class="connection-guide" id="connectionGuide" data-i18n="connectionGuideChoose">まず機器を選択してください。</p>
           </div>
         </div>
         <div class="connection-actions">
@@ -1210,6 +1291,8 @@
         <button class="terminal-tool" id="copyTerminalButton" type="button" data-i18n="copyTerminal" disabled>コピー</button>
         <button class="terminal-tool" id="clearTerminalButton" type="button" data-i18n="clearTerminal" disabled>消去</button>
         <button class="terminal-tool" id="searchTerminalButton" type="button" data-i18n="searchTerminal">検索</button>
+        <button class="terminal-tool" id="filterTerminalButton" type="button" data-i18n="filterTerminal" aria-expanded="false" aria-controls="terminalFilter">絞り込み</button>
+        <button class="terminal-tool" id="addMarkerButton" type="button" data-i18n="addMarker" disabled>目印</button>
         <span class="terminal-tool-spacer"></span>
         <span class="terminal-count" id="terminalCount">0 chars</span>
         <button class="terminal-tool" id="autoScrollButton" type="button" aria-pressed="true"><span data-i18n="autoScroll">自動スクロール</span>: <strong id="autoScrollState">ON</strong></button>
@@ -1222,6 +1305,20 @@
         <button class="terminal-tool" id="nextMatchButton" type="button" data-i18n="nextMatch" disabled>次へ</button>
         <span class="search-count" id="searchCount">0 / 0</span>
         <button class="terminal-tool" id="closeSearchButton" type="button" data-i18n-aria-label="closeSearch" aria-label="検索を閉じる">×</button>
+      </div>
+
+      <div class="terminal-filter" id="terminalFilter" hidden>
+        <label class="sr-only" for="filterQuery" data-i18n="filterTerminal">絞り込み</label>
+        <input class="search-input filter-input" id="filterQuery" type="search" maxlength="120" autocomplete="off" spellcheck="false" data-i18n-placeholder="filterPlaceholder" placeholder="含む文字を入力">
+        <label class="sr-only" for="filterMode" data-i18n="filterModeLabel">表示方法</label>
+        <select class="terminal-select filter-mode" id="filterMode">
+          <option value="highlight" data-i18n="filterHighlight">強調表示</option>
+          <option value="only" data-i18n="filterOnly">一致する行だけ</option>
+        </select>
+        <button class="terminal-tool" id="closeFilterButton" type="button" data-i18n-aria-label="closeFilter" aria-label="絞り込みを閉じる">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 5 19 19M19 5 5 19"/></svg>
+        </button>
+        <span class="filter-help" id="filterCount" aria-live="polite"></span>
       </div>
 
       <div class="terminal-wrap">
@@ -1251,6 +1348,7 @@
         </select>
         <button class="button send-button" id="sendButton" type="button" data-i18n="send" disabled>送信</button>
         <p class="composer-note" id="sendNote"></p>
+        <p class="composer-preview" id="sendPreview" hidden role="status"></p>
         <p class="composer-error" id="sendError" role="status"></p>
       </div>
 
@@ -1261,6 +1359,14 @@
         <span class="status-spacer"></span>
         <span class="io-stats" id="ioStats">RX 0 B · TX 0 B</span>
         <span class="log-status" id="logStatus" data-state="recording">ログ 約0 B / 20 MiB</span>
+        <details class="log-name-control" id="logNameControl">
+          <summary data-i18n="logNameTitle">ファイル名</summary>
+          <div class="log-name-editor">
+            <label for="logNameInput" data-i18n="logNameLabel">保存する名前</label>
+            <input id="logNameInput" type="text" maxlength="120" spellcheck="false" autocomplete="off"
+                   data-i18n-placeholder="logNamePlaceholder" placeholder="空欄なら日時で自動設定">
+          </div>
+        </details>
         <button class="status-action" id="saveTxtButton" type="button" data-i18n="saveTxt" disabled>TXTログ</button>
         <button class="status-action" id="saveJsonlButton" type="button" data-i18n="saveJsonl" disabled>JSONL</button>
         <button class="status-action danger" id="clearSessionLogButton" type="button" data-i18n="clearSessionLog" disabled>ログ消去</button>
@@ -1318,6 +1424,25 @@
     </div>
   </dialog>
 
+  <dialog id="markerDialog">
+    <div class="dialog-head">
+      <h2 data-i18n="markerDialogTitle">ログに目印を付ける</h2>
+      <button class="dialog-close" id="closeMarkerButton" type="button" data-i18n-aria-label="close" aria-label="閉じる">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12"/><path d="M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <form id="markerForm" class="dialog-body">
+      <label class="macro-form-field" for="markerInput">
+        <span data-i18n="markerLabel">メモ</span>
+        <input class="macro-form-control" id="markerInput" type="text" maxlength="120" required autocomplete="off" data-i18n-placeholder="markerPlaceholder" placeholder="動作を確認した">
+      </label>
+    </form>
+    <div class="dialog-actions">
+      <button class="button" id="cancelMarkerButton" type="button" data-i18n="cancel">キャンセル</button>
+      <button class="button primary" type="submit" form="markerForm" data-i18n="confirmMarker">追加</button>
+    </div>
+  </dialog>
+
   <dialog id="helpDialog">
     <div class="dialog-head">
       <h2 data-i18n="helpTitle">使い方と注意事項</h2>
@@ -1349,6 +1474,7 @@
         <li data-i18n="helpBusy">接続できない場合は、Arduino IDEや他のシリアルターミナルが同じポートを使用していないか確認してください。</li>
         <li data-i18n="helpPortName">ブラウザからCOM番号などの分かりやすいポート名を取得できるとは限りません。</li>
       </ul>
+      <p data-i18n="helpNewLogFeatures">Text表示では受信した文字を改行ごとにつなぎます。「絞り込み」では行の強調表示や一致する行だけの表示ができ、「目印」で時刻付きのメモを追加できます。目印は機器へ送信されず、保存用ログにも記録されます。</p>
       <p class="dialog-note" data-i18n="helpFixed">「消去」は画面表示だけ、「ログ消去」は保存用セッションログだけを消します。ログ上限後は保存してから「ログ消去」を行うと記録を再開できます。DTR / RTSやBREAKは接続先への影響を確認して使用してください。</p>
       <span class="build-meta" id="buildMeta"></span>
       <!-- APP:HELP:END -->
@@ -1402,6 +1528,31 @@
           brandMeta: 'USBシリアル機器とブラウザで送受信',
           introTitle: 'シリアル機器へ接続',
           introBody: 'シリアル機器を選んで接続し、受信データを確認したりコマンドを送ったりできます。',
+          connectionGuideChoose: 'まず機器を選択してください。',
+          connectionGuideReady: '通信設定を確認して「接続」を押します。',
+          filterTerminal: '絞り込み',
+          filterPlaceholder: '含む文字を入力',
+          filterModeLabel: '表示方法',
+          filterHighlight: '強調表示',
+          filterOnly: '一致する行だけ',
+          closeFilter: '絞り込みを閉じる',
+          filterMatches: '{count} 行が一致',
+          filterEmptyTitle: '一致する行はありません',
+          filterEmptyBody: '条件を変えるか、絞り込みを閉じてください。',
+          addMarker: '目印',
+          markerDialogTitle: 'ログに目印を付ける',
+          markerLabel: 'メモ',
+          markerPlaceholder: '動作を確認した',
+          confirmMarker: '追加',
+          markerAdded: 'ログに目印を追加しました。',
+          markerNotSaved: '表示には追加しましたが、保存用ログは上限に達しています。',
+          helpNewLogFeatures: 'Text表示では受信した文字を改行ごとにつなぎます。「絞り込み」で一致行の強調表示や抽出ができ、「目印」でメモを残せます。目印は機器へ送信されず、保存用ログにも記録されます。TXT/JSONL保存では「ファイル名」から保存名を変更できます。', 
+          logNameTitle: 'ファイル名',
+          logNameLabel: '保存する名前',
+          logNamePlaceholder: '空欄なら日時で自動設定',
+          previewText: '{count} bytes · 改行 {ending}',
+          previewHex: '{count} bytes · HEX',
+          previewInvalid: 'HEXの入力を確認してください。',
           privacyBadge: '完全ローカル処理',
           noDevice: '機器が選択されていません',
           chooseHint: 'USBシリアル機器を選択してください',
@@ -1580,6 +1731,31 @@
           brandMeta: 'Send and receive with USB serial devices in your browser',
           introTitle: 'Connect a serial device',
           introBody: 'Select a serial device, connect, then view incoming data or send commands.',
+          connectionGuideChoose: 'Choose a device to get started.',
+          connectionGuideReady: 'Review settings, then press Connect.',
+          filterTerminal: 'Filter',
+          filterPlaceholder: 'Text to match',
+          filterModeLabel: 'Filter mode',
+          filterHighlight: 'Highlight',
+          filterOnly: 'Matching lines',
+          closeFilter: 'Close filter',
+          filterMatches: '{count} matching lines',
+          filterEmptyTitle: 'No matching lines',
+          filterEmptyBody: 'Change the filter or close it to show all data.',
+          addMarker: 'Marker',
+          markerDialogTitle: 'Add a log marker',
+          markerLabel: 'Note',
+          markerPlaceholder: 'Checked the device',
+          confirmMarker: 'Add marker',
+          markerAdded: 'Marker added to the log.',
+          markerNotSaved: 'Marker shown, but the saved log is full.',
+          helpNewLogFeatures: 'Text display joins received characters into lines. Filter to highlight or show matching lines, and add timestamped notes with Marker. Markers are never sent to the device and are included in saved logs. Use Filename to customize TXT/JSONL downloads.', 
+          logNameTitle: 'Filename',
+          logNameLabel: 'Save as',
+          logNamePlaceholder: 'Leave blank for a timestamped name',
+          previewText: '{count} bytes · ending {ending}',
+          previewHex: '{count} bytes · HEX',
+          previewInvalid: 'Check the HEX bytes.',
           privacyBadge: 'Fully local processing',
           noDevice: 'No device selected',
           chooseHint: 'Choose a USB serial device',
@@ -1795,6 +1971,10 @@
         txBusy: false,
         commandInputRevision: 0,
         clearUndoGeneration: 0,
+        filterQuery: '',
+        filterMode: 'highlight',
+        filterRefreshTimer: 0,
+        displayAssembler: { rxOpen: false, afterCr: false },
         connectedAt: null,
         connectionClockTimer: 0,
         displayEntries: [],
@@ -1837,6 +2017,8 @@
       const MACRO_PAYLOAD_LIMIT = 8192;
       const SEARCH_MATCH_LIMIT = 5000;
       const SEARCH_REFRESH_INTERVAL_MS = 350;
+      const FILTER_REFRESH_INTERVAL_MS = 350;
+      const MAX_HIGHLIGHT_MATCHES = 400;
       const decoder = new TextDecoder('utf-8');
       const encoder = new TextEncoder();
 
@@ -2126,6 +2308,29 @@
         $('#commandInput').setAttribute('placeholder', t(hexMode ? 'hexPlaceholder' : 'commandPlaceholder'));
         $('#sendNote').textContent = hexMode ? t('sendNoteHex') : t('sendNote').replace('{ending}', endingText($('#lineEnding').value));
         if (!hexMode) $('#sendError').textContent = '';
+        refreshSendPreview();
+      }
+
+      function refreshSendPreview() {
+        const input = $('#commandInput').value;
+        const output = $('#sendPreview');
+        output.hidden = !input;
+        output.dataset.invalid = 'false';
+        if (!input) {
+          output.textContent = '';
+          return true;
+        }
+        const hex = $('#sendMode').value === 'hex';
+        const bytes = hex ? parseHexInput(input) : encoder.encode(input + endingBytes($('#lineEnding').value));
+        if (!bytes) {
+          output.textContent = t('previewInvalid');
+          output.dataset.invalid = 'true';
+          return false;
+        }
+        output.textContent = t(hex ? 'previewHex' : 'previewText')
+          .replace('{count}', new Intl.NumberFormat(state.language).format(bytes.byteLength))
+          .replace('{ending}', endingText($('#lineEnding').value));
+        return true;
       }
 
       function macroPayloadPreview(payload) {
@@ -2400,11 +2605,145 @@
         return true;
       }
 
-      function displayEntryText(entry) {
-        if (state.displayMode === 'text' && !state.showTimestamp && !state.localEcho && entry.direction === 'rx') return entry.text;
-        const prefix = (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + entry.direction.toUpperCase() + '  ';
-        const payload = state.displayMode === 'hex' ? bytesToHex(entry.bytes) : (entry.displayText || entry.text);
-        return prefix + payload + (payload.endsWith('\n') ? '' : '\n');
+      function newDisplayAssembler() {
+        return { rxOpen: false, afterCr: false };
+      }
+
+      // RX reads are arbitrary chunks, not lines. Build Text lines across reads
+      // without altering their original bytes in the saved session entries.
+      function formatDisplayEntry(entry, assembler) {
+        if (entry.direction === 'marker') {
+          const before = assembler.rxOpen ? '\n' : '';
+          assembler.rxOpen = false;
+          assembler.afterCr = false;
+          return before + '── ' + formatDisplayTime(entry.time) + '  ' + entry.text + ' ──\n';
+        }
+        if (entry.direction !== 'rx') {
+          if (!state.localEcho) return '';
+          const before = assembler.rxOpen ? '\n' : '';
+          assembler.rxOpen = false;
+          assembler.afterCr = false;
+          const prefix = (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + 'TX  ';
+          const payload = state.displayMode === 'hex' ? bytesToHex(entry.bytes) : (entry.displayText || entry.text);
+          return before + prefix + payload + (payload.endsWith('\n') ? '' : '\n');
+        }
+        if (state.displayMode === 'hex') {
+          if (!entry.bytes.length) return '';
+          return (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + 'RX  ' + bytesToHex(entry.bytes) + '\n';
+        }
+        const text = entry.text || '';
+        if (!text) return '';
+        const label = state.showTimestamp || state.localEcho;
+        const prefix = (state.showTimestamp ? formatDisplayTime(entry.time) + '  ' : '') + 'RX  ';
+        const parts = [];
+        for (let i = 0; i < text.length; i += 1) {
+          const ch = text[i];
+          if (ch === '\n' && assembler.afterCr) {
+            assembler.afterCr = false;
+            continue;
+          }
+          assembler.afterCr = false;
+          if (ch !== '\r' && ch !== '\n') {
+            if (!assembler.rxOpen && label) parts.push(prefix);
+            assembler.rxOpen = true;
+            // Append ordinary characters in groups in the next iteration.
+            let end = i + 1;
+            while (end < text.length && text[end] !== '\r' && text[end] !== '\n') end += 1;
+            parts.push(text.slice(i, end));
+            i = end - 1;
+            continue;
+          }
+          if (!assembler.rxOpen && label) parts.push(prefix);
+          parts.push('\n');
+          assembler.rxOpen = false;
+          assembler.afterCr = ch === '\r';
+        }
+        return parts.join('');
+      }
+
+      function literalMatchRegex(query, global) {
+        const escaped = String(query).replace(/[|\\{}()[\]^$+*?.]/g, '\\$&');
+        return new RegExp(escaped, global ? 'giu' : 'iu');
+      }
+
+      function filterDisplayText(fullText) {
+        if (!state.filterQuery) return { text: fullText, matches: 0 };
+        const matcher = literalMatchRegex(state.filterQuery, false);
+        const lines = fullText.split('\n');
+        const retained = [];
+        let matches = 0;
+        for (let i = 0; i < lines.length; i += 1) {
+          const line = lines[i];
+          const matched = matcher.test(line);
+          if (matched) matches += 1;
+          if (state.filterMode !== 'only' || matched || line.startsWith('── ')) retained.push(line);
+        }
+        const output = retained.join('\n');
+        return { text: output, matches };
+      }
+
+      function updateFilterCount(matches) {
+        const counter = $('#filterCount');
+        counter.textContent = state.filterQuery
+          ? t('filterMatches').replace('{count}', new Intl.NumberFormat(state.language).format(matches))
+          : '';
+      }
+
+      function updateTerminalEmptyState() {
+        const filtered = state.filterQuery && state.filterMode === 'only';
+        const title = $('#terminalEmpty strong');
+        const body = $('#terminalEmpty span');
+        title.dataset.i18n = filtered ? 'filterEmptyTitle' : 'terminalEmptyTitle';
+        body.dataset.i18n = filtered ? 'filterEmptyBody' : 'terminalEmptyBody';
+        title.textContent = t(title.dataset.i18n);
+        body.textContent = t(body.dataset.i18n);
+      }
+
+      // Only untrusted Text is placed in text nodes; highlights are not HTML.
+      function paintFilterHighlights() {
+        if (!state.filterQuery || state.filterMode !== 'highlight') return;
+        const terminal = $('#terminal');
+        const text = state.terminalText;
+        const selection = window.getSelection();
+        // Periodic highlighting must not erase an active user/Search selection.
+        if (selection && !selection.isCollapsed &&
+            (terminal.contains(selection.anchorNode) || terminal.contains(selection.focusNode))) return;
+        const matcher = literalMatchRegex(state.filterQuery, true);
+        const fragment = document.createDocumentFragment();
+        let pos = 0;
+        let foundCount = 0;
+        let match;
+        while (foundCount < MAX_HIGHLIGHT_MATCHES && (match = matcher.exec(text))) {
+          const index = match.index;
+          if (index > pos) fragment.append(document.createTextNode(text.slice(pos, index)));
+          const marked = document.createElement('mark');
+          marked.textContent = match[0];
+          fragment.append(marked);
+          pos = index + match[0].length;
+          foundCount += 1;
+        }
+        if (!foundCount) {
+          terminal.textContent = text;
+          return;
+        }
+        if (pos < text.length) fragment.append(document.createTextNode(text.slice(pos)));
+        const top = terminal.scrollTop;
+        terminal.replaceChildren(fragment);
+        terminal.scrollTop = top;
+      }
+
+      function scheduleFilterRefresh() {
+        if (!state.filterQuery || state.filterRefreshTimer) return;
+        state.filterRefreshTimer = window.setTimeout(() => {
+          state.filterRefreshTimer = 0;
+          if (!state.filterQuery) return;
+          if (state.filterMode === 'only') {
+            renderTerminal();
+          } else {
+            updateFilterCount(filterDisplayText(state.terminalText).matches);
+            paintFilterHighlights();
+          }
+        }, FILTER_REFRESH_INTERVAL_MS);
       }
 
       function countLineBreaks(text) {
@@ -2485,14 +2824,11 @@
         state.searchIndex = -1;
 
         if (query) {
-          const haystack = state.terminalText.toLocaleLowerCase();
-          const needle = query.toLocaleLowerCase();
-          let from = 0;
-          while (state.searchMatches.length < SEARCH_MATCH_LIMIT) {
-            const found = haystack.indexOf(needle, from);
-            if (found < 0) break;
-            state.searchMatches.push(found);
-            from = found + Math.max(1, needle.length);
+          const matcher = literalMatchRegex(query, true);
+          let match;
+          while (state.searchMatches.length < SEARCH_MATCH_LIMIT &&
+                 (match = matcher.exec(state.terminalText))) {
+            state.searchMatches.push(match.index);
           }
           if (state.searchMatches.length && previousPosition !== null && config.preserveIndex !== false) {
             const samePosition = state.searchMatches.indexOf(previousPosition);
@@ -2521,16 +2857,27 @@
       function selectSearchMatch() {
         if (state.searchIndex < 0 || !state.searchMatches.length || !state.searchQuery) return;
         const terminal = $('#terminal');
-        const node = terminal.firstChild;
-        if (!node || node.nodeType !== Node.TEXT_NODE) return;
         const start = state.searchMatches[state.searchIndex];
         const end = start + state.searchQuery.length;
-        if (end > node.data.length) return;
+        if (end > state.terminalText.length) return;
 
+        const position = offset => {
+          const walker = document.createTreeWalker(terminal, NodeFilter.SHOW_TEXT);
+          let remaining = offset;
+          let node;
+          while ((node = walker.nextNode())) {
+            if (remaining <= node.data.length) return { node, offset: remaining };
+            remaining -= node.data.length;
+          }
+          return null;
+        };
+        const from = position(start);
+        const to = position(end);
+        if (!from || !to) return;
         const selection = window.getSelection();
         const range = document.createRange();
-        range.setStart(node, start);
-        range.setEnd(node, end);
+        range.setStart(from.node, from.offset);
+        range.setEnd(to.node, to.offset);
         selection.removeAllRanges();
         selection.addRange(range);
 
@@ -2573,6 +2920,8 @@
         const terminal = $('#terminal');
         if (!trimmed.omitted && terminal.childNodes.length === 1 && terminal.firstChild.nodeType === Node.TEXT_NODE && terminal.firstChild.data.length === previousLength) {
           terminal.firstChild.appendData(pending);
+        } else if (!trimmed.omitted && state.filterQuery && state.filterMode === 'highlight' && terminal.textContent.length === previousLength) {
+          terminal.append(document.createTextNode(pending));
         } else {
           terminal.textContent = state.terminalText;
         }
@@ -2583,6 +2932,7 @@
         }
 
         $('#terminalEmpty').hidden = state.terminalText.length > 0;
+        updateTerminalEmptyState();
         updateIoStats();
         updateTerminalControls();
 
@@ -2592,6 +2942,7 @@
         }
         updateLatestButton();
         scheduleSearchRefresh();
+        scheduleFilterRefresh();
       }
 
       function queueTerminalAppend(text) {
@@ -2605,49 +2956,45 @@
       }
 
       function buildDisplayTextFromHistory() {
+        const assembler = newDisplayAssembler();
         const parts = [];
-        let chars = 0;
-        let lines = 0;
-        let omitted = false;
-        for (let i = state.displayEntries.length - 1; i >= state.displayStartIndex; i -= 1) {
-          const entry = state.displayEntries[i];
-          if (entry.direction !== 'rx' && !state.localEcho) continue;
-          const piece = displayEntryText(entry);
-          const pieceLines = countLineBreaks(piece);
-          if (parts.length && (chars + piece.length > MAX_DISPLAY_CHARS || lines + pieceLines > MAX_DISPLAY_LINES)) {
-            omitted = true;
-            break;
-          }
-          parts.push(piece);
-          chars += piece.length;
-          lines += pieceLines;
-          if (chars >= MAX_DISPLAY_CHARS || lines >= MAX_DISPLAY_LINES) {
-            omitted = i > state.displayStartIndex;
-            break;
-          }
+        for (let i = state.displayStartIndex; i < state.displayEntries.length; i += 1) {
+          const piece = formatDisplayEntry(state.displayEntries[i], assembler);
+          if (piece) parts.push(piece);
         }
-        const joined = parts.reverse().join('');
-        const bounded = trimDisplayToBudget(joined, countLineBreaks(joined));
-        return { text: bounded.text, omitted: omitted || bounded.omitted };
+        const filtered = filterDisplayText(parts.join(''));
+        const bounded = trimDisplayToBudget(filtered.text, countLineBreaks(filtered.text));
+        return { text: bounded.text, omitted: bounded.omitted, assembler, matches: filtered.matches };
       }
 
       function renderTerminal() {
         cancelPendingRender();
+        if (state.filterRefreshTimer) {
+          window.clearTimeout(state.filterRefreshTimer);
+          state.filterRefreshTimer = 0;
+        }
         const built = buildDisplayTextFromHistory();
+        state.displayAssembler = built.assembler;
         state.terminalText = built.text;
         state.displayLineCount = countLineBreaks(built.text);
         const terminal = $('#terminal');
+        const previousScrollTop = terminal.scrollTop;
         terminal.textContent = built.text;
         $('#terminalEmpty').hidden = built.text.length > 0;
+        updateTerminalEmptyState();
         if (built.omitted && !state.bufferNoticeShown) {
           state.bufferNoticeShown = true;
           showToast(t('displayTrimmed'), 5200);
         }
+        updateFilterCount(built.matches);
+        paintFilterHighlights();
         updateTerminalControls();
-        updateSearchMatches();
+        updateSearchMatches({ preserveIndex: true, skipSelection: true });
         if (state.autoScroll) {
           resetNewLogCount();
           setProgrammaticScrollTop(terminal.scrollHeight);
+        } else {
+          setProgrammaticScrollTop(previousScrollTop);
         }
         updateLatestButton();
       }
@@ -2657,25 +3004,33 @@
         const entry = { time: Date.now(), direction, bytes: data, text: String(text || ''), displayText: displayText ? String(displayText) : '' };
 
         appendDisplayEntry(entry);
-        recordSessionEntry(entry);
+        const recorded = recordSessionEntry(entry);
 
         if (direction === 'rx') state.rxBytes += data.byteLength;
-        else state.txBytes += data.byteLength;
+        else if (direction === 'tx') state.txBytes += data.byteLength;
         state.terminalRevision += 1;
 
-        if (direction === 'rx' || state.localEcho) {
-          const visibleText = displayEntryText(entry);
-          if (visibleText) queueTerminalAppend(visibleText);
-          else updateIoStats();
-        } else {
+        const visibleText = formatDisplayEntry(entry, state.displayAssembler);
+        if (state.filterQuery && state.filterMode === 'only') {
+          if (visibleText && !state.autoScroll) {
+            state.newLogLines += countLineBreaks(visibleText);
+            state.newLogPartial = !visibleText.endsWith('\n');
+            updateLatestButton();
+          }
+          scheduleFilterRefresh();
           updateIoStats();
           updateTerminalControls();
+        } else {
+          if (visibleText) queueTerminalAppend(visibleText);
+          else updateIoStats();
         }
+        return recorded;
       }
 
       function updateTerminalControls() {
         const hasText = state.terminalText.length > 0;
         $('#copyTerminalButton').disabled = !hasText;
+        $('#addMarkerButton').disabled = state.phase !== 'connected' && !state.displayEntries.length;
         $('#clearTerminalButton').disabled = !hasText;
         $('#terminalCount').textContent = new Intl.NumberFormat(state.language).format(state.terminalText.length) + (state.language === 'ja' ? ' 文字' : ' chars');
         $('#autoScrollButton').setAttribute('aria-pressed', String(state.autoScroll));
@@ -2839,7 +3194,15 @@
         // Always allow an explicit recovery check; reconnect events may arrive with a new SerialPort object or be missed.
         $('#connectButton').disabled = !supported || !state.port || busy || connected;
         $('#connectButton').textContent = t(state.unexpectedDisconnect ? 'reconnect' : 'connect');
+        const step = !supported ? 'unavailable' : connected ? 'connected' : state.port ? 'ready' : 'choose';
+        $('.workspace').dataset.connectionStep = step;
+        const guide = $('#connectionGuide');
+        const guideKey = step === 'choose' ? 'connectionGuideChoose' : 'connectionGuideReady';
+        guide.dataset.i18n = guideKey;
+        guide.textContent = t(guideKey);
+        guide.hidden = step !== 'choose' && step !== 'ready';
         $('#disconnectButton').disabled = !connected;
+        $('#addMarkerButton').disabled = !connected && !state.displayEntries.length;
         $('#commandInput').disabled = !connected;
         setSettingsDisabled(busy || connected);
         updateSendState();
@@ -2850,13 +3213,15 @@
       function updateSendState() {
         const connected = state.phase === 'connected';
         const hasText = $('#commandInput').value.length > 0;
-        $('#sendButton').disabled = !connected || !hasText || state.txBusy;
+        const valid = refreshSendPreview();
+        $('#sendButton').disabled = !connected || !hasText || !valid || state.txBusy;
       }
 
       function refreshDeviceLabel(fallbackKey) {
         const info = describePort(state.port, fallbackKey);
         $('#deviceName').textContent = info.name;
         $('#deviceDetail').textContent = info.detail;
+        $('#deviceDetail').hidden = !state.port;
       }
 
       function appendReceived(bytes, text) {
@@ -3285,7 +3650,7 @@
         if (!entry) return '';
         // readLoop already decodes RX as a continuous UTF-8 stream; individual
         // read() chunks may start or end in the middle of a multibyte character.
-        if (entry.direction === 'rx') return entry.text;
+        if (entry.direction === 'rx' || entry.direction === 'marker') return entry.text;
         return entry.bytes && entry.bytes.byteLength
           ? new TextDecoder('utf-8').decode(entry.bytes) : '';
       }
@@ -3294,7 +3659,7 @@
         const parts = [];
         for (const entry of state.sessionEntries) {
           const exactText = exactTextForLog(entry);
-          const readable = isReadableLogText(exactText);
+          const readable = entry.direction === 'marker' || isReadableLogText(exactText);
           const payload = readable ? escapeLogText(exactText) : 'HEX ' + bytesToHex(entry.bytes);
           parts.push(formatFileTime(entry.time) + ' ' + entry.direction.toUpperCase() + ' ' + payload + '\n');
         }
@@ -3314,6 +3679,13 @@
         return parts;
       }
 
+      function normalizeLogBaseFilename(value) {
+        let name = String(value || '').replace(/[\\/:*?"<>|\x00-\x1F\x7F]/g, '-')
+          .replace(/^\.+|\.+$/g, '').trim().slice(0, 100).replace(/[.\s]+$/g, '');
+        if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])$/i.test(name)) name = '_' + name;
+        return name;
+      }
+
       function logFilename(extension) {
         const now = new Date();
         const stamp = now.getFullYear() +
@@ -3322,7 +3694,9 @@
           String(now.getHours()).padStart(2, '0') +
           String(now.getMinutes()).padStart(2, '0') +
           String(now.getSeconds()).padStart(2, '0');
-        return 'serial-log-' + stamp + '.' + extension;
+        const custom = $('#logNameInput').value.trim().replace(/\.(?:txt|jsonl)$/i, '');
+        const safe = normalizeLogBaseFilename(custom);
+        return (safe || 'serial-log-' + stamp) + '.' + extension;
       }
 
       function downloadLog(parts, extension, mime) {
@@ -3583,6 +3957,54 @@
         setProgrammaticScrollTop($('#terminal').scrollHeight);
         updateTerminalControls();
       });
+      $('#filterTerminalButton').addEventListener('click', () => {
+        const panel = $('#terminalFilter');
+        panel.hidden = !panel.hidden;
+        $('#filterTerminalButton').setAttribute('aria-expanded', String(!panel.hidden));
+        if (!panel.hidden) $('#filterQuery').focus();
+      });
+      $('#closeFilterButton').addEventListener('click', () => {
+        $('#terminalFilter').hidden = true;
+        $('#filterTerminalButton').setAttribute('aria-expanded', 'false');
+        state.filterQuery = '';
+        $('#filterQuery').value = '';
+        renderTerminal();
+        $('#filterTerminalButton').focus();
+      });
+      $('#filterQuery').addEventListener('input', event => {
+        state.filterQuery = event.currentTarget.value;
+        renderTerminal();
+      });
+      $('#filterMode').addEventListener('change', event => {
+        state.filterMode = event.currentTarget.value === 'only' ? 'only' : 'highlight';
+        renderTerminal();
+      });
+
+      const markerDialog = $('#markerDialog');
+      $('#addMarkerButton').addEventListener('click', () => {
+        if (state.phase !== 'connected' && !state.displayEntries.length) return;
+        $('#markerInput').value = '';
+        markerDialog.showModal();
+        $('#markerInput').focus();
+      });
+      $('#markerForm').addEventListener('submit', event => {
+        event.preventDefault();
+        const label = $('#markerInput').value.trim().slice(0, 120);
+        if (!label) {
+          $('#markerInput').focus();
+          return;
+        }
+        const recorded = addSessionEntry('marker', new Uint8Array(), label);
+        markerDialog.close();
+        showToast(t(recorded ? 'markerAdded' : 'markerNotSaved'), 3500);
+      });
+      $('#closeMarkerButton').addEventListener('click', () => markerDialog.close());
+      $('#cancelMarkerButton').addEventListener('click', () => markerDialog.close());
+      markerDialog.addEventListener('click', event => {
+        const rect = markerDialog.getBoundingClientRect();
+        if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) markerDialog.close();
+      });
+
       $('#searchTerminalButton').addEventListener('click', () => {
         $('#terminalSearch').hidden = false;
         $('#terminalSearchInput').focus();
@@ -3648,7 +4070,10 @@
       ['dataBits','parity','stopBits','flowControl'].forEach(id => {
         $('#' + id).addEventListener('change', updateSettingsFromControls);
       });
-      $('#lineEnding').addEventListener('change', updateSettingsFromControls);
+      $('#lineEnding').addEventListener('change', () => {
+        updateSettingsFromControls();
+        updateSendState();
+      });
       $('#sendMode').addEventListener('change', () => {
         state.settings.sendMode = $('#sendMode').value;
         persistSettings();
@@ -3721,7 +4146,7 @@
         });
       });
 
-      ['commandInput','macroNameInput','macroPayloadInput'].forEach(id => {
+      ['commandInput','macroNameInput','macroPayloadInput','markerInput'].forEach(id => {
         const element = $('#' + id);
         element.addEventListener('focus', () => {
           updateVisualViewport();
@@ -3810,6 +4235,7 @@
       window.addEventListener('pagehide', () => {
         if (state.renderTimer) window.clearTimeout(state.renderTimer);
         if (state.searchRefreshTimer) window.clearTimeout(state.searchRefreshTimer);
+        if (state.filterRefreshTimer) window.clearTimeout(state.filterRefreshTimer);
         if (state.connectionClockTimer) window.clearInterval(state.connectionClockTimer);
         if (state.phase === 'connected') void disconnect({ silent: true });
       });
